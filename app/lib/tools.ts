@@ -1,16 +1,20 @@
-import Realm from '../models/Realm'
-import Quest from '../models/Quest'
+import { QuestModel, PlayerStateModel, connectDB } from './mongodb'
 
 export async function getRealmState(userId: string) {
-    return await Realm.findOne({ userId })
+  await connectDB()
+  return await PlayerStateModel.findOne({ id: userId })
 }
 
 export async function saveQuest(data: any) {
-    return await Quest.create(data)
+  await connectDB()
+  return await QuestModel.create(data)
 }
 
 export async function completeQuest(id: string) {
-    return await Quest.findByIdAndUpdate(id, {
-        completed: true,
-    })
+  await connectDB()
+  return await QuestModel.findOneAndUpdate(
+    { id: Number(id) },
+    { isCompleted: true },
+    { new: true }
+  )
 }

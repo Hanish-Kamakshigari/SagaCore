@@ -49,22 +49,53 @@ async function callGemini(payload: any): Promise<string> {
     model = 'gemini-3.5-flash'
   }
 
-  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${process.env.GOOGLE_API_KEY || ''}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(body),
-  })
+  const maxRetries = 3
+  let delay = 1000 // initial delay of 1 second
 
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({}))
-    throw new Error(`Gemini API error ${response.status}: ${JSON.stringify(err)}`)
+  for (let attempt = 1; attempt <= maxRetries + 1; attempt++) {
+    try {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${process.env.GOOGLE_API_KEY || ''}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      })
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}))
+        const status = response.status
+        const shouldRetry = status === 429 || status === 503 || status === 500 || status === 502 || status === 504
+
+        if (shouldRetry && attempt <= maxRetries) {
+          console.warn(`Gemini API call failed with status ${status} (Attempt ${attempt}/${maxRetries + 1}). Retrying in ${delay}ms...`)
+          await new Promise((resolve) => setTimeout(resolve, delay))
+          delay *= 2 // exponential backoff
+          continue
+        }
+
+        throw new Error(`Gemini API error ${response.status}: ${JSON.stringify(err)}`)
+      }
+
+      const data = await response.json()
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
+      return text
+    } catch (error: any) {
+      // If it's a fetch network error or transient code, retry if we have attempts left
+      const isNetworkError = error instanceof TypeError || error.name === 'TypeError'
+      const isTransientError = error.message?.includes('503') || error.message?.includes('429') || error.message?.includes('500')
+      
+      if ((isNetworkError || isTransientError) && attempt <= maxRetries) {
+        console.warn(`Gemini API network/transient error (Attempt ${attempt}/${maxRetries + 1}): ${error.message || error}. Retrying in ${delay}ms...`)
+        await new Promise((resolve) => setTimeout(resolve, delay))
+        delay *= 2 // exponential backoff
+        continue
+      }
+      throw error
+    }
   }
 
-  const data = await response.json()
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
-  return text
+  throw new Error('Gemini API call failed after max retries')
 }
 
 // ─── Shared JSON parser ───────────────────────────────────────────────────────
@@ -128,7 +159,8 @@ Rules:
 export async function forgeQuestlineWithAI(
   goal: string,
   startId: number,
-  worldTheme: 'fantasy' | 'cyberpunk' | 'steampunk'
+  worldTheme: 'fantasy' | 'cyberpunk' | 'steampunk',
+  playerLevel: number = 1
 ): Promise<Quest[]> {
   const themeContext = {
     fantasy:   'a high-fantasy realm of mana, spires, and ancient scrolls',
@@ -145,6 +177,12 @@ Quest 1 should focus on learning/prep (wisdom category).
 Quest 2 should focus on crafting/building (creation category).
 Quest 3 should focus on testing/polishing/discipline (discipline category).
 
+The user is currently Level ${playerLevel} in their SAGACORE journey. 
+To emulate a true progressive game, scale the quest difficulty, task depth, and XP rewards dynamically based on this level:
+- For levels 1-5 (Novice): Tasks must be simple, direct, and straightforward. Set difficulty to "Common" or "Rare". XP rewards must scale between 60 XP and 120 XP.
+- For levels 6-12 (Expert): Tasks must represent solid multi-stage sub-projects. Set difficulty to "Rare" or "Epic". XP rewards must scale between 130 XP and 240 XP.
+- For levels 13+ (Master): Tasks must demand granular, highly rigorous professional disciplines. Set difficulty to "Epic" or "Legendary". XP rewards must scale between 250 XP and 450 XP, representing their immense master-tier progress in the game!
+
 Respond ONLY with a valid JSON object of this exact shape — no prose, no markdown fences:
 {
   "quests": [
@@ -153,7 +191,7 @@ Respond ONLY with a valid JSON object of this exact shape — no prose, no markd
       "description": "1-2 sentences in thematic language detailing the specific real-world goal and prep step",
       "category": "wisdom",
       "difficulty": "Common" | "Rare" | "Epic" | "Legendary",
-      "xp": number between 50 and 300,
+      "xp": number matching the level scaling rules above,
       "tasks": ["practical real-world step 1", "practical real-world step 2", "practical real-world step 3"],
       "mythEvent": "What changes in the world when this quest is completed (1 vivid sentence)"
     },
@@ -162,7 +200,7 @@ Respond ONLY with a valid JSON object of this exact shape — no prose, no markd
       "description": "1-2 sentences in thematic language detailing the specific real-world goal and building step",
       "category": "creation",
       "difficulty": "Common" | "Rare" | "Epic" | "Legendary",
-      "xp": number between 50 and 300,
+      "xp": number matching the level scaling rules above,
       "tasks": ["practical real-world step 1", "practical real-world step 2", "practical real-world step 3"],
       "mythEvent": "What changes in the world when this quest is completed (1 vivid sentence)"
     },
@@ -171,7 +209,7 @@ Respond ONLY with a valid JSON object of this exact shape — no prose, no markd
       "description": "1-2 sentences in thematic language detailing the specific real-world goal and testing step",
       "category": "discipline",
       "difficulty": "Common" | "Rare" | "Epic" | "Legendary",
-      "xp": number between 50 and 300,
+      "xp": number matching the level scaling rules above,
       "tasks": ["practical real-world step 1", "practical real-world step 2", "practical real-world step 3"],
       "mythEvent": "What changes in the world when this quest is completed (1 vivid sentence)"
     }
@@ -272,12 +310,13 @@ Pick the theme that best matches the prompt's aesthetic.`,
 
 // ─── Memory Engine (MongoDB Persistence) ───────────────────────────────────────
 
-export async function saveChapterToMongo(chapter: LoreChapter): Promise<void> {
+export async function saveChapterToMongo(chapter: LoreChapter, userId: string): Promise<void> {
   try {
     await connectDB()
     await LoreChapterModel.findOneAndUpdate(
-      { id: chapter.id },
+      { userId, id: chapter.id },
       {
+        userId,
         title: chapter.title,
         text: chapter.text,
         timestamp: chapter.timestamp
@@ -289,10 +328,10 @@ export async function saveChapterToMongo(chapter: LoreChapter): Promise<void> {
   }
 }
 
-export async function fetchAllChaptersFromMongo(): Promise<LoreChapter[]> {
+export async function fetchChaptersFromMongo(userId: string): Promise<LoreChapter[]> {
   try {
     await connectDB()
-    const chapters = await LoreChapterModel.find({}).sort({ id: 1 }).lean()
+    const chapters = await LoreChapterModel.find({ userId }).sort({ id: 1 }).lean()
     return chapters.map((c: any) => ({
       id: c.id,
       title: c.title,
@@ -365,25 +404,53 @@ Difficulty: ${difficulty}`,
   return parseJSON(raw)
 }
 
-export async function saveQuestToMongo(quest: Quest) {
+export async function saveQuestToMongo(quest: Quest, userId: string) {
   try {
     await connectDB()
 
-    console.log('Saving quest:', quest)
+    console.log('Saving quest:', quest, 'for user:', userId)
 
     const updated = await QuestModel.findOneAndUpdate(
-      { id: quest.id },
-      quest,
+      { userId, id: quest.id },
+      { ...quest, userId },
       {
         upsert: true,
         new: true,
       }
-    )
+    ).lean()
 
-    return updated
+    if (updated) {
+      return JSON.parse(JSON.stringify(updated)) as Quest
+    }
+    return quest
   } catch (error: any) {
     console.warn('Mongo Save Quest Warning (Offline/Memory Mode):', error.message || error)
     // Return original quest to client to guarantee uninterrupted execution
     return quest
+  }
+}
+
+export async function fetchQuestsFromMongo(userId: string): Promise<Quest[]> {
+  try {
+    await connectDB()
+    const quests = await QuestModel.find({ userId }).sort({ id: 1 }).lean()
+    return JSON.parse(JSON.stringify(quests)) as Quest[]
+  } catch (error: any) {
+    console.warn('Mongo Fetch Quests Warning (Offline/Memory Mode):', error.message || error)
+    return []
+  }
+}
+
+export async function fetchPlayerStateFromMongo(userId: string) {
+  try {
+    await connectDB()
+    const state = await PlayerStateModel.findOne({ id: userId }).lean()
+    if (state) {
+      return JSON.parse(JSON.stringify(state))
+    }
+    return null
+  } catch (error: any) {
+    console.warn('Mongo Fetch Player State Warning (Offline/Memory Mode):', error.message || error)
+    return null
   }
 }

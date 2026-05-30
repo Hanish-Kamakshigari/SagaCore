@@ -138,17 +138,28 @@ export const quests: Quest[] = [
 ]
 
 // Generative RPG template mapping based on keywords to simulate AI "Dream Forging"
-export const forgeQuestFromGoal = (goalText: string, id: number): Quest => {
+export const forgeQuestFromGoal = (goalText: string, id: number, playerLevel: number = 1): Quest => {
   const text = goalText.toLowerCase()
   let category: 'wisdom' | 'discipline' | 'creation' = 'discipline'
   let difficulty: 'Common' | 'Rare' | 'Epic' | 'Legendary' = 'Common'
   let title = 'Embark on a Secret Trial'
   let description = `Channel your inner resolve to achieve: "${goalText}".`
-  let xp = 80
+  
+  let baseXP = 80
+  
+  if (playerLevel <= 5) {
+    difficulty = id % 2 === 0 ? 'Common' : 'Rare'
+    baseXP = 60 + (id % 5) * 10
+  } else if (playerLevel <= 12) {
+    difficulty = id % 2 === 0 ? 'Rare' : 'Epic'
+    baseXP = 130 + (id % 5) * 20
+  } else {
+    difficulty = id % 2 === 0 ? 'Epic' : 'Legendary'
+    baseXP = 250 + (id % 5) * 35
+  }
 
   if (text.includes('learn') || text.includes('study') || text.includes('read') || text.includes('dsa') || text.includes('book') || text.includes('exam') || text.includes('test')) {
     category = 'wisdom'
-    xp = 120
     const wisdomTitles = [
       'Inscribe the Codex of Knowledge',
       'Whisper with the Ancient Sages',
@@ -157,10 +168,8 @@ export const forgeQuestFromGoal = (goalText: string, id: number): Quest => {
     ]
     title = wisdomTitles[id % wisdomTitles.length]
     description = `Acquire profound enlightenment and master: "${goalText}" inside the grand archives.`
-    difficulty = id % 3 === 0 ? 'Epic' : 'Rare'
   } else if (text.includes('code') || text.includes('build') || text.includes('app') || text.includes('dev') || text.includes('ai') || text.includes('website') || text.includes('api') || text.includes('project')) {
     category = 'creation'
-    xp = 180
     const creationTitles = [
       'Animate the Automaton Essence',
       'Concoct the Celestial Framework',
@@ -169,10 +178,8 @@ export const forgeQuestFromGoal = (goalText: string, id: number): Quest => {
     ]
     title = creationTitles[id % creationTitles.length]
     description = `Manifest a marvel of modern tech and construct: "${goalText}" using glowing power crystals.`
-    difficulty = id % 2 === 0 ? 'Legendary' : 'Epic'
   } else if (text.includes('gym') || text.includes('run') || text.includes('exercise') || text.includes('workout') || text.includes('cardio') || text.includes('sleep') || text.includes('eat')) {
     category = 'discipline'
-    xp = 100
     const disciplineTitles = [
       'Tame the Inner Wyrm',
       'Tempering the Physical Vessel',
@@ -181,14 +188,13 @@ export const forgeQuestFromGoal = (goalText: string, id: number): Quest => {
     ]
     title = disciplineTitles[id % disciplineTitles.length]
     description = `Harness physical discipline and focus to accomplish: "${goalText}" under trial conditions.`
-    difficulty = id % 2 === 0 ? 'Rare' : 'Common'
   }
 
   return {
     id,
     title,
     description,
-    xp: xp + (id % 5) * 10,
+    xp: baseXP + (id % 3) * 5,
     category,
     difficulty,
     isCompleted: false,

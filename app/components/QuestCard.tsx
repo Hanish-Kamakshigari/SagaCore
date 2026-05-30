@@ -83,20 +83,20 @@ export default function QuestCard({
     },
     Epic: {
       border: 'border-purple-500/20 hover:border-purple-500/40',
-      label: 'text-purple-400 font-bold uppercase tracking-widest text-[10px]',
+      label: 'text-purple-300 font-bold uppercase tracking-widest text-[10px]',
       bgGlow: 'from-transparent via-purple-950/5 to-purple-900/10',
       glow: 'shadow-[0_0_20px_-3px_rgba(168,85,247,0.25)]',
       glowColor: 'bg-purple-400',
-      iconBg: 'bg-purple-950/30 text-purple-400 border-purple-900/35',
+      iconBg: 'bg-purple-950/30 text-purple-300 border-purple-900/35',
       progressBar: 'from-purple-600 to-fuchsia-400 shadow-[0_0_12px_rgba(168,85,247,0.45)]',
       checkboxBorder: 'border-zinc-750 group-hover:border-purple-500/50',
       checkboxChecked: 'border-purple-500 bg-purple-500 text-white shadow-[0_0_8px_rgba(168,85,247,0.4)]',
       taskHighlight: 'hover:bg-purple-500/5 hover:border-purple-500/20',
       taskCheckedHighlight: 'bg-purple-500/5 border-purple-500/10 shadow-[0_0_12px_rgba(168,85,247,0.06)]',
       xpText: 'text-purple-300 bg-purple-500/10 border-purple-500/20',
-      completeBtn: 'border-purple-500/40 bg-purple-500/10 text-purple-200 hover:border-purple-400 hover:bg-purple-500/20 shadow-[0_0_15px_rgba(168,85,247,0.25)]',
+      completeBtn: 'border-purple-500/40 bg-purple-500/10 text-purple-200 hover:border-purple-300 hover:bg-purple-500/20 shadow-[0_0_15px_rgba(168,85,247,0.25)]',
       chapterHighlight: 'border-purple-500/15',
-      completedLabel: 'text-purple-300 bg-purple-500/10 border-purple-500/20',
+      completedLabel: 'text-purple-200 bg-purple-500/10 border-purple-500/20',
       completedGlow: 'bg-purple-500',
       completedBorder: 'border-purple-500/20',
       completedShadow: 'shadow-[0_0_25px_rgba(168,85,247,0.1)]',
@@ -226,10 +226,10 @@ export default function QuestCard({
       {/* Locked Quest Overlay */}
       {isLocked && (
         <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/65 backdrop-blur-[1px] p-6 text-center pointer-events-auto select-none">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-zinc-850 bg-zinc-900/90 text-purple-400 shadow-[0_0_15px_rgba(168,85,247,0.15)] mb-3 animate-pulse">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-zinc-850 bg-zinc-900/90 text-purple-300 shadow-[0_0_15px_rgba(168,85,247,0.15)] mb-3 animate-pulse">
             <Lock size={18} />
           </div>
-          <span className="text-[10px] font-bold uppercase tracking-widest text-purple-400 font-mono">Quest Locked</span>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-purple-300 font-mono">Quest Locked</span>
           <h4 className="text-xs font-semibold text-zinc-300 mt-1.5 max-w-xs px-6 leading-relaxed">
             Complete "{parentQuestTitle || 'previous quest'}" to unlock
           </h4>
@@ -270,6 +270,26 @@ export default function QuestCard({
       {/* Description */}
       <p className="mt-5 text-base text-zinc-300/90 leading-relaxed">{quest.description}</p>
 
+      {/* Top-Level Mini Progress Bar (Always Visible) */}
+      {hasTasks && (
+        <div className="mt-5 px-0.5 space-y-2 select-none">
+          <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-zinc-500 font-mono">
+            <span>Realm Coordinates Synced</span>
+            <span className={`${theme.label.split(' ')[0]} font-mono text-xs`}>
+              {completedCount} / {totalCount} Completed ({Math.round((completedCount / totalCount) * 100)}%)
+            </span>
+          </div>
+          <div className="relative h-2 w-full overflow-hidden rounded-full bg-zinc-950/80 border border-zinc-850/50 shadow-inner">
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${(completedCount / totalCount) * 100}%` }}
+              transition={{ type: 'spring', stiffness: 70, damping: 14 }}
+              className={`h-full rounded-full bg-gradient-to-r ${theme.progressBar}`}
+            />
+          </div>
+        </div>
+      )}
+
       {/* Expandable Body */}
       <AnimatePresence initial={false}>
         {expanded && (
@@ -280,23 +300,8 @@ export default function QuestCard({
             transition={{ duration: 0.25, ease: 'easeInOut' }}
             className="overflow-hidden"
           >
-            {/* Quest Progress Bar */}
-            {hasTasks && (
-              <div className="mt-6 space-y-2 border-t border-zinc-800/50 pt-5 px-1">
-                <div className="flex items-center justify-between text-sm font-semibold">
-                  <span className="uppercase tracking-widest text-zinc-500 text-[10px]">Quest Progress</span>
-                  <span className={`${theme.label.split(' ')[0]} font-mono text-xs`}>{completedCount} / {totalCount} Tasks Done</span>
-                </div>
-                <div className="relative h-2.5 w-full overflow-hidden rounded-full bg-zinc-950 border border-zinc-850 shadow-inner">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${(completedCount / totalCount) * 100}%` }}
-                    transition={{ type: 'spring', stiffness: 80, damping: 15 }}
-                    className={`h-full rounded-full bg-gradient-to-r ${theme.progressBar}`}
-                  />
-                </div>
-              </div>
-            )}
+            {/* Task Checklist Spacer */}
+            {hasTasks && <div className="mt-5 border-t border-zinc-800/40 pt-4" />}
 
             {/* Task Checklist */}
             {hasTasks && (

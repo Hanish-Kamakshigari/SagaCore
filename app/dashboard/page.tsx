@@ -1,18 +1,10 @@
 'use client'
 
-// dashboard/page.tsx — patched with three engine integrations:
-//   1. Dream Engine: forgeQuestWithAI() replaces forgeQuestFromGoal()
-//   2. Adaptive AI Engine: generateAdaptiveChapter() replaces generateLoreChapter()
-//      + narrateWorldChange fires per quest completion/failure
-//   3. Memory Engine: MongoDB MCP saves quests, chapters, player state
-//
-// Everything else (XPBar, KingdomStatus, WorldArchitect, LoreFeed, LoreCodex,
-// filtering, level-up modal, theme switching) is UNCHANGED from your original.
-
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Sparkles, ArrowLeft, Send, Sparkle, Award, Compass, BookOpen, Scroll as ScrollIcon, Loader2, Volume2, VolumeX } from 'lucide-react'
+import { Sparkles, ArrowLeft, Send, Sparkle, Award, Compass, BookOpen, Scroll as ScrollIcon, Loader2, Volume2, VolumeX, LogOut } from 'lucide-react'
 
 import KingdomStatus from '../components/KingdomStatus'
 import LoreFeed from '../components/LoreFeed'
@@ -21,8 +13,8 @@ import XPBar from '../components/XPbar'
 import WorldArchitect from '../components/WorldArchitect'
 import LoreCodex from '../components/LoreCodex'
 
-import { usePersistentState } from '../hooks/usePersistentState'
 import { useAmbientAudio } from '../hooks/useAmbientAudio'
+import { useAuth } from '../context/AuthContext'
 
 import {
   quests as initialQuests,
@@ -41,24 +33,153 @@ import {
   savePlayerStateToMongo,
   generateRoadmapForQuest,
   forgeQuestlineWithAI,
+  fetchQuestsFromMongo,
+  fetchChaptersFromMongo,
+  fetchPlayerStateFromMongo,
 } from '@/app/lib/ai'
 
-
-// Stable player ID — in production, derive from auth session
-const PLAYER_ID = 'player_sagacore_default'
-
 export default function Dashboard() {
-  const [activeWorld, setActiveWorld] = usePersistentState<World>('activeWorld', worldTemplates.fantasy)
-  const [quests, setQuests]           = usePersistentState<Quest[]>('quests', initialQuests)
-  const [xp, setXp]                   = usePersistentState<number>('xp', 0)
-  const [level, setLevel]             = usePersistentState<number>('level', 1)
-  const [lore, setLore]               = usePersistentState<string[]>('lore', [
+  const { user, loading: authLoading, logout } = useAuth()
+  const router = useRouter()
+
+  const [activeWorld, _setActiveWorld] = useState<World>(worldTemplates.fantasy)
+  const [quests, _setQuests]           = useState<Quest[]>([])
+  const [xp, _setXp]                   = useState<number>(0)
+  const [level, _setLevel]             = useState<number>(1)
+  const [lore, _setLore]               = useState<string[]>([
     'The Ancient Library expands once more under your focus.',
     'The Valley of Distraction has weakened due to your high productivity.',
     'The Fortress of Algorithms has risen, establishing order in the digital realms.',
   ])
-  const [chapters, setChapters]       = usePersistentState<LoreChapter[]>('chapters', [])
-  const [audioActive, setAudioActive] = usePersistentState<boolean>('audioActive', false)
+  const [chapters, _setChapters]       = useState<LoreChapter[]>([])
+  const [audioActive, _setAudioActive] = useState<boolean>(false)
+  const [isDataLoaded, setIsDataLoaded] = useState(false)
+
+  // Scoped setters to write directly to Namespaced local storage
+  const setActiveWorld = (newWorld: World) => {
+    _setActiveWorld(newWorld)
+    if (user) localStorage.setItem(`sagacore_${user.uid}_activeWorld`, JSON.stringify(newWorld))
+  }
+
+  const setQuests = (value: Quest[] | ((prev: Quest[]) => Quest[])) => {
+    _setQuests((prev) => {
+      const next = typeof value === 'function' ? (value as Function)(prev) : value
+      if (user) localStorage.setItem(`sagacore_${user.uid}_quests`, JSON.stringify(next))
+      return next
+    })
+  }
+
+  const setXp = (value: number | ((prev: number) => number)) => {
+    _setXp((prev) => {
+      const next = typeof value === 'function' ? (value as Function)(prev) : value
+      if (user) localStorage.setItem(`sagacore_${user.uid}_xp`, JSON.stringify(next))
+      return next
+    })
+  }
+
+  const setLevel = (value: number | ((prev: number) => number)) => {
+    _setLevel((prev) => {
+      const next = typeof value === 'function' ? (value as Function)(prev) : value
+      if (user) localStorage.setItem(`sagacore_${user.uid}_level`, JSON.stringify(next))
+      return next
+    })
+  }
+
+  const setLore = (value: string[] | ((prev: string[]) => string[])) => {
+    _setLore((prev) => {
+      const next = typeof value === 'function' ? (value as Function)(prev) : value
+      if (user) localStorage.setItem(`sagacore_${user.uid}_lore`, JSON.stringify(next))
+      return next
+    })
+  }
+
+  const setChapters = (value: LoreChapter[] | ((prev: LoreChapter[]) => LoreChapter[])) => {
+    _setChapters((prev) => {
+      const next = typeof value === 'function' ? (value as Function)(prev) : value
+      if (user) localStorage.setItem(`sagacore_${user.uid}_chapters`, JSON.stringify(next))
+      return next
+    })
+  }
+
+  const setAudioActive = (value: boolean | ((prev: boolean) => boolean)) => {
+    _setAudioActive((prev) => {
+      const next = typeof value === 'function' ? (value as Function)(prev) : value
+      if (user) localStorage.setItem(`sagacore_${user.uid}_audioActive`, JSON.stringify(next))
+      return next
+    })
+  }
+
+  // Load Namespaced local storage cache + Sync with MongoDB
+  useEffect(() => {
+    if (authLoading) return
+    if (!user) {
+      router.push('/auth')
+      return
+    }
+
+    const loadUserData = async () => {
+      try {
+        const uid = user.uid
+
+        // 1. Instantly Hydrate from Namespaced Cache
+        const localActiveWorld = localStorage.getItem(`sagacore_${uid}_activeWorld`)
+        const localQuests = localStorage.getItem(`sagacore_${uid}_quests`)
+        const localXp = localStorage.getItem(`sagacore_${uid}_xp`)
+        const localLevel = localStorage.getItem(`sagacore_${uid}_level`)
+        const localChapters = localStorage.getItem(`sagacore_${uid}_chapters`)
+        const localLore = localStorage.getItem(`sagacore_${uid}_lore`)
+        const localAudio = localStorage.getItem(`sagacore_${uid}_audioActive`)
+
+        if (localActiveWorld) _setActiveWorld(JSON.parse(localActiveWorld))
+        if (localQuests) _setQuests(JSON.parse(localQuests))
+        else _setQuests(initialQuests)
+
+        if (localXp) _setXp(JSON.parse(localXp))
+        if (localLevel) _setLevel(JSON.parse(localLevel))
+        if (localChapters) _setChapters(JSON.parse(localChapters))
+        if (localLore) _setLore(JSON.parse(localLore))
+        if (localAudio) _setAudioActive(JSON.parse(localAudio))
+
+        // 2. Fetch fresh database state in background to sync
+        const [dbQuests, dbChapters, dbPlayer] = await Promise.all([
+          fetchQuestsFromMongo(uid),
+          fetchChaptersFromMongo(uid),
+          fetchPlayerStateFromMongo(uid)
+        ])
+
+        if (dbQuests && dbQuests.length > 0) {
+          _setQuests(dbQuests)
+          localStorage.setItem(`sagacore_${uid}_quests`, JSON.stringify(dbQuests))
+        } else {
+          // New user seed: Save default quests to Mongo
+          await Promise.all(initialQuests.map(q => saveQuestToMongo(q, uid)))
+          _setQuests(initialQuests)
+          localStorage.setItem(`sagacore_${uid}_quests`, JSON.stringify(initialQuests))
+        }
+
+        if (dbChapters && dbChapters.length > 0) {
+          _setChapters(dbChapters)
+          localStorage.setItem(`sagacore_${uid}_chapters`, JSON.stringify(dbChapters))
+        }
+
+        if (dbPlayer) {
+          _setXp(dbPlayer.xp)
+          _setLevel(dbPlayer.level)
+          const matchedWorld = Object.values(worldTemplates).find(w => w.theme === dbPlayer.worldTheme) || worldTemplates.fantasy
+          _setActiveWorld(matchedWorld)
+          localStorage.setItem(`sagacore_${uid}_xp`, JSON.stringify(dbPlayer.xp))
+          localStorage.setItem(`sagacore_${uid}_level`, JSON.stringify(dbPlayer.level))
+          localStorage.setItem(`sagacore_${uid}_activeWorld`, JSON.stringify(matchedWorld))
+        }
+      } catch (err) {
+        console.error('Failed to sync SAGACORE user data:', err)
+      } finally {
+        setIsDataLoaded(true)
+      }
+    }
+
+    loadUserData()
+  }, [user, authLoading, router])
 
   // Trigger procedural atmospheric soundscapes
   useAmbientAudio(activeWorld.theme, audioActive)
@@ -67,6 +188,52 @@ export default function Dashboard() {
   const [showLevelUp, setShowLevelUp]       = useState(false)
   const [justLeveledTo, setJustLeveledTo]   = useState(1)
   const [activeTab, setActiveTab]           = useState<'quests' | 'codex'>('quests')
+
+  // Dynamic ranking lookup helper for SAGACORE leveling milestones
+  const getRankName = (lvl: number) => {
+    const ranks: Record<number, string> = {
+      1: 'Neophyte Scribe',
+      2: 'Apprentice Spellweaver',
+      3: 'Focus Adept',
+      4: 'Habit Vanguard',
+      5: 'Realm Architect',
+      6: 'Aether Sculptor',
+      7: 'Chrono Weaver',
+      8: 'Iron Sentinel',
+      9: 'Mindset Alchemist',
+      10: 'Mythos Scriptor',
+      11: 'Void Breaker',
+      12: 'Star Forge Warden',
+      13: 'Celestial Sentry',
+      14: 'Grand Spellbreaker',
+      15: 'Astral Overseer',
+      16: 'Eternal Dynamo',
+      17: 'Paradigm Shifter',
+      18: 'Sovereign Scriptor',
+      19: 'Cosmic Prime',
+      20: 'Grand Sage Paragon'
+    }
+    return ranks[lvl] || `Ascended Creator Lvl ${lvl}`
+  }
+
+  // Dynamic rotating placeholders for SAGACORE Dream Forge
+  const forgePlaceholders = [
+    "study binary search tree traversal algorithms",
+    "clear a 5-kilometer running routine at sunrise",
+    "build a custom Firebase user context provider",
+    "design vector database index search schemas",
+    "practice 20 minutes of deep focus meditation",
+    "isolate and fix local memory heap leaks",
+    "weld solid brass rods for clockwork furnace cores"
+  ]
+  const [currentPlaceholderIdx, setCurrentPlaceholderIdx] = useState(0)
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentPlaceholderIdx((prev) => (prev + 1) % forgePlaceholders.length)
+    }, 4000)
+    return () => clearInterval(timer)
+  }, [forgePlaceholders.length])
 
   // ── Loading states for the three AI engines ──────────────────────────────
   const [isForging, setIsForging]       = useState(false)   // Dream Engine
@@ -78,7 +245,7 @@ export default function Dashboard() {
 
   // ── Theme colours (unchanged from original) ────────────────────────────────
   const themeColors = {
-    fantasy:   { radialGlow: 'bg-[radial-gradient(ellipse_at_top,rgba(168,85,247,0.06),transparent_60%)]',  borderGlow: 'border-purple-500/20', activeText: 'text-purple-400', accentBg: 'bg-purple-500/10 border-purple-500/20 text-purple-300',  btnBg: 'from-purple-500 to-indigo-500'  },
+    fantasy:   { radialGlow: 'bg-[radial-gradient(ellipse_at_top,rgba(168,85,247,0.06),transparent_60%)]',  borderGlow: 'border-purple-500/20', activeText: 'text-purple-300', accentBg: 'bg-purple-500/10 border-purple-500/20 text-purple-200',  btnBg: 'from-purple-500 to-indigo-500'  },
     cyberpunk: { radialGlow: 'bg-[radial-gradient(ellipse_at_top,rgba(6,182,212,0.06),transparent_60%)]',   borderGlow: 'border-cyan-500/20',   activeText: 'text-cyan-400',   accentBg: 'bg-cyan-500/10 border-cyan-500/20 text-cyan-300',     btnBg: 'from-cyan-500 to-blue-500'      },
     steampunk: { radialGlow: 'bg-[radial-gradient(ellipse_at_top,rgba(249,115,22,0.06),transparent_60%)]',  borderGlow: 'border-orange-500/20', activeText: 'text-orange-400', accentBg: 'bg-orange-500/10 border-orange-500/20 text-orange-350', btnBg: 'from-orange-500 to-amber-500'   },
   }
@@ -145,7 +312,7 @@ export default function Dashboard() {
 
     try {
       const startId = quests.length + 1
-      const generatedCampaign = await forgeQuestlineWithAI(newGoal, startId, activeWorld.theme)
+      const generatedCampaign = await forgeQuestlineWithAI(newGoal, startId, activeWorld.theme, level)
 
       // Prepend all 3 sequential campaign quests to state
       setQuests((prev) => [...generatedCampaign, ...prev])
@@ -159,16 +326,18 @@ export default function Dashboard() {
         ...prev,
       ])
 
-      // Persist all 3 quests to MongoDB via Memory Engine
-      await Promise.allSettled(generatedCampaign.map((q) => saveQuestToMongo(q))).catch(() => {
-        console.warn('MongoDB campaign save failed')
-      })
+            // Persist all 3 quests to MongoDB via Memory Engine
+      if (user) {
+        await Promise.allSettled(generatedCampaign.map((q) => saveQuestToMongo(q, user.uid))).catch(() => {
+          console.warn('MongoDB campaign save failed')
+        })
+      }
     } catch (err) {
       console.warn('Dream Engine AI failed, triggering local fallback:', err)
       
       const { forgeQuestFromGoal } = await import('../lib/data')
       const newId = quests.length + 1
-      const fallbackQuest = forgeQuestFromGoal(newGoal, newId)
+      const fallbackQuest = forgeQuestFromGoal(newGoal, newId, level)
       const initializedFallback: Quest = {
         ...fallbackQuest,
         completedTasks: fallbackQuest.tasks ? new Array(fallbackQuest.tasks.length).fill(false) : []
@@ -239,12 +408,14 @@ export default function Dashboard() {
         ...prev,
       ])
 
-      // ── Memory Engine: persist chapter and player state ────────────────────
-      await Promise.allSettled([
-        saveChapterToMongo(chapter),
-        savePlayerStateToMongo(PLAYER_ID, remainingXp, nextLevel, activeWorld.theme),
-        saveQuestToMongo({ ...questToComplete, isCompleted: true }),
-      ])
+            // ── Memory Engine: persist chapter and player state ────────────────────
+      if (user) {
+        await Promise.allSettled([
+          saveChapterToMongo(chapter, user.uid),
+          savePlayerStateToMongo(user.uid, remainingXp, nextLevel, activeWorld.theme),
+          saveQuestToMongo({ ...questToComplete, isCompleted: true }, user.uid),
+        ])
+      }
     } catch (err) {
       console.error('Adaptive Engine failed:', err)
       // Fall back to static chapter generation from the original data.ts
@@ -292,10 +463,12 @@ export default function Dashboard() {
         ...prev,
       ])
 
-      await Promise.allSettled([
-        saveChapterToMongo(chapter),
-        saveQuestToMongo({ ...quest, isCompleted: true }),
-      ])
+            if (user) {
+        await Promise.allSettled([
+          saveChapterToMongo(chapter, user.uid),
+          saveQuestToMongo({ ...quest, isCompleted: true }, user.uid),
+        ])
+      }
     } catch {
       setLore((prev) => [`🌑 Quest abandoned: "${quest.title}" — the realm suffers.`, ...prev])
     } finally {
@@ -330,10 +503,12 @@ export default function Dashboard() {
         ...prev,
       ])
 
-      // Persist to MongoDB via Memory Engine
-      await saveQuestToMongo(updatedQuest).catch(() => {
-        console.warn('MongoDB quest roadmap save failed')
-      })
+            // Persist to MongoDB via Memory Engine
+      if (user) {
+        await saveQuestToMongo(updatedQuest, user.uid).catch(() => {
+          console.warn('MongoDB quest roadmap save failed')
+        })
+      }
     } catch (err) {
       console.warn('Roadmap AI generation failed, using local fallback:', err)
       const category = quest.category
@@ -405,9 +580,9 @@ export default function Dashboard() {
       (q) => q.id === questId
     )
 
-    if (updatedQuest) {
+    if (updatedQuest && user) {
       try {
-        await saveQuestToMongo(updatedQuest)
+        await saveQuestToMongo(updatedQuest, user.uid)
       } catch (err) {
         console.error('Failed saving task progress:', err)
       }
@@ -415,6 +590,24 @@ export default function Dashboard() {
   }
 
   const filteredQuests = quests.filter((q) => filter === 'all' || q.category === filter)
+
+  if (authLoading || (user && !isDataLoaded)) {
+    return (
+      <main className="min-h-screen bg-black text-white flex flex-col items-center justify-center relative overflow-hidden">
+        <div className="absolute inset-0 -z-20 bg-[linear-gradient(rgba(255,255,255,0.012)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.012)_1px,transparent_1px)] bg-[size:40px_40px] opacity-40 pointer-events-none" />
+        <div className="absolute left-1/2 top-1/2 h-[400px] w-[400px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-purple-500/10 blur-[100px] -z-10 pointer-events-none" />
+        <div className="flex flex-col items-center text-center">
+          <Loader2 size={40} className="animate-spin text-purple-400 mb-6" />
+          <h2 className="text-xl font-bold font-cinzel tracking-[0.2em] text-zinc-200">ALIGNING REALM CORES</h2>
+          <p className="text-xs text-zinc-500 mt-2 font-mono uppercase tracking-widest">Synthesizing personalized grid sub-routines...</p>
+        </div>
+      </main>
+    )
+  }
+
+  if (!user) {
+    return null
+  }
 
   // ─────────────────────────────────────────────────────────────────────────────
   // Render — identical structure to your original, with two additions:
@@ -451,8 +644,12 @@ export default function Dashboard() {
                 <span className="text-xs font-bold uppercase tracking-widest text-yellow-400">Realm Ascension</span>
                 <h2 className="text-4xl font-extrabold text-white mt-2">LEVEL UP!</h2>
                 <p className="mt-4 text-zinc-400">Your actions have echoed across the digital cosmos. You are now:</p>
-                <div className="mt-6 rounded-2xl bg-yellow-500/10 border border-yellow-500/20 px-6 py-3 font-mono text-2xl font-black text-yellow-300">
-                  Level {justLeveledTo} Creator
+                <div className="mt-6 w-full rounded-2xl bg-yellow-500/10 border border-yellow-500/20 px-6 py-4 shadow-[0_0_20px_rgba(234,179,8,0.1)]">
+                  <span className="block text-zinc-400 font-mono text-[10px] uppercase tracking-widest">New Rank Obtained</span>
+                  <span className="block mt-1 font-cinzel text-xl font-black text-yellow-300 tracking-wide uppercase">
+                    {getRankName(justLeveledTo)}
+                  </span>
+                  <span className="block mt-1 text-zinc-500 text-[10px] font-mono font-bold">LEVEL {justLeveledTo} ASCENSION</span>
                 </div>
                 <button
                   onClick={() => setShowLevelUp(false)}
@@ -486,19 +683,6 @@ export default function Dashboard() {
           </div>
 
           <div className="flex items-center gap-4">
-            {/* Ambient Soundscape Toggle */}
-            <button
-              onClick={() => setAudioActive((a) => !a)}
-              title="Toggle Ambient Audio Soundscape"
-              className={`flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-semibold uppercase tracking-wider backdrop-blur-md transition-all duration-300 hover:scale-[1.03] active:scale-[0.97] hover:cursor-pointer ${
-                audioActive
-                  ? 'border-purple-500/35 bg-purple-500/10 text-purple-300 shadow-[0_0_15px_rgba(168,85,247,0.15)]'
-                  : 'border-zinc-800 bg-zinc-950/40 text-zinc-400 hover:border-zinc-700'
-              }`}
-            >
-              {audioActive ? <Volume2 size={13} className="text-purple-400" /> : <VolumeX size={13} />}
-              <span>{audioActive ? 'Synth On' : 'Muted'}</span>
-            </button>
 
             <div className="hidden text-right sm:block">
               <p className="text-xs text-zinc-500">World Engine</p>
@@ -508,6 +692,20 @@ export default function Dashboard() {
             <span className={`rounded-full px-4 py-1.5 text-xs font-semibold uppercase tracking-wider backdrop-blur-md border transition-colors duration-500 ${colors.accentBg}`}>
               {activeWorld.theme} grid active
             </span>
+            <div className="h-10 w-[1px] bg-zinc-800 hidden sm:block" />
+            
+            {/* Sign Out Button */}
+            <button
+              onClick={async () => {
+                await logout()
+                router.push('/auth')
+              }}
+              title="Sign Out of Portal"
+              className="flex items-center gap-2 rounded-full border border-red-500/25 bg-red-500/5 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-red-400 backdrop-blur-md transition-all duration-300 hover:bg-red-500/12 hover:scale-[1.03] active:scale-[0.97] hover:cursor-pointer"
+            >
+              <LogOut size={13} />
+              <span className="hidden sm:inline">Sign Out</span>
+            </button>
           </div>
         </header>
 
@@ -540,7 +738,7 @@ export default function Dashboard() {
                   value={newGoal}
                   onChange={(e) => setNewGoal(e.target.value)}
                   disabled={isForging}
-                  placeholder="e.g., study graph theory algorithms, clear gym routines, build user interface..."
+                  placeholder={`e.g., ${forgePlaceholders[currentPlaceholderIdx]}`}
                   className="flex-1 rounded-2xl border border-zinc-800 bg-black/40 px-5 py-3 text-sm placeholder-zinc-550 outline-none transition focus:border-zinc-700 focus:bg-black/60 focus:ring-1 focus:ring-purple-500/10 disabled:opacity-50"
                 />
                 <button
@@ -556,6 +754,25 @@ export default function Dashboard() {
                   <span className="hidden sm:inline">{isForging ? 'Forging…' : 'Forge'}</span>
                 </button>
               </form>
+
+              {/* Sample Ambition suggestion chips */}
+              <div className="mt-3.5 flex flex-wrap items-center gap-2 select-none">
+                <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mr-1 font-mono">Quick Ambitions:</span>
+                {[
+                  { text: 'Master Graph Traversal Algorithms', theme: 'wisdom' },
+                  { text: 'Complete a 5K Sunrise Run', theme: 'discipline' },
+                  { text: 'Build generative layout boards with Gemini', theme: 'creation' },
+                ].map((chip, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setNewGoal(chip.text)}
+                    className="text-[11px] font-semibold border border-zinc-850 bg-zinc-900/30 hover:border-purple-500/35 hover:bg-purple-500/10 hover:text-purple-300 rounded-full px-3.5 py-1.5 transition-all duration-300 hover:scale-[1.03] hover:cursor-pointer active:scale-[0.97]"
+                  >
+                    {chip.text}
+                  </button>
+                ))}
+              </div>
 
               {/* Engine status badge — only visible while forging */}
               <AnimatePresence>

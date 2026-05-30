@@ -3,13 +3,12 @@ import mongoose from 'mongoose'
 // Disable query buffering globally so offline mode operations fail instantly instead of hanging for 10 seconds
 mongoose.set('bufferCommands', false);
 
-const MONGODB_URI = process.env.MONGODB_URI!
-
-if (!MONGODB_URI) {
-  throw new Error('Missing MongoDB URI')
-}
-
 export async function connectDB() {
+  const uri = process.env.MONGODB_URI
+  if (!uri) {
+    throw new Error('Missing MONGODB_URI env variable')
+  }
+
   try {
     if (mongoose.connection.readyState >= 1) {
       console.log('✅ Mongo already connected')
@@ -18,16 +17,18 @@ export async function connectDB() {
 
     console.log('⏳ Connecting to MongoDB...')
 
-    await mongoose.connect(MONGODB_URI)
+    await mongoose.connect(uri)
 
     console.log('✅ MongoDB Connected Successfully!')
   } catch (error) {
     console.error('❌ MongoDB Connection Error:', error)
+    throw error
   }
 }
 
 const QuestSchema = new mongoose.Schema({
-  id: { type: Number, required: true, unique: true },
+  userId: { type: String, required: true },
+  id: { type: Number, required: true },
   title: { type: String, required: true },
   description: { type: String, required: true },
   category: { type: String, required: true, enum: ['wisdom', 'discipline', 'creation'] },
@@ -41,15 +42,20 @@ const QuestSchema = new mongoose.Schema({
   dependsOnQuestId: { type: Number }
 }, { timestamps: true })
 
+QuestSchema.index({ userId: 1, id: 1 }, { unique: true })
+
 const LoreChapterSchema = new mongoose.Schema({
-  id: { type: Number, required: true, unique: true },
+  userId: { type: String, required: true },
+  id: { type: Number, required: true },
   title: { type: String, required: true },
   text: { type: String, required: true },
   timestamp: { type: String, required: true }
 }, { timestamps: true })
 
+LoreChapterSchema.index({ userId: 1, id: 1 }, { unique: true })
+
 const PlayerStateSchema = new mongoose.Schema({
-  id: { type: String, required: true, unique: true },
+  id: { type: String, required: true, unique: true }, // id is the Firebase UID
   xp: { type: Number, required: true },
   level: { type: Number, required: true },
   worldTheme: { type: String, required: true },

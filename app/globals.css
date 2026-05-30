@@ -24,3 +24,18 @@ body {
   color: var(--foreground);
   font-family: var(--font-inter), sans-serif;
 }
+
+.xp-bar-fill {
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.xp-bar-fill.xp-gained {
+  box-shadow: 0 0 12px rgba(200, 100, 255, 0.7);
+  animation: xpPulse 0.8s ease forwards;
+}
+
+@keyframes xpPulse {
+  0%   { box-shadow: 0 0 4px rgba(200, 100, 255, 0.4); }
+  50%  { box-shadow: 0 0 18px rgba(200, 100, 255, 0.9); }
+  100% { box-shadow: none; }
+}
