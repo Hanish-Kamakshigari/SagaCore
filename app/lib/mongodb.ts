@@ -4,6 +4,7 @@ import mongoose from 'mongoose'
 mongoose.set('bufferCommands', false);
 
 export async function connectDB() {
+  // Read URI from environment variables (must be added in Vercel settings and redeployed)
   const uri = process.env.MONGODB_URI
   if (!uri) {
     throw new Error('Missing MONGODB_URI env variable')
