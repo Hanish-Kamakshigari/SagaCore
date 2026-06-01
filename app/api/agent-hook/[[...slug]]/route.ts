@@ -8,20 +8,22 @@ export async function POST(request: Request) {
     const body = await request.json()
     console.log('🤖 [Agent Hook Webhook] Received webhook call from Google Cloud Agent Builder:', body)
     
-    // Resolve operation name and parameters from the Agent Builder payload
+    // Resolve operation name, parameters, and URL path
+    const url = new URL(request.url)
+    const reqPath = url.pathname
     const { operation, parameters } = body
     const op = operation || body.tag || ''
     const params = parameters || body.sessionInfo?.parameters || body
     
     let result: any = null
     
-    if (op === 'getRealmState' || body.path?.includes('realm-state')) {
+    if (op === 'getRealmState' || reqPath.includes('realm-state')) {
       const state = await getRealmState(params.userId)
       result = state ? JSON.parse(JSON.stringify(state)) : { error: "No realm state found" }
-    } else if (op === 'completeQuest' || body.path?.includes('complete-quest')) {
+    } else if (op === 'completeQuest' || reqPath.includes('complete-quest')) {
       const completed = await completeQuest(params.id, params.userId)
       result = completed ? JSON.parse(JSON.stringify(completed)) : { error: "Quest not found" }
-    } else if (op === 'saveQuestToDatabase' || body.path?.includes('save-quest')) {
+    } else if (op === 'saveQuestToDatabase' || reqPath.includes('save-quest')) {
       const quest: Quest = {
         id: Number(params.id),
         title: params.title,
@@ -35,7 +37,7 @@ export async function POST(request: Request) {
       }
       await saveQuestToMongo(quest, params.userId)
       result = quest
-    } else if (op === 'saveChapterToDatabase' || body.path?.includes('save-chapter')) {
+    } else if (op === 'saveChapterToDatabase' || reqPath.includes('save-chapter')) {
       const chapter: LoreChapter = {
         id: Number(params.id),
         title: params.title,
@@ -49,7 +51,7 @@ export async function POST(request: Request) {
       await saveChapterToMongo(chapter, params.userId)
       result = chapter
     } else {
-      return NextResponse.json({ error: `Unknown operation: ${op}` }, { status: 400 })
+      return NextResponse.json({ error: `Unknown operation: ${op} at path ${reqPath}` }, { status: 400 })
     }
     
     return NextResponse.json(result)
