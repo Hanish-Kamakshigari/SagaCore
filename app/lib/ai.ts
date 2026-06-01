@@ -10,9 +10,117 @@ import type { Quest, LoreChapter } from './data'
 import { connectDB, QuestModel, LoreChapterModel, PlayerStateModel } from './mongodb'
 import { getRealmState, saveQuest, completeQuest } from './tools'
 
+// ─── Google Cloud Agent Builder Integration ──────────────────────────────────
+
+async function getGCPAuthToken(): Promise<string> {
+  const email = process.env.GCP_CLIENT_EMAIL || ''
+  const privateKey = (process.env.GCP_PRIVATE_KEY || '').replace(/\\n/g, '\n')
+  
+  if (!email || !privateKey) {
+    throw new Error('GCP Service Account credentials (GCP_CLIENT_EMAIL / GCP_PRIVATE_KEY) are missing in environment.')
+  }
+  
+  // Dynamic native JWT signing for Google Cloud Platform services
+  const crypto = await import('crypto')
+  const header = JSON.stringify({ alg: 'RS256', typ: 'JWT' })
+  
+  const now = Math.floor(Date.now() / 1000)
+  const claimSet = JSON.stringify({
+    iss: email,
+    scope: 'https://www.googleapis.com/auth/cloud-platform',
+    aud: 'https://oauth2.googleapis.com/token',
+    exp: now + 3600,
+    iat: now
+  })
+  
+  const base64UrlEncode = (str: string) => 
+    Buffer.from(str).toString('base64').replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_')
+    
+  const signatureInput = `${base64UrlEncode(header)}.${base64UrlEncode(claimSet)}`
+  const sign = crypto.createSign('RSA-SHA256')
+  sign.update(signatureInput)
+  const signature = sign.sign(privateKey, 'base64')
+    .replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_')
+    
+  const jwt = `${signatureInput}.${signature}`
+  
+  const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`
+  })
+  
+  if (!tokenResponse.ok) {
+    const err = await tokenResponse.json().catch(() => ({}))
+    throw new Error(`Failed to exchange Google OAuth token: ${JSON.stringify(err)}`)
+  }
+  
+  const data = await tokenResponse.json()
+  return data.access_token
+}
+
+async function callAgentBuilder(payload: any): Promise<string> {
+  const gcpProject = process.env.GCP_PROJECT_ID || ''
+  const gcpAgent = process.env.GCP_AGENT_ID || ''
+  const gcpLocation = process.env.GCP_LOCATION || 'global'
+  
+  const token = await getGCPAuthToken()
+  
+  const messages = payload.messages || []
+  const lastMessage = messages[messages.length - 1]?.content || ''
+  
+  const sessionId = 'sagacore-session-' + (payload.userId || 'default-user')
+  const url = `https://${gcpLocation}-dialogflow.googleapis.com/v3/projects/${gcpProject}/locations/${gcpLocation}/agents/${gcpAgent}/sessions/${sessionId}:detectIntent`
+  
+  const body = {
+    queryInput: {
+      text: {
+        text: lastMessage
+      },
+      languageCode: 'en'
+    }
+  }
+  
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(body)
+  })
+  
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}))
+    throw new Error(`GCP Agent Builder error ${response.status}: ${JSON.stringify(err)}`)
+  }
+  
+  const data = await response.json()
+  const messagesList = data.queryResult?.responseMessages || []
+  let finalResponse = ''
+  
+  for (const msg of messagesList) {
+    if (msg.text?.text?.[0]) {
+      finalResponse += msg.text.text[0]
+    }
+  }
+  
+  return finalResponse || JSON.stringify(data)
+}
+
 // ─── Shared fetch helper ──────────────────────────────────────────────────────
 
 async function callGemini(payload: any): Promise<string> {
+  // If Agent Builder is fully configured in .env, route to Agent Builder provider!
+  if (process.env.GCP_PROJECT_ID && process.env.GCP_AGENT_ID) {
+    try {
+      console.log('🤖 [Agent Provider] Delegating query to Google Cloud Agent Builder...')
+      return await callAgentBuilder(payload)
+    } catch (err: any) {
+      console.warn('⚠️ [Agent Provider Warning] GCP Agent Builder failed, cascading to local Gemini fallback:', err.message || err)
+    }
+  }
+
   const systemPrompt = payload.system || ''
   const messages = payload.messages || []
   
