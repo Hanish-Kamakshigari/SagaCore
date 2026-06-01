@@ -99,6 +99,18 @@ export default function AuthPage() {
           0% { left: -100%; }
           100% { left: 100%; }
         }
+        @keyframes float-ember-1 {
+          0%, 100% { transform: translateY(0px) translateX(0px) scale(1); opacity: 0.25; }
+          50% { transform: translateY(-80px) translateX(40px) scale(1.35); opacity: 0.65; }
+        }
+        @keyframes float-ember-2 {
+          0%, 100% { transform: translateY(0px) translateX(0px) scale(1); opacity: 0.2; }
+          50% { transform: translateY(-130px) translateX(-50px) scale(1.4); opacity: 0.55; }
+        }
+        @keyframes float-ember-3 {
+          0%, 100% { transform: translateY(0px) translateX(0px) scale(1.2); opacity: 0.35; }
+          50% { transform: translateY(-60px) translateX(30px) scale(0.95); opacity: 0.75; }
+        }
         .animate-float-1 {
           animation: float-slow-1 18s ease-in-out infinite;
         }
@@ -114,6 +126,15 @@ export default function AuthPage() {
         .animate-text-shine {
           background-size: 200% auto;
           animation: text-shine 5s ease infinite;
+        }
+        .animate-ember-1 {
+          animation: float-ember-1 14s ease-in-out infinite;
+        }
+        .animate-ember-2 {
+          animation: float-ember-2 18s ease-in-out infinite;
+        }
+        .animate-ember-3 {
+          animation: float-ember-3 11s ease-in-out infinite;
         }
         .shine-button:hover::after {
           content: '';
@@ -153,8 +174,24 @@ export default function AuthPage() {
         {/* Steampunk Orange (Discipline) */}
         <div className="absolute left-[25%] top-[25%] h-[500px] w-[500px] rounded-full bg-amber-500/12 blur-[130px] animate-float-3" />
 
-        {/* Floating starlight particles */}
-        <div className="absolute inset-0 bg-[radial-gradient(1px_1px_at_12%_15%,#fff_100%,transparent),radial-gradient(1.5px_1.5px_at_45%_55%,#fff_100%,transparent),radial-gradient(1px_1px_at_80%_30%,#fff_100%,transparent),radial-gradient(2px_2px_at_25%_75%,#fff_100%,transparent)] bg-[size:300px_300px] opacity-35" />
+        {/* Enchanted Floating Embers (replaces star dots) */}
+        <div className="absolute inset-0 overflow-hidden">
+          {/* Ember 1 (Purple) */}
+          <div className="absolute left-[15%] bottom-[15%] h-3.5 w-3.5 rounded-full bg-purple-400 blur-[2px] opacity-40 animate-ember-1" />
+          <div className="absolute left-[17%] bottom-[17%] h-2 w-2 rounded-full bg-pink-300 blur-[1px] opacity-35 animate-ember-1" />
+          
+          {/* Ember 2 (Cyan) */}
+          <div className="absolute right-[20%] bottom-[20%] h-4.5 w-4.5 rounded-full bg-cyan-400 blur-[3px] opacity-35 animate-ember-2" />
+          <div className="absolute right-[22%] bottom-[22%] h-3 w-3 rounded-full bg-blue-300 blur-[2px] opacity-25 animate-ember-2" />
+          
+          {/* Ember 3 (Gold/Orange) */}
+          <div className="absolute left-[40%] bottom-[25%] h-3 w-3 rounded-full bg-amber-450/50 blur-[2px] opacity-45 animate-ember-3" />
+          <div className="absolute left-[41%] bottom-[27%] h-2 w-2 rounded-full bg-yellow-300 blur-[1px] opacity-35 animate-ember-3" />
+          
+          {/* Drifting Embers at higher heights */}
+          <div className="absolute right-[35%] top-[30%] h-4 w-4 rounded-full bg-purple-400 blur-[3px] opacity-30 animate-ember-2" />
+          <div className="absolute left-[10%] top-[35%] h-4.5 w-4.5 rounded-full bg-amber-400 blur-[4px] opacity-25 animate-ember-1" />
+        </div>
       </div>
 
       {/* Interactive Back Link */}
