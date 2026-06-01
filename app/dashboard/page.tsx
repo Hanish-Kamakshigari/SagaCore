@@ -52,6 +52,7 @@ export default function Dashboard() {
     'The Fortress of Algorithms has risen, establishing order in the digital realms.',
   ])
   const [chapters, _setChapters]       = useState<LoreChapter[]>([])
+  const [isWritingChapter, setIsWritingChapter] = useState<boolean>(false)
   const [audioActive, _setAudioActive] = useState<boolean>(false)
   const [isDataLoaded, setIsDataLoaded] = useState(false)
 
@@ -384,23 +385,28 @@ export default function Dashboard() {
 
     setNarratingId(id)
 
-    // XP + level progression (unchanged logic)
+    // XP + level progression (improved logic to handle multiple level ups)
     const questXp    = questToComplete.xp
     const newXpTotal = xp + questXp
     let nextLevel    = level
     let remainingXp  = newXpTotal
 
-    if (remainingXp >= 1000) {
+    let levelUpOccurred = false
+    while (remainingXp >= 1000) {
       nextLevel  += 1
       remainingXp = remainingXp - 1000
+      levelUpOccurred = true
+    }
+
+    setXp(remainingXp)
+    setLevel(nextLevel)
+
+    if (levelUpOccurred) {
       setJustLeveledTo(nextLevel)
       setShowLevelUp(true)
       setTimeout(() => setShowLevelUp(false), 5000)
       setLore((prev) => [`✨ CELESTIAL ASCENSION: You have reached Level ${nextLevel}!`, ...prev])
     }
-
-    setXp(remainingXp)
-    setLevel(nextLevel)
 
     // Mark quest complete immediately and unblock UI for 0ms optimistic response
     setQuests((prev) => prev.map((q) => (q.id === id ? { ...q, isCompleted: true } : q)))
@@ -412,6 +418,7 @@ export default function Dashboard() {
     const currentChaptersCount = chapters.length;
 
     (async () => {
+      setIsWritingChapter(true)
       try {
         // ── Adaptive AI Engine: generate world-change narration ────────────────
         const newChapterId = currentChaptersCount + 1
@@ -459,6 +466,8 @@ export default function Dashboard() {
           `⚔️ Quest complete: "${questToComplete.title}" (+${questXp} XP)`,
           ...prev,
         ])
+      } finally {
+        setIsWritingChapter(false)
       }
     })()
   }
@@ -480,6 +489,7 @@ export default function Dashboard() {
     const currentChaptersCount = chapters.length;
 
     (async () => {
+      setIsWritingChapter(true)
       try {
         const newChapterId = currentChaptersCount + 1
         const chapter = await generateAdaptiveChapter(
@@ -508,6 +518,8 @@ export default function Dashboard() {
       } catch (err) {
         console.error('Shadow chronicler failed:', err)
         setLore((prev) => [`🌑 Quest abandoned: "${quest.title}" — the realm suffers.`, ...prev])
+      } finally {
+        setIsWritingChapter(false)
       }
     })()
   }
@@ -972,7 +984,7 @@ export default function Dashboard() {
                   )}
                 </div>
               ) : (
-                <LoreCodex chapters={chapters} theme={activeWorld.theme} />
+                <LoreCodex chapters={chapters} theme={activeWorld.theme} isWriting={isWritingChapter} />
               )}
             </div>
           </div>
