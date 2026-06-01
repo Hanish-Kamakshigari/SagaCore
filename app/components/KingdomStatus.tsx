@@ -2,12 +2,32 @@
 
 import { motion } from 'framer-motion'
 import { BookOpen, Sword, Sparkles, ShieldCheck } from 'lucide-react'
+import { Quest, World } from '../lib/data'
 
-export default function KingdomStatus() {
+interface KingdomStatusProps {
+  quests?: Quest[]
+  activeWorld?: World
+}
+
+export default function KingdomStatus({ quests = [], activeWorld }: KingdomStatusProps) {
+  // Helper to calculate percentages dynamically
+  const getCategoryPct = (cat: 'wisdom' | 'discipline' | 'creation') => {
+    const categoryQuests = quests.filter((q) => q.category === cat)
+    if (categoryQuests.length === 0) return 15 // stable starting baseline
+
+    const completed = categoryQuests.filter((q) => q.isCompleted && !q.failed)
+    // Scale from 15% starting base to 100% full completion
+    return Math.max(15, Math.round((completed.length / categoryQuests.length) * 100))
+  }
+
+  const wisdomName = activeWorld?.pillars?.wisdomName || 'Wisdom'
+  const disciplineName = activeWorld?.pillars?.disciplineName || 'Discipline'
+  const creationName = activeWorld?.pillars?.creationName || 'Creation'
+
   const stats = [
     {
-      name: 'Wisdom',
-      value: 80,
+      name: wisdomName,
+      value: getCategoryPct('wisdom'),
       icon: BookOpen,
       color: 'bg-cyan-500',
       textColor: 'text-cyan-400',
@@ -16,8 +36,8 @@ export default function KingdomStatus() {
       description: 'Understanding of systems & DSA concepts',
     },
     {
-      name: 'Discipline',
-      value: 65,
+      name: disciplineName,
+      value: getCategoryPct('discipline'),
       icon: Sword,
       color: 'bg-orange-500',
       textColor: 'text-orange-400',
@@ -26,8 +46,8 @@ export default function KingdomStatus() {
       description: 'Daily consistency & habit integrity',
     },
     {
-      name: 'Creation',
-      value: 90,
+      name: creationName,
+      value: getCategoryPct('creation'),
       icon: Sparkles,
       color: 'bg-purple-500',
       textColor: 'text-purple-400',
@@ -58,7 +78,7 @@ export default function KingdomStatus() {
                   </div>
                   <div>
                     <span className="font-bold text-zinc-200">{stat.name}</span>
-                    <span className="ml-2 hidden text-[10px] text-zinc-500 group-hover:inline-inline">
+                    <span className="ml-2 hidden text-[10px] text-zinc-500 group-hover:inline">
                       — {stat.description}
                     </span>
                   </div>
@@ -85,4 +105,5 @@ export default function KingdomStatus() {
       </div>
     </div>
   )
-}
+}
+

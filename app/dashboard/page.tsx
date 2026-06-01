@@ -928,7 +928,7 @@ export default function Dashboard() {
               onChangeWorld={handleChangeWorld}
               onForgeCustomWorld={handleForgeCustomWorld}
             />
-            <KingdomStatus />
+            <KingdomStatus quests={quests} activeWorld={activeWorld} />
             <LoreFeed lore={lore} />
           </div>
 
