@@ -133,20 +133,29 @@ export default function AuthPage() {
         }
       `}</style>
 
-      {/* Dynamic drifting cosmic grid */}
-      <div 
-        className="absolute inset-0 bg-[linear-gradient(rgba(147,51,234,0.018)_1px,transparent_1px),linear-gradient(90deg,rgba(147,51,234,0.018)_1px,transparent_1px)] bg-[size:40px_40px] opacity-70 animate-grid-shift pointer-events-none" 
-      />
+      {/* ─── Themed Portal Background System ─── */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+        {/* Dynamic drifting cosmic grid */}
+        <div 
+          className="absolute inset-0 bg-[linear-gradient(rgba(168,85,247,0.035)_1px,transparent_1px),linear-gradient(90deg,rgba(168,85,247,0.035)_1px,transparent_1px)] bg-[size:50px_50px] opacity-80 animate-grid-shift" 
+        />
 
-      {/* Multi-layered floating nebulas */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none -z-10">
-        <div className="absolute left-[10%] top-[15%] h-[600px] w-[600px] rounded-full bg-purple-600/12 blur-[140px] animate-float-1" />
-        <div className="absolute right-[10%] bottom-[15%] h-[600px] w-[600px] rounded-full bg-indigo-600/10 blur-[150px] animate-float-2" />
-        <div className="absolute left-1/3 top-1/2 h-[500px] w-[500px] rounded-full bg-pink-600/6 blur-[120px] animate-float-3" />
+        {/* Ambient Portal Center Glow */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(168,85,247,0.12)_0%,rgba(3,3,3,0.85)_60%,#030303_100%)]" />
+
+        {/* Multi-layered floating themed nebulas */}
+        {/* High-Fantasy Purple (Wisdom) */}
+        <div className="absolute -left-[10%] -top-[10%] h-[600px] w-[600px] rounded-full bg-purple-650/22 blur-[140px] animate-float-1" />
+        
+        {/* Cyberpunk Cyan (Creation) */}
+        <div className="absolute -right-[10%] -bottom-[10%] h-[650px] w-[650px] rounded-full bg-cyan-500/20 blur-[155px] animate-float-2" />
+        
+        {/* Steampunk Orange (Discipline) */}
+        <div className="absolute left-[25%] top-[25%] h-[500px] w-[500px] rounded-full bg-amber-500/12 blur-[130px] animate-float-3" />
+
+        {/* Floating starlight particles */}
+        <div className="absolute inset-0 bg-[radial-gradient(1px_1px_at_12%_15%,#fff_100%,transparent),radial-gradient(1.5px_1.5px_at_45%_55%,#fff_100%,transparent),radial-gradient(1px_1px_at_80%_30%,#fff_100%,transparent),radial-gradient(2px_2px_at_25%_75%,#fff_100%,transparent)] bg-[size:300px_300px] opacity-35" />
       </div>
-
-      {/* Floating starlight particles */}
-      <div className="absolute inset-0 bg-[radial-gradient(1px_1px_at_12%_15%,#fff_100%,transparent),radial-gradient(1.5px_1.5px_at_45%_55%,#fff_100%,transparent),radial-gradient(1px_1px_at_80%_30%,#fff_100%,transparent),radial-gradient(2px_2px_at_25%_75%,#fff_100%,transparent)] bg-[size:300px_300px] opacity-25 pointer-events-none" />
 
       {/* Interactive Back Link */}
       <div className="absolute top-8 left-8 z-50">
