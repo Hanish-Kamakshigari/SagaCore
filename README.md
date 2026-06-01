@@ -21,7 +21,7 @@ This is not a chatbot. The agent uses tools to act on a live database — it rea
 
 ---
 
-### ✅ Move Beyond Chat
+### Move Beyond Chat
 The agent does not answer questions. It uses **Gemini Function Calling** to invoke database tools directly:
 
 | Tool | What It Does |
@@ -33,7 +33,7 @@ The agent does not answer questions. It uses **Gemini Function Calling** to invo
 
 Gemini decides **when and which tools to call** — the app does not parse JSON and save manually.
 
-### ✅ Multi-Step Mission
+### Multi-Step Mission
 The `forgeQuestlineWithAI` function triggers a **ReAct agentic loop** (max 5 iterations):
 
 ```
@@ -46,10 +46,10 @@ User submits ambition
   → Agent returns campaign summary
 ```
 
-### ✅ Partner MCP Integration
+### Partner MCP Integration
 SAGACORE integrates **MongoDB Atlas** as its partner MCP tool layer. The Gemini agent uses MongoDB as its persistent memory — reading world state before planning, and writing structured quest data autonomously. All player progress, quest campaigns, and lore chapters are persisted per-user in MongoDB with full multi-user isolation via Firebase UID scoping.
 
-### ✅ Powered by Gemini
+### Powered by Gemini
 All AI reasoning runs on **Gemini 2.5 Flash** with automatic fallback to **Gemini 2.5 Pro** on quota pressure. Three distinct AI engines:
 
 - **DreamForge Engine** — transforms ambitions into quest campaigns via Function Calling
