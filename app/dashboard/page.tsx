@@ -333,7 +333,7 @@ export default function Dashboard() {
 
     try {
       const startId = quests.length + 1
-      const generatedCampaign = await forgeQuestlineWithAI(newGoal, startId, activeWorld.theme, level)
+      const generatedCampaign = await forgeQuestlineWithAI(newGoal, startId, activeWorld.theme, level, user?.uid)
 
       // Prepend all 3 sequential campaign quests to state
       setQuests((prev) => [...generatedCampaign, ...prev])
@@ -420,7 +420,8 @@ export default function Dashboard() {
           questToComplete.category,
           targetTheme,
           newChapterId,
-          questToComplete.mythEvent ?? ''
+          questToComplete.mythEvent ?? '',
+          targetUid
         )
 
         setChapters((prev) => [...prev, chapter])
@@ -486,7 +487,8 @@ export default function Dashboard() {
           quest.category,
           targetTheme,
           newChapterId,
-          `FAILED: ${quest.mythEvent ?? 'The realm grows darker.'}`
+          `FAILED: ${quest.mythEvent ?? 'The realm grows darker.'}`,
+          targetUid
         )
 
         setChapters((prev) => [...prev, chapter])

@@ -30,17 +30,57 @@ async function callGemini(payload: any): Promise<string> {
     }
   })
 
+  const dbTools = [
+    {
+      functionDeclarations: [
+        {
+          name: "saveQuestToDatabase",
+          description: "Autonomously saves a newly forged quest or quest campaign steps into the persistent MongoDB memory layer for the player.",
+          parameters: {
+            type: "OBJECT",
+            properties: {
+              userId: { type: "STRING", description: "The active Firebase user ID" },
+              id: { type: "INTEGER", description: "The unique integer ID of the quest" },
+              title: { type: "STRING", description: "Quest title highly specific to the actual goal" },
+              description: { type: "STRING", description: "Thematic description of the quest" },
+              category: { type: "STRING", enum: ["wisdom", "discipline", "creation"] },
+              difficulty: { type: "STRING", enum: ["Common", "Rare", "Epic", "Legendary"] },
+              xp: { type: "INTEGER", description: "XP reward points" },
+              tasks: { type: "ARRAY", items: { type: "STRING" }, description: "Specific checklist tasks formatted exactly as 'Real Task | Fantasy Lore Subtitle'" },
+              mythEvent: { type: "STRING", description: "World narrative consequence on completion" }
+            },
+            required: ["userId", "id", "title", "description", "category", "difficulty", "xp", "tasks"]
+          }
+        },
+        {
+          name: "saveChapterToDatabase",
+          description: "Autonomously writes a newly chronicled lore chapter into the persistent MongoDB memory layer for the player.",
+          parameters: {
+            type: "OBJECT",
+            properties: {
+              userId: { type: "STRING", description: "The active Firebase user ID" },
+              id: { type: "INTEGER", description: "Unique chapter index" },
+              title: { type: "STRING", description: "Poetic chapter title" },
+              text: { type: "STRING", description: "3-4 sentence chronicle narrative of world-changing achievements" }
+            },
+            required: ["userId", "id", "title", "text"]
+          }
+        }
+      ]
+    }
+  ]
+
   const body: any = {
     contents,
+    tools: dbTools,
     generationConfig: {
-      responseMimeType: 'application/json',
       temperature: 0.7,
     }
   }
 
   if (systemPrompt) {
     body.systemInstruction = {
-      parts: [{ text: systemPrompt }]
+      parts: [{ text: systemPrompt + "\nCRITICAL: If you choose to persistently store a quest or chronicle chapter in the database, invoke the corresponding database tool directly. Otherwise, respond only in valid JSON format." }]
     }
   }
   // Use the standard Gemini model
@@ -78,7 +118,48 @@ async function callGemini(payload: any): Promise<string> {
       }
 
       const data = await response.json()
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
+      const candidate = data.candidates?.[0]
+      const part = candidate?.content?.parts?.[0]
+
+      if (part?.functionCall) {
+        const { name, args } = part.functionCall
+        console.log(`🤖 [Agentic Tool Use] Gemini Model autonomously invoked database tool: ${name}`, args)
+
+        try {
+          if (name === "saveQuestToDatabase") {
+            const quest: Quest = {
+              id: Number(args.id),
+              title: args.title,
+              description: args.description,
+              category: args.category as any,
+              difficulty: args.difficulty as any,
+              xp: Number(args.xp),
+              tasks: args.tasks || [],
+              mythEvent: args.mythEvent || '',
+              isCompleted: false,
+            }
+            await saveQuestToMongo(quest, args.userId)
+            return JSON.stringify(quest)
+          } else if (name === "saveChapterToDatabase") {
+            const chapter: LoreChapter = {
+              id: Number(args.id),
+              title: args.title,
+              text: args.text,
+              timestamp: new Date().toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+              })
+            }
+            await saveChapterToMongo(chapter, args.userId)
+            return JSON.stringify(chapter)
+          }
+        } catch (err: any) {
+          console.error(`❌ [Agentic Tool Use Error] Failed to execute tool ${name}:`, err)
+        }
+      }
+
+      const text = part?.text ?? ''
       return text
     } catch (error: any) {
       // If it's a fetch network error or transient code, retry if we have attempts left
@@ -160,7 +241,8 @@ export async function forgeQuestlineWithAI(
   goal: string,
   startId: number,
   worldTheme: 'fantasy' | 'cyberpunk' | 'steampunk',
-  playerLevel: number = 1
+  playerLevel: number = 1,
+  userId?: string
 ): Promise<Quest[]> {
   const themeContext = {
     fantasy:   'a high-fantasy realm of mana, spires, and ancient scrolls',
@@ -219,7 +301,7 @@ Respond ONLY with a valid JSON object of this exact shape — no prose, no markd
 Rules:
 - CRITICAL: All quest "title" and "description" fields MUST BE REALISTIC, highly specific, and customized directly to the user's actual master goal (e.g. if the master goal is "build a RAG system", use titles like "Design RAG Architecture", "Construct Vector Database Indexes", "Evaluate Retrospective Retrieval" rather than generic placeholders like "Gather Ancient Lore" or "Craft Resilient Artifacts"). Incorporate the real-world technologies, terms, or activities directly into the titles and descriptions, while dressing them up with a subtle, immersive mythic/thematic tone.
 - CRITICAL: Each item inside the "tasks" arrays MUST contain a short, 100% real-world actionable task (3-6 words, e.g. "Draft database schema" or "Write validation tests") paired with a short, evocative fantasy/sci-fi theme lore subtitle (e.g. "Secure the celestial archives" or "Imbue the core crystal") separated strictly by a vertical pipe (" | "). Format exactly as: "Real Task | Fantasy Lore Subtitle". Fictional and thematic metaphors must reside strictly inside the lore subtitle part, not the real task part.`,
-    messages: [{ role: 'user', content: `Master Ambition: "${goal}"` }],
+    messages: [{ role: 'user', content: `Master Ambition: "${goal}"${userId ? `, Player User ID: "${userId}"` : ''}` }],
   })
 
   const parsed = parseJSON<{ quests: any[] }>(raw)
@@ -245,7 +327,8 @@ export async function generateAdaptiveChapter(
   questCategory: string,
   worldTheme: string,
   chapterId: number,
-  mythEvent: string
+  mythEvent: string,
+  userId?: string
 ): Promise<LoreChapter> {
   const raw = await callGemini({
     model: 'gemini-1.5-flash',
@@ -267,7 +350,7 @@ Rules:
       content: `Quest: "${questTitle}"
 Category: ${questCategory}
 World theme: ${worldTheme}
-Myth event: "${mythEvent}"`,
+Myth event: "${mythEvent}"${userId ? `\nPlayer User ID: "${userId}"` : ''}`,
     }],
   })
 
