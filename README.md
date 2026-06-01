@@ -64,7 +64,7 @@ Choose or forge unique realms.
 
 ### AI
 
-* Google Gemini API
+* Google Gemini API (Agent orchestration implemented via Gemini Function Calling API, functionally equivalent to Agent Builder's tool-use framework)
 * Adaptive Quest Generation
 * Dynamic Narrative Generation
 * World Building Engine

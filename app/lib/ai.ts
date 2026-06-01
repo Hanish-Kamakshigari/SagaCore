@@ -8,6 +8,7 @@
 
 import type { Quest, LoreChapter } from './data'
 import { connectDB, QuestModel, LoreChapterModel, PlayerStateModel } from './mongodb'
+import { getRealmState, saveQuest, completeQuest } from './tools'
 
 // ─── Shared fetch helper ──────────────────────────────────────────────────────
 
@@ -24,9 +25,23 @@ async function callGemini(payload: any): Promise<string> {
     } else if (role !== 'model' && role !== 'user') {
       role = 'user'
     }
+
+    if (m.parts) {
+      return { role, parts: m.parts }
+    }
+
+    const parts: any[] = []
+    if (m.functionCall) {
+      parts.push({ functionCall: m.functionCall })
+    } else if (m.functionResponse) {
+      parts.push({ functionResponse: m.functionResponse })
+    } else {
+      parts.push({ text: m.content || '' })
+    }
+
     return {
       role: role,
-      parts: [{ text: m.content || '' }]
+      parts
     }
   })
 
@@ -65,123 +80,199 @@ async function callGemini(payload: any): Promise<string> {
             },
             required: ["userId", "id", "title", "text"]
           }
+        },
+        {
+          name: "getRealmState",
+          description: "Reads the player's current realm state (XP, level, active theme) from the database to adapt the narrative and scale quest difficulties.",
+          parameters: {
+            type: "OBJECT",
+            properties: {
+              userId: { type: "STRING", description: "The active Firebase user ID" }
+            },
+            required: ["userId"]
+          }
+        },
+        {
+          name: "completeQuest",
+          description: "Marks a specific quest as completed in the database by its unique ID for a specific user.",
+          parameters: {
+            type: "OBJECT",
+            properties: {
+              id: { type: "STRING", description: "The unique ID of the quest to mark as completed" },
+              userId: { type: "STRING", description: "The active Firebase user ID" }
+            },
+            required: ["id", "userId"]
+          }
         }
       ]
     }
   ]
 
-  const body: any = {
-    contents,
-    tools: dbTools,
-    generationConfig: {
-      temperature: 0.7,
+  let currentContents = [...contents]
+  let lastWriteToolOutput: string | null = null
+  let loopCount = 0
+  const maxLoops = 5
+
+  while (loopCount < maxLoops) {
+    loopCount++
+    const body: any = {
+      contents: currentContents,
+      tools: dbTools,
+      generationConfig: {
+        temperature: 0.7,
+      }
     }
-  }
 
-  if (systemPrompt) {
-    body.systemInstruction = {
-      parts: [{ text: systemPrompt + "\nCRITICAL: If you choose to persistently store a quest or chronicle chapter in the database, invoke the corresponding database tool directly. Otherwise, respond only in valid JSON format." }]
+    if (systemPrompt) {
+      body.systemInstruction = {
+        parts: [{ text: systemPrompt + "\nCRITICAL: If you need to read the player state or persistently store a quest or chronicle chapter in the database, invoke the corresponding database tool directly. Otherwise, respond only in valid JSON format." }]
+      }
     }
-  }
-  // Use the standard Gemini model (upgraded to 2.5-flash due to deprecation of 1.5 series on June 1, 2026)
-  let model = payload.model || 'gemini-2.5-flash'
-  if (model.includes('llama') || model.includes('versatile') || model.includes('gemini-1.5-flash')) {
-    model = 'gemini-2.5-flash'
-  }
-
-  const maxRetries = 3
-  let delay = 1000 // initial delay of 1 second
-
-  for (let attempt = 1; attempt <= maxRetries + 1; attempt++) {
-    // Cascading Fallback: on retry attempts (from 503 high demand or 429), fall back to gemini-2.5-pro to bypass quota/spikes!
-    let currentModel = model
-    if (attempt > 1) {
-      currentModel = 'gemini-2.5-pro'
+    // Use the standard Gemini model (upgraded to 2.5-flash due to deprecation of 1.5 series on June 1, 2026)
+    let model = payload.model || 'gemini-2.5-flash'
+    if (model.includes('llama') || model.includes('versatile') || model.includes('gemini-1.5-flash')) {
+      model = 'gemini-2.5-flash'
     }
-    try {
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${process.env.GOOGLE_API_KEY || ''}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(body),
-      })
 
-      if (!response.ok) {
-        const err = await response.json().catch(() => ({}))
-        const status = response.status
-        const shouldRetry = status === 429 || status === 503 || status === 500 || status === 502 || status === 504
+    const maxRetries = 3
+    let delay = 1000 // initial delay of 1 second
+    let data: any = null
 
-        if (shouldRetry && attempt <= maxRetries) {
-          console.warn(`Gemini API call failed with status ${status} (Attempt ${attempt}/${maxRetries + 1}). Retrying in ${delay}ms...`)
+    for (let attempt = 1; attempt <= maxRetries + 1; attempt++) {
+      // Cascading Fallback: on retry attempts (from 503 high demand or 429), fall back to gemini-2.5-pro to bypass quota/spikes!
+      let currentModel = model
+      if (attempt > 1) {
+        currentModel = 'gemini-2.5-pro'
+      }
+      try {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${process.env.GOOGLE_API_KEY || ''}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(body),
+        })
+
+        if (!response.ok) {
+          const err = await response.json().catch(() => ({}))
+          const status = response.status
+          const shouldRetry = status === 429 || status === 503 || status === 500 || status === 502 || status === 504
+
+          if (shouldRetry && attempt <= maxRetries) {
+            console.warn(`Gemini API call failed with status ${status} (Attempt ${attempt}/${maxRetries + 1}). Retrying in ${delay}ms...`)
+            await new Promise((resolve) => setTimeout(resolve, delay))
+            delay *= 2 // exponential backoff
+            continue
+          }
+
+          throw new Error(`Gemini API error ${response.status}: ${JSON.stringify(err)}`)
+        }
+
+        data = await response.json()
+        break
+      } catch (error: any) {
+        // If it's a fetch network error or transient code, retry if we have attempts left
+        const isNetworkError = error instanceof TypeError || error.name === 'TypeError'
+        const isTransientError = error.message?.includes('503') || error.message?.includes('429') || error.message?.includes('500')
+        
+        if ((isNetworkError || isTransientError) && attempt <= maxRetries) {
+          console.warn(`Gemini API network/transient error (Attempt ${attempt}/${maxRetries + 1}): ${error.message || error}. Retrying in ${delay}ms...`)
           await new Promise((resolve) => setTimeout(resolve, delay))
           delay *= 2 // exponential backoff
           continue
         }
-
-        throw new Error(`Gemini API error ${response.status}: ${JSON.stringify(err)}`)
+        throw error
       }
-
-      const data = await response.json()
-      const candidate = data.candidates?.[0]
-      const part = candidate?.content?.parts?.[0]
-
-      if (part?.functionCall) {
-        const { name, args } = part.functionCall
-        console.log(`🤖 [Agentic Tool Use] Gemini Model autonomously invoked database tool: ${name}`, args)
-
-        try {
-          if (name === "saveQuestToDatabase") {
-            const quest: Quest = {
-              id: Number(args.id),
-              title: args.title,
-              description: args.description,
-              category: args.category as any,
-              difficulty: args.difficulty as any,
-              xp: Number(args.xp),
-              tasks: args.tasks || [],
-              mythEvent: args.mythEvent || '',
-              isCompleted: false,
-            }
-            await saveQuestToMongo(quest, args.userId)
-            return JSON.stringify(quest)
-          } else if (name === "saveChapterToDatabase") {
-            const chapter: LoreChapter = {
-              id: Number(args.id),
-              title: args.title,
-              text: args.text,
-              timestamp: new Date().toLocaleDateString('en-US', {
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric',
-              })
-            }
-            await saveChapterToMongo(chapter, args.userId)
-            return JSON.stringify(chapter)
-          }
-        } catch (err: any) {
-          console.error(`❌ [Agentic Tool Use Error] Failed to execute tool ${name}:`, err)
-        }
-      }
-
-      const text = part?.text ?? ''
-      return text
-    } catch (error: any) {
-      // If it's a fetch network error or transient code, retry if we have attempts left
-      const isNetworkError = error instanceof TypeError || error.name === 'TypeError'
-      const isTransientError = error.message?.includes('503') || error.message?.includes('429') || error.message?.includes('500')
-      
-      if ((isNetworkError || isTransientError) && attempt <= maxRetries) {
-        console.warn(`Gemini API network/transient error (Attempt ${attempt}/${maxRetries + 1}): ${error.message || error}. Retrying in ${delay}ms...`)
-        await new Promise((resolve) => setTimeout(resolve, delay))
-        delay *= 2 // exponential backoff
-        continue
-      }
-      throw error
     }
+
+    if (!data) {
+      throw new Error('Gemini API call failed after max retries')
+    }
+
+    const candidate = data.candidates?.[0]
+    const part = candidate?.content?.parts?.[0]
+
+    if (part?.functionCall) {
+      const { name, args } = part.functionCall
+      console.log(`🤖 [Agentic Tool Use] Gemini Model autonomously invoked database tool: ${name}`, args)
+
+      let resultObj: any = null
+      let isWriteTool = false
+
+      try {
+        if (name === "getRealmState") {
+          const state = await getRealmState(args.userId)
+          resultObj = state ? JSON.parse(JSON.stringify(state)) : { error: "No realm state found" }
+        } else if (name === "completeQuest") {
+          const completed = await completeQuest(args.id, args.userId)
+          resultObj = completed ? JSON.parse(JSON.stringify(completed)) : { error: "Quest not found" }
+          isWriteTool = true
+        } else if (name === "saveQuestToDatabase") {
+          const quest: Quest = {
+            id: Number(args.id),
+            title: args.title,
+            description: args.description,
+            category: args.category as any,
+            difficulty: args.difficulty as any,
+            xp: Number(args.xp),
+            tasks: args.tasks || [],
+            mythEvent: args.mythEvent || '',
+            isCompleted: false,
+          }
+          await saveQuestToMongo(quest, args.userId)
+          resultObj = quest
+          isWriteTool = true
+        } else if (name === "saveChapterToDatabase") {
+          const chapter: LoreChapter = {
+            id: Number(args.id),
+            title: args.title,
+            text: args.text,
+            timestamp: new Date().toLocaleDateString('en-US', {
+              month: 'short',
+              day: 'numeric',
+              year: 'numeric',
+            })
+          }
+          await saveChapterToMongo(chapter, args.userId)
+          resultObj = chapter
+          isWriteTool = true
+        }
+      } catch (err: any) {
+        console.error(`❌ [Agentic Tool Use Error] Failed to execute tool ${name}:`, err)
+        resultObj = { error: err.message || "Execution failed" }
+      }
+
+      currentContents.push({
+        role: 'model',
+        parts: [{ functionCall: { name, args } }]
+      })
+
+      currentContents.push({
+        role: 'user',
+        parts: [{
+          functionResponse: {
+            name,
+            response: { output: resultObj }
+          }
+        }]
+      })
+
+      if (isWriteTool) {
+        lastWriteToolOutput = JSON.stringify(resultObj)
+      }
+
+      // Continue ReAct loop so Gemini can generate the next narrative/quests or invoke another tool!
+      continue
+    }
+
+    const text = part?.text ?? ''
+    if (!text.trim() && lastWriteToolOutput) {
+      return lastWriteToolOutput
+    }
+    return text
   }
 
-  throw new Error('Gemini API call failed after max retries')
+  throw new Error('Gemini API call failed: ReAct loop max iterations reached')
 }
 
 // ─── Shared JSON parser ───────────────────────────────────────────────────────
@@ -196,7 +287,8 @@ function parseJSON<T>(raw: string): T {
 export async function forgeQuestWithAI(
   goal: string,
   newId: number,
-  worldTheme: 'fantasy' | 'cyberpunk' | 'steampunk'
+  worldTheme: 'fantasy' | 'cyberpunk' | 'steampunk',
+  userId?: string
 ): Promise<Quest> {
   const themeContext = {
     fantasy:   'a high-fantasy realm of mana, spires, and ancient scrolls',
@@ -224,7 +316,7 @@ Rules:
 - CRITICAL: The quest "title" and "description" MUST BE REALISTIC and highly specific to the user's actual real-world goal (e.g. if the goal is "build a RAG system", the title should be "Build the RAG System" or "Design Vector Indexes", NOT a generic template like "Gather Ancient Lore" or "Craft Resilient Artifacts"). Incorporate the real-world technologies, terms, or activities directly into the title and description, while dressing them up with a subtle, immersive mythic tone.
 - CRITICAL: Each item inside the "tasks" array MUST contain a short, 100% real-world actionable task (3-6 words, e.g. "Install auth package" or "Draft SQL schema") paired with an evocative, short fantasy/sci-fi theme lore subtitle (e.g. "Forge the aether shield" or "Decrypt the mainframe cache") separated strictly by a vertical pipe (" | "). Format exactly as: "Real Task | Fantasy Lore Subtitle". Do NOT use fictional items (like starlight ore or mana crystals) inside the real task part — fictional elements belong strictly in the lore subtitle, quest title, and description.
 - mythEvent must feel emotionally significant — not generic`,
-    messages: [{ role: 'user', content: `Goal: "${goal}"` }],
+    messages: [{ role: 'user', content: `Goal: "${goal}"${userId ? `, Player User ID: "${userId}"` : ''}` }],
   })
 
   const parsed = parseJSON<any>(raw)

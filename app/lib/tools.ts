@@ -10,10 +10,10 @@ export async function saveQuest(data: any) {
   return await QuestModel.create(data)
 }
 
-export async function completeQuest(id: string) {
+export async function completeQuest(id: string, userId: string) {
   await connectDB()
   return await QuestModel.findOneAndUpdate(
-    { id: Number(id) },
+    { id: Number(id), userId },
     { isCompleted: true },
     { new: true }
   )
