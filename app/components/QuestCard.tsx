@@ -418,7 +418,7 @@ export default function QuestCard({
           </span>
           {hasTasks && (
             <span className="h-9 flex items-center justify-center rounded-xl border border-zinc-800/80 bg-zinc-950/80 px-3 text-xs font-bold text-zinc-400 font-mono whitespace-nowrap shrink-0">
-              ⚡ {completedCount}/{totalCount} Tasks
+              {completedCount}/{totalCount} Tasks
             </span>
           )}
         </div>

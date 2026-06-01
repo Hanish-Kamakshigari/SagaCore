@@ -124,7 +124,7 @@ export default function WorldArchitect({
 
       {/* Prompt Bar to Forge Custom Realm */}
       <form onSubmit={handleCustomSubmit} className="mt-6 border-t border-zinc-800/80 pt-6">
-        <span className="text-xs font-bold text-zinc-400 block mb-2">Forge a Custom Realm (Prompt AI)</span>
+        <span className="text-xs font-bold text-zinc-400 block mb-2">Forge a Custom Realm</span>
         <div className="flex gap-2">
           <input
             name="worldPrompt"

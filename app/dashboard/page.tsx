@@ -381,59 +381,64 @@ export default function Dashboard() {
     setXp(remainingXp)
     setLevel(nextLevel)
 
-    // Mark quest complete immediately so UI responds
+    // Mark quest complete immediately and unblock UI for 0ms optimistic response
     setQuests((prev) => prev.map((q) => (q.id === id ? { ...q, isCompleted: true } : q)))
+    setNarratingId(null)
 
-    try {
-      // ── Adaptive AI Engine: generate world-change narration ────────────────
-      const newChapterId = chapters.length + 1
-      const chapter = await generateAdaptiveChapter(
-        questToComplete.title,
-        questToComplete.category,
-        activeWorld.theme,
-        newChapterId,
-        questToComplete.mythEvent ?? ''
-      )
+    // Fire the heavy Gemini AI Narrator and MongoDB saving as a non-blocking background worker thread
+    const targetUid = user?.uid;
+    const targetTheme = activeWorld.theme;
+    const currentChaptersCount = chapters.length;
 
-      setChapters((prev) => [...prev, chapter])
-      setNarratedEvents((prev) => ({ ...prev, [id]: chapter.text }))
+    (async () => {
+      try {
+        // ── Adaptive AI Engine: generate world-change narration ────────────────
+        const newChapterId = currentChaptersCount + 1
+        const chapter = await generateAdaptiveChapter(
+          questToComplete.title,
+          questToComplete.category,
+          targetTheme,
+          newChapterId,
+          questToComplete.mythEvent ?? ''
+        )
 
-      const categoryEmoji =
-        questToComplete.category === 'wisdom' ? '📖' :
-        questToComplete.category === 'creation' ? '🔮' : '⚔️'
+        setChapters((prev) => [...prev, chapter])
+        setNarratedEvents((prev) => ({ ...prev, [id]: chapter.text }))
 
-      setLore((prev) => [
-        `${categoryEmoji} Triumph! "${questToComplete.title}" (+${questXp} XP)`,
-        `Scribed Chapter ${newChapterId}: "${chapter.title}"`,
-        ...prev,
-      ])
+        const categoryEmoji =
+          questToComplete.category === 'wisdom' ? '📖' :
+          questToComplete.category === 'creation' ? '🔮' : '⚔️'
 
-            // ── Memory Engine: persist chapter and player state ────────────────────
-      if (user) {
-        await Promise.allSettled([
-          saveChapterToMongo(chapter, user.uid),
-          savePlayerStateToMongo(user.uid, remainingXp, nextLevel, activeWorld.theme),
-          saveQuestToMongo({ ...questToComplete, isCompleted: true }, user.uid),
+        setLore((prev) => [
+          `${categoryEmoji} Triumph! "${questToComplete.title}" (+${questXp} XP)`,
+          `Scribed Chapter ${newChapterId}: "${chapter.title}"`,
+          ...prev,
+        ])
+
+        // ── Memory Engine: persist chapter and player state ────────────────────
+        if (targetUid) {
+          await Promise.allSettled([
+            saveChapterToMongo(chapter, targetUid),
+            savePlayerStateToMongo(targetUid, remainingXp, nextLevel, targetTheme),
+            saveQuestToMongo({ ...questToComplete, isCompleted: true }, targetUid),
+          ]).catch((e) => console.warn('Background MongoDB persist failed:', e))
+        }
+      } catch (err) {
+        console.error('Adaptive Engine failed, using fallback:', err)
+        const { generateLoreChapter } = await import('../lib/data')
+        const fallbackChapter = generateLoreChapter(
+          questToComplete.title,
+          questToComplete.category,
+          targetTheme,
+          currentChaptersCount + 1
+        )
+        setChapters((prev) => [...prev, fallbackChapter])
+        setLore((prev) => [
+          `⚔️ Quest complete: "${questToComplete.title}" (+${questXp} XP)`,
+          ...prev,
         ])
       }
-    } catch (err) {
-      console.error('Adaptive Engine failed:', err)
-      // Fall back to static chapter generation from the original data.ts
-      const { generateLoreChapter } = await import('../lib/data')
-      const fallbackChapter = generateLoreChapter(
-        questToComplete.title,
-        questToComplete.category,
-        activeWorld.theme,
-        chapters.length + 1
-      )
-      setChapters((prev) => [...prev, fallbackChapter])
-      setLore((prev) => [
-        `⚔️ Quest complete: "${questToComplete.title}" (+${questXp} XP)`,
-        ...prev,
-      ])
-    } finally {
-      setNarratingId(null)
-    }
+    })()
   }
 
   // ── Quest failure — dark world narration ──────────────────────────────────
@@ -443,37 +448,45 @@ export default function Dashboard() {
     if (!quest || quest.isCompleted) return
 
     setNarratingId(id)
+    
+    // Mark failed instantly and unblock UI for 0ms optimistic response
     setQuests((prev) => prev.map((q) => (q.id === id ? { ...q, isCompleted: true, failed: true } : q)))
+    setNarratingId(null)
 
-    try {
-      const newChapterId = chapters.length + 1
-      const chapter = await generateAdaptiveChapter(
-        quest.title,
-        quest.category,
-        activeWorld.theme,
-        newChapterId,
-        `FAILED: ${quest.mythEvent ?? 'The realm grows darker.'}`
-      )
+    const targetUid = user?.uid;
+    const targetTheme = activeWorld.theme;
+    const currentChaptersCount = chapters.length;
 
-      setChapters((prev) => [...prev, chapter])
-      setNarratedEvents((prev) => ({ ...prev, [id]: chapter.text }))
-      setLore((prev) => [
-        `🌑 Darkness spreads: "${quest.title}" was abandoned.`,
-        `Shadow Chapter ${newChapterId} etched into the Codex.`,
-        ...prev,
-      ])
+    (async () => {
+      try {
+        const newChapterId = currentChaptersCount + 1
+        const chapter = await generateAdaptiveChapter(
+          quest.title,
+          quest.category,
+          targetTheme,
+          newChapterId,
+          `FAILED: ${quest.mythEvent ?? 'The realm grows darker.'}`
+        )
 
-            if (user) {
-        await Promise.allSettled([
-          saveChapterToMongo(chapter, user.uid),
-          saveQuestToMongo({ ...quest, isCompleted: true }, user.uid),
+        setChapters((prev) => [...prev, chapter])
+        setNarratedEvents((prev) => ({ ...prev, [id]: chapter.text }))
+        setLore((prev) => [
+          `🌑 Darkness spreads: "${quest.title}" was abandoned.`,
+          `Shadow Chapter ${newChapterId} etched into the Codex.`,
+          ...prev,
         ])
+
+        if (targetUid) {
+          await Promise.allSettled([
+            saveChapterToMongo(chapter, targetUid),
+            saveQuestToMongo({ ...quest, isCompleted: true }, targetUid),
+          ]).catch((e) => console.warn('Background MongoDB fail-persist failed:', e))
+        }
+      } catch (err) {
+        console.error('Shadow chronicler failed:', err)
+        setLore((prev) => [`🌑 Quest abandoned: "${quest.title}" — the realm suffers.`, ...prev])
       }
-    } catch {
-      setLore((prev) => [`🌑 Quest abandoned: "${quest.title}" — the realm suffers.`, ...prev])
-    } finally {
-      setNarratingId(null)
-    }
+    })()
   }
 
   // ── Quest Roadmap Generation — Unlocks interactive checklists ──────────────

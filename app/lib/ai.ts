@@ -44,9 +44,9 @@ async function callGemini(payload: any): Promise<string> {
     }
   }
   // Use the standard Gemini model
-  let model = payload.model || 'gemini-3.5-flash'
-  if (model.includes('llama') || model.includes('versatile') || model.includes('gemini-1.5-flash')) {
-    model = 'gemini-3.5-flash'
+  let model = payload.model || 'gemini-2.5-flash'
+  if (model.includes('llama') || model.includes('versatile') || model.includes('gemini-1.5-flash') || model.includes('gemini-3.5-flash')) {
+    model = 'gemini-2.5-flash'
   }
 
   const maxRetries = 3

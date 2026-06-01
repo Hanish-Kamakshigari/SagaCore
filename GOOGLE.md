@@ -12,5 +12,5 @@ This file outlines the commands and guidelines for building and testing the SAGA
 ## Architecture Guidelines
 
 - **AI Engine**: All calls to the AI core are server-side in `app/lib/ai.ts` using Next.js Server Actions. Do not invoke external APIs directly from client components.
-- **Model Standard**: Defaults to `llama-3.3-70b-versatile` running natively in Groq JSON mode (`response_format: { type: "json_object" }`).
+- **Model Standard**: Defaults to Google Gemini models (e.g., `gemini-2.5-flash` or `gemini-1.5-flash`) running natively via the **Google Gemini API** (`generativelanguage.googleapis.com`) using JSON mode with exponential backoff retries for reliability.
 - **Memory Engine**: MCP MongoDB integration coordinates persistent storage of player sheets, codex logs, and custom-forged worlds.

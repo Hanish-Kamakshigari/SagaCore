@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Cpu, BookOpen, Shield, Zap, Flame, Compass, Activity } from 'lucide-react'
+import { Cpu, BookOpen, Shield, Flame } from 'lucide-react'
 
 // --- Animation helper ---
 const fadeInVariant = {
@@ -21,16 +21,7 @@ export default function LandingSections() {
         <div className="absolute right-0 top-1/4 -z-10 h-96 w-96 rounded-full bg-purple-950/10 blur-[150px] pointer-events-none" />
         
         <div className="text-center mb-20">
-          <motion.div 
-            {...fadeInVariant}
-            className="inline-flex items-center gap-2 rounded-full border border-purple-500/20 bg-purple-500/5 px-4 py-1.5 backdrop-blur-sm mb-4"
-          >
-            <Zap size={12} className="text-purple-300 animate-pulse" />
-            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-purple-300 font-mono">
-              World Core Modules
-            </span>
-          </motion.div>
-          
+
           <motion.h2 
             {...fadeInVariant}
             transition={{ delay: 0.1, duration: 0.8 }}
@@ -133,16 +124,6 @@ export default function LandingSections() {
           
           {/* Left Block - Text */}
           <div className="lg:col-span-7">
-            <motion.div 
-              {...fadeInVariant}
-              className="inline-flex items-center gap-2 rounded-full border border-indigo-500/20 bg-indigo-500/5 px-4 py-1.5 backdrop-blur-sm mb-4"
-            >
-              <Compass size={12} className="text-indigo-400 animate-spin-slow" />
-              <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-indigo-300 font-mono">
-                The Lore Core
-              </span>
-            </motion.div>
-
             <motion.h2 
               {...fadeInVariant}
               transition={{ delay: 0.1, duration: 0.8 }}
@@ -234,16 +215,6 @@ export default function LandingSections() {
         <div className="absolute right-10 bottom-10 -z-10 h-80 w-80 rounded-full bg-pink-950/10 blur-[150px] pointer-events-none" />
 
         <div className="text-center mb-20">
-          <motion.div 
-            {...fadeInVariant}
-            className="inline-flex items-center gap-2 rounded-full border border-pink-500/20 bg-pink-500/5 px-4 py-1.5 backdrop-blur-sm mb-4"
-          >
-            <Activity size={12} className="text-pink-400 animate-pulse" />
-            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-pink-300 font-mono">
-              The Path Ahead
-            </span>
-          </motion.div>
-
           <motion.h2 
             {...fadeInVariant}
             transition={{ delay: 0.1, duration: 0.8 }}
