@@ -243,11 +243,32 @@ export default function Dashboard() {
 
   const goalInputRef = useRef<HTMLInputElement>(null)
 
-  // ── Theme colours (unchanged from original) ────────────────────────────────
+  // ── Theme colours (updated with responsive hoverGlow effects) ──────────────
   const themeColors = {
-    fantasy:   { radialGlow: 'bg-[radial-gradient(ellipse_at_top,rgba(168,85,247,0.06),transparent_60%)]',  borderGlow: 'border-purple-500/20', activeText: 'text-purple-300', accentBg: 'bg-purple-500/10 border-purple-500/20 text-purple-200',  btnBg: 'from-purple-500 to-indigo-500'  },
-    cyberpunk: { radialGlow: 'bg-[radial-gradient(ellipse_at_top,rgba(6,182,212,0.06),transparent_60%)]',   borderGlow: 'border-cyan-500/20',   activeText: 'text-cyan-400',   accentBg: 'bg-cyan-500/10 border-cyan-500/20 text-cyan-300',     btnBg: 'from-cyan-500 to-blue-500'      },
-    steampunk: { radialGlow: 'bg-[radial-gradient(ellipse_at_top,rgba(249,115,22,0.06),transparent_60%)]',  borderGlow: 'border-orange-500/20', activeText: 'text-orange-400', accentBg: 'bg-orange-500/10 border-orange-500/20 text-orange-350', btnBg: 'from-orange-500 to-amber-500'   },
+    fantasy: {
+      radialGlow: 'bg-[radial-gradient(ellipse_at_top,rgba(168,85,247,0.06),transparent_60%)]',
+      borderGlow: 'border-purple-500/20',
+      hoverGlow: 'hover:border-purple-500/40 hover:shadow-[0_0_25px_rgba(168,85,247,0.08)]',
+      activeText: 'text-purple-300',
+      accentBg: 'bg-purple-500/10 border-purple-500/20 text-purple-200',
+      btnBg: 'from-purple-500 to-indigo-500'
+    },
+    cyberpunk: {
+      radialGlow: 'bg-[radial-gradient(ellipse_at_top,rgba(6,182,212,0.06),transparent_60%)]',
+      borderGlow: 'border-cyan-500/20',
+      hoverGlow: 'hover:border-cyan-500/40 hover:shadow-[0_0_25px_rgba(6,182,212,0.08)]',
+      activeText: 'text-cyan-400',
+      accentBg: 'bg-cyan-500/10 border-cyan-500/20 text-cyan-300',
+      btnBg: 'from-cyan-500 to-blue-500'
+    },
+    steampunk: {
+      radialGlow: 'bg-[radial-gradient(ellipse_at_top,rgba(249,115,22,0.06),transparent_60%)]',
+      borderGlow: 'border-orange-500/20',
+      hoverGlow: 'hover:border-orange-500/40 hover:shadow-[0_0_25px_rgba(249,115,22,0.08)]',
+      activeText: 'text-orange-400',
+      accentBg: 'bg-orange-500/10 border-orange-500/20 text-orange-350',
+      btnBg: 'from-orange-500 to-amber-500'
+    },
   }
   const colors = themeColors[activeWorld.theme]
 
@@ -628,10 +649,43 @@ export default function Dashboard() {
   //   2. QuestCard receives onFail, isNarrating, narratedMythEvent props
   // ─────────────────────────────────────────────────────────────────────────────
   return (
-    <main className="relative min-h-screen bg-gradient-to-b from-black via-zinc-950 to-black px-6 py-8 text-white transition-colors duration-500">
+    <main className="relative min-h-screen bg-gradient-to-b from-black via-zinc-950 to-black px-6 py-8 text-white transition-colors duration-500 overflow-hidden">
       {/* Dynamic backdrop grid */}
       <div className="absolute inset-0 -z-20 bg-[linear-gradient(rgba(255,255,255,0.015)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.015)_1px,transparent_1px)] bg-[size:40px_40px] opacity-60" />
-      <div className={`absolute inset-0 -z-30 transition-all duration-700 ${colors.radialGlow}`} />
+      
+      {/* Shifting dual-gradient ambient mesh glows */}
+      <div className="absolute inset-0 -z-30 overflow-hidden pointer-events-none">
+        <motion.div
+          animate={{
+            x: [0, 40, -25, 0],
+            y: [0, -35, 20, 0],
+            scale: [1, 1.15, 0.9, 1]
+          }}
+          transition={{
+            duration: 20,
+            repeat: Infinity,
+            ease: 'easeInOut'
+          }}
+          className={`absolute -left-20 -top-20 h-[500px] w-[500px] rounded-full blur-[130px] transition-colors duration-700 ${
+            activeWorld.theme === 'fantasy' ? 'bg-purple-600/12' : activeWorld.theme === 'cyberpunk' ? 'bg-cyan-600/12' : 'bg-orange-600/12'
+          }`}
+        />
+        <motion.div
+          animate={{
+            x: [0, -40, 25, 0],
+            y: [0, 35, -20, 0],
+            scale: [1, 0.9, 1.15, 1]
+          }}
+          transition={{
+            duration: 24,
+            repeat: Infinity,
+            ease: 'easeInOut'
+          }}
+          className={`absolute -right-20 -bottom-20 h-[500px] w-[500px] rounded-full blur-[130px] transition-colors duration-700 ${
+            activeWorld.theme === 'fantasy' ? 'bg-indigo-600/12' : activeWorld.theme === 'cyberpunk' ? 'bg-blue-600/12' : 'bg-amber-600/12'
+          }`}
+        />
+      </div>
 
       {/* Level Up modal — unchanged */}
       <AnimatePresence>
@@ -723,7 +777,7 @@ export default function Dashboard() {
         </header>
 
         {/* XP Bar */}
-        <XPBar xp={xp} level={level} />
+        <XPBar xp={xp} level={level} theme={activeWorld.theme} />
 
         {/* Layout grid */}
         <div className="mt-8 grid gap-6 lg:grid-cols-3">
@@ -732,7 +786,7 @@ export default function Dashboard() {
           <div className="space-y-6 lg:col-span-2">
 
             {/* Dream Forge — only change: button shows spinner when isForging */}
-            <div className={`relative overflow-hidden rounded-3xl border ${colors.borderGlow} bg-gradient-to-r from-zinc-900/40 via-zinc-900/20 to-zinc-950/40 p-6 shadow-xl backdrop-blur-xl transition-all duration-500`}>
+            <div className={`relative overflow-hidden rounded-3xl border ${colors.borderGlow} ${colors.hoverGlow} bg-gradient-to-r from-zinc-900/40 via-zinc-900/20 to-zinc-950/40 p-6 shadow-xl backdrop-blur-xl transition-all duration-500`}>
               <div className="absolute right-4 top-4 text-purple-500/10">
                 <Sparkle size={48} className="animate-spin-slow" />
               </div>
@@ -916,7 +970,7 @@ export default function Dashboard() {
                   )}
                 </div>
               ) : (
-                <LoreCodex chapters={chapters} />
+                <LoreCodex chapters={chapters} theme={activeWorld.theme} />
               )}
             </div>
           </div>
@@ -929,7 +983,7 @@ export default function Dashboard() {
               onForgeCustomWorld={handleForgeCustomWorld}
             />
             <KingdomStatus quests={quests} activeWorld={activeWorld} />
-            <LoreFeed lore={lore} />
+            <LoreFeed lore={lore} theme={activeWorld.theme} />
           </div>
 
         </div>

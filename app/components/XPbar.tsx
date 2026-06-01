@@ -7,13 +7,66 @@ import { useState, useEffect } from 'react'
 interface XPBarProps {
   xp: number
   level: number
+  theme?: 'fantasy' | 'cyberpunk' | 'steampunk'
 }
 
-export default function XPBar({ xp, level }: XPBarProps) {
+export default function XPBar({ xp, level, theme = 'fantasy' }: XPBarProps) {
   const [showTooltip, setShowTooltip] = useState(false)
   const [prevXp, setPrevXp] = useState(xp)
   const [prevLevel, setPrevLevel] = useState(level)
   const [isFlashing, setIsFlashing] = useState(false)
+
+  // Mapping dynamic styles based on theme
+  const style = {
+    fantasy: {
+      barFill: 'bg-gradient-to-r from-violet-600 via-fuchsia-500 to-indigo-500 shadow-[0_0_15px_rgba(168,85,247,0.5)]',
+      glowBg: 'bg-purple-500/5',
+      starColor: 'text-purple-400',
+      shieldOuter: 'text-purple-500/35',
+      shieldInner: 'rgba(168,85,247,0.06)',
+      levelText: 'from-white to-purple-200',
+      rankText: 'text-purple-300',
+      badgeFilter: 'drop-shadow-[0_0_10px_rgba(168,85,247,0.25)] hover:drop-shadow-[0_0_20px_rgba(168,85,247,0.45)]',
+      borderFlash: ["rgba(63,63,70,0.8)", "rgba(168,85,247,0.8)", "rgba(63,63,70,0.8)"],
+      boxShadowFlash: [
+        "0 10px 30px -10px rgba(0,0,0,0.5)",
+        "0 0 40px rgba(168,85,247,0.35)",
+        "0 10px 30px -10px rgba(0,0,0,0.5)"
+      ]
+    },
+    cyberpunk: {
+      barFill: 'bg-gradient-to-r from-cyan-500 via-teal-400 to-blue-600 shadow-[0_0_15px_rgba(6,182,212,0.5)]',
+      glowBg: 'bg-cyan-500/5',
+      starColor: 'text-cyan-400',
+      shieldOuter: 'text-cyan-500/35',
+      shieldInner: 'rgba(6,182,212,0.06)',
+      levelText: 'from-white to-cyan-200',
+      rankText: 'text-cyan-300',
+      badgeFilter: 'drop-shadow-[0_0_10px_rgba(6,182,212,0.25)] hover:drop-shadow-[0_0_20px_rgba(6,182,212,0.45)]',
+      borderFlash: ["rgba(63,63,70,0.8)", "rgba(6,182,212,0.8)", "rgba(63,63,70,0.8)"],
+      boxShadowFlash: [
+        "0 10px 30px -10px rgba(0,0,0,0.5)",
+        "0 0 40px rgba(6,182,212,0.35)",
+        "0 10px 30px -10px rgba(0,0,0,0.5)"
+      ]
+    },
+    steampunk: {
+      barFill: 'bg-gradient-to-r from-orange-600 via-amber-500 to-yellow-600 shadow-[0_0_15px_rgba(249,115,22,0.5)]',
+      glowBg: 'bg-orange-500/5',
+      starColor: 'text-orange-400',
+      shieldOuter: 'text-orange-500/35',
+      shieldInner: 'rgba(249,115,22,0.06)',
+      levelText: 'from-white to-orange-200',
+      rankText: 'text-orange-400',
+      badgeFilter: 'drop-shadow-[0_0_10px_rgba(249,115,22,0.25)] hover:drop-shadow-[0_0_20px_rgba(249,115,22,0.45)]',
+      borderFlash: ["rgba(63,63,70,0.8)", "rgba(249,115,22,0.8)", "rgba(63,63,70,0.8)"],
+      boxShadowFlash: [
+        "0 10px 30px -10px rgba(0,0,0,0.5)",
+        "0 0 40px rgba(249,115,22,0.35)",
+        "0 10px 30px -10px rgba(0,0,0,0.5)"
+      ]
+    }
+  }[theme]
 
   useEffect(() => {
     const gainedXp = xp > prevXp || level > prevLevel
@@ -58,44 +111,40 @@ export default function XPBar({ xp, level }: XPBarProps) {
   return (
     <motion.div 
       animate={isFlashing ? {
-        borderColor: ["rgba(63,63,70,0.8)", "rgba(168,85,247,0.8)", "rgba(63,63,70,0.8)"],
-        boxShadow: [
-          "0 10px 30px -10px rgba(0,0,0,0.5)",
-          "0 0 40px rgba(168,85,247,0.35)",
-          "0 10px 30px -10px rgba(0,0,0,0.5)"
-        ]
+        borderColor: style.borderFlash,
+        boxShadow: style.boxShadowFlash
       } : {}}
       transition={{ duration: 1.0, ease: "easeInOut" }}
-      className="relative overflow-hidden rounded-3xl border border-zinc-800/80 bg-zinc-950/50 p-6 shadow-2xl backdrop-blur-xl transition-colors duration-500"
+      className="relative overflow-hidden rounded-3xl border border-zinc-800/80 bg-zinc-950/50 p-6 shadow-2xl backdrop-blur-xl transition-all duration-500"
     >
       {/* Background Accent Glow */}
-      <div className="absolute left-1/4 top-1/2 -z-10 h-24 w-80 -translate-y-1/2 bg-purple-500/5 blur-3xl" />
-
+      <div className={`absolute left-1/4 top-1/2 -z-10 h-24 w-80 -translate-y-1/2 blur-3xl ${style.glowBg}`} />
+ 
       <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
         
         {/* Level Badge and Title */}
         <div className="flex items-center gap-4">
-          <div className="relative h-16 w-16 flex items-center justify-center select-none shrink-0 filter drop-shadow-[0_0_10px_rgba(168,85,247,0.25)] hover:drop-shadow-[0_0_20px_rgba(168,85,247,0.45)] transition-all duration-300">
+          <div className={`relative h-16 w-16 flex items-center justify-center select-none shrink-0 transition-all duration-300 ${style.badgeFilter}`}>
             {/* Rotating Star Background */}
-            <Star className="absolute h-10 w-10 animate-spin-slow opacity-20 text-purple-400" />
+            <Star className={`absolute h-10 w-10 animate-spin-slow opacity-20 ${style.starColor}`} />
             
             {/* Shield Vector SVG */}
-            <svg className="absolute inset-0 w-full h-full text-purple-500/10" viewBox="0 0 100 100" fill="currentColor">
+            <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" fill="currentColor">
               {/* Outer Shield Path */}
               <path 
                 d="M50,6 L88,19.5 L88,52 C88,71.5 73,88 50,93 C27,88 12,71.5 12,52 L12,19.5 Z" 
                 stroke="currentColor" 
                 strokeWidth="4.5" 
-                className="text-purple-500/35"
+                className={style.shieldOuter}
               />
               {/* Inner Shield Overlay */}
               <path 
                 d="M50,12 L81.5,23.5 L81.5,52 C81.5,68 69,82 50,86 C31,82 18.5,68 18.5,52 L18.5,23.5 Z" 
-                fill="rgba(168,85,247,0.06)" 
+                fill={style.shieldInner} 
               />
             </svg>
             
-            <span className="relative z-10 text-2xl font-black bg-gradient-to-b from-white to-purple-200 bg-clip-text text-transparent font-cinzel">
+            <span className={`relative z-10 text-2xl font-black bg-gradient-to-b bg-clip-text text-transparent font-cinzel ${style.levelText}`}>
               {level}
             </span>
           </div>
@@ -106,7 +155,7 @@ export default function XPBar({ xp, level }: XPBarProps) {
               <Trophy size={12} className="text-yellow-400" />
             </div>
             <h2 className="text-2xl font-bold bg-gradient-to-r from-zinc-100 to-zinc-400 bg-clip-text text-transparent">
-              {getRankName(level)} <span className="text-purple-300">Level {level}</span>
+              {getRankName(level)} <span className={style.rankText}>Level {level}</span>
             </h2>
           </div>
         </div>
@@ -117,7 +166,7 @@ export default function XPBar({ xp, level }: XPBarProps) {
             <div className="relative flex items-center gap-1.5 group select-none">
               <span className="font-semibold text-zinc-400">Realm Experience</span>
               <div 
-                className="text-zinc-500 hover:text-purple-300 cursor-help transition-colors duration-200 p-0.5 rounded-full"
+                className={`cursor-help transition-colors duration-200 p-0.5 rounded-full text-zinc-500 hover:${style.rankText}`}
                 onMouseEnter={() => setShowTooltip(true)}
                 onMouseLeave={() => setShowTooltip(false)}
               >
@@ -131,7 +180,7 @@ export default function XPBar({ xp, level }: XPBarProps) {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
                     transition={{ duration: 0.2, ease: 'easeOut' }}
-                    className="absolute bottom-full left-0 mb-2.5 w-72 rounded-2xl border border-white/10 bg-zinc-950/95 p-4 shadow-[0_10px_30px_rgba(0,0,0,0.5)] shadow-purple-500/10 backdrop-blur-md z-30"
+                    className="absolute bottom-full left-0 mb-2.5 w-72 rounded-2xl border border-white/10 bg-zinc-950/95 p-4 shadow-[0_10px_30px_rgba(0,0,0,0.5)] backdrop-blur-md z-30"
                   >
                     <div className="absolute top-full left-4 -mt-1 h-3.5 w-3.5 rotate-45 border-r border-b border-white/10 bg-zinc-950/95" />
                     <p className="text-[11px] leading-relaxed text-zinc-300">
@@ -144,18 +193,18 @@ export default function XPBar({ xp, level }: XPBarProps) {
             </div>
             
             <span className="font-mono text-zinc-200">
-              <span className="text-purple-300 font-bold">{xp}</span> / 1000 XP
+              <span className={`font-bold ${style.rankText}`}>{xp}</span> / 1000 XP
             </span>
           </div>
 
           <div className="relative h-6 w-full overflow-hidden rounded-full bg-zinc-900 border border-zinc-800/50">
             {/* Pulsing sub-bar background */}
-            <div className="absolute inset-0 bg-purple-500/5" />
+            <div className={`absolute inset-0 opacity-50 ${style.glowBg}`} />
 
             {/* Glowing active progress bar */}
             <div
               style={{ width: `${progressPercentage}%` }}
-              className={`relative h-full rounded-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 shadow-[0_0_15px_rgba(168,85,247,0.5)] xp-bar-fill ${isFlashing ? 'xp-gained' : ''}`}
+              className={`relative h-full rounded-full xp-bar-fill ${style.barFill} ${isFlashing ? 'xp-gained' : ''}`}
             >
               {/* Inner highlight line */}
               <div className="absolute inset-x-0 top-0.5 h-[1.5px] bg-white/20" />

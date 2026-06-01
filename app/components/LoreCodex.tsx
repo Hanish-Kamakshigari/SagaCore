@@ -6,11 +6,18 @@ import { LoreChapter } from '../lib/data'
 
 interface LoreCodexProps {
   chapters: LoreChapter[]
+  theme?: 'fantasy' | 'cyberpunk' | 'steampunk'
 }
 
-export default function LoreCodex({ chapters }: LoreCodexProps) {
+export default function LoreCodex({ chapters, theme = 'fantasy' }: LoreCodexProps) {
+  const styles = {
+    fantasy: 'hover:border-purple-500/40 hover:shadow-[0_0_25px_rgba(168,85,247,0.08)]',
+    cyberpunk: 'hover:border-cyan-500/40 hover:shadow-[0_0_25px_rgba(6,182,212,0.08)]',
+    steampunk: 'hover:border-orange-500/40 hover:shadow-[0_0_25px_rgba(249,115,22,0.08)]',
+  }[theme]
+
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-zinc-800/80 bg-zinc-950/50 p-6 backdrop-blur-xl">
+    <div className={`relative overflow-hidden rounded-3xl border border-zinc-800/80 bg-zinc-950/50 p-6 backdrop-blur-xl transition-all duration-500 ${styles}`}>
       {/* Background glowing particles simulation */}
       <div className="absolute left-0 top-0 -z-10 h-32 w-32 bg-purple-500/5 blur-3xl animate-pulse" />
       <div className="absolute right-0 bottom-0 -z-10 h-32 w-32 bg-indigo-500/5 blur-3xl animate-pulse" />

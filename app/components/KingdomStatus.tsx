@@ -58,7 +58,9 @@ export default function KingdomStatus({ quests = [], activeWorld }: KingdomStatu
   ]
 
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-zinc-800/80 bg-zinc-950/50 p-6 backdrop-blur-xl">
+    <div className={`relative overflow-hidden rounded-3xl border border-zinc-800/80 bg-zinc-950/50 p-6 backdrop-blur-xl transition-all duration-500 ${
+      activeWorld?.theme === 'fantasy' ? 'hover:border-purple-500/40 hover:shadow-[0_0_25px_rgba(168,85,247,0.08)]' : activeWorld?.theme === 'cyberpunk' ? 'hover:border-cyan-500/40 hover:shadow-[0_0_25px_rgba(6,182,212,0.08)]' : 'hover:border-orange-500/40 hover:shadow-[0_0_25px_rgba(249,115,22,0.08)]'
+    }`}>
       <div className="flex items-center gap-3">
         <ShieldCheck className="text-purple-400" />
         <h2 className="text-xl font-bold text-zinc-100">
