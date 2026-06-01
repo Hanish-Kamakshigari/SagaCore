@@ -83,18 +83,23 @@ async function callGemini(payload: any): Promise<string> {
       parts: [{ text: systemPrompt + "\nCRITICAL: If you choose to persistently store a quest or chronicle chapter in the database, invoke the corresponding database tool directly. Otherwise, respond only in valid JSON format." }]
     }
   }
-  // Use the standard Gemini model
-  let model = payload.model || 'gemini-1.5-flash'
-  if (model.includes('llama') || model.includes('versatile') || model.includes('gemini-2.5-flash') || model.includes('gemini-3.5-flash')) {
-    model = 'gemini-1.5-flash'
+  // Use the standard Gemini model (upgraded to 2.5-flash due to deprecation of 1.5 series on June 1, 2026)
+  let model = payload.model || 'gemini-2.5-flash'
+  if (model.includes('llama') || model.includes('versatile') || model.includes('gemini-1.5-flash')) {
+    model = 'gemini-2.5-flash'
   }
 
   const maxRetries = 3
   let delay = 1000 // initial delay of 1 second
 
   for (let attempt = 1; attempt <= maxRetries + 1; attempt++) {
+    // Cascading Fallback: on retry attempts (from 503 high demand or 429), fall back to gemini-2.5-pro to bypass quota/spikes!
+    let currentModel = model
+    if (attempt > 1) {
+      currentModel = 'gemini-2.5-pro'
+    }
     try {
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${process.env.GOOGLE_API_KEY || ''}`, {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${process.env.GOOGLE_API_KEY || ''}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
