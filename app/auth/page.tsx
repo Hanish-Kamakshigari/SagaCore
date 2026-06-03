@@ -207,29 +207,7 @@ export default function AuthPage() {
 
       <div className="w-full max-w-[440px] mt-6 relative z-10 flex flex-col justify-center min-h-[80vh]">
         
-        {/* Mock auth mode indicator */}
-        {isMock && (
-          <motion.div 
-            initial={{ opacity: 0, y: -25, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            className="mb-8 rounded-3xl border border-amber-500/20 bg-gradient-to-r from-amber-500/5 to-orange-500/5 px-6 py-4.5 backdrop-blur-xl flex gap-4 items-start shadow-[0_0_25px_rgba(245,158,11,0.06)] relative overflow-hidden"
-          >
-            <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-amber-500/20 to-transparent" />
-            <div className="relative">
-              <span className="absolute inset-0 rounded-full bg-amber-400/40 animate-ping" />
-              <ShieldAlert className="text-amber-400 shrink-0 relative z-10" size={20} />
-            </div>
-            <div>
-              <h4 className="text-xs font-black text-amber-400 uppercase tracking-widest flex items-center gap-1.5">
-                <span>Rune-Sandbox Active</span>
-                <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse" />
-              </h4>
-              <p className="text-[11px] text-zinc-400 mt-1 leading-relaxed">
-                Running in zero-config Mock Mode. Registration is fully simulated locally, saving scoped data under your custom avatar.
-              </p>
-            </div>
-          </motion.div>
-        )}
+
 
         <div className="flex flex-col items-center mb-8 text-center">
           <motion.div 
