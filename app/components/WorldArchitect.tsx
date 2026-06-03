@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Compass, Sparkles, AlertCircle, RefreshCw, Zap } from 'lucide-react'
+import { Compass, Sparkles, AlertCircle, RefreshCw, Zap, Sword, Cog, Cpu } from 'lucide-react'
 import { World } from '../lib/data'
 
 interface WorldArchitectProps {
@@ -20,7 +20,7 @@ export default function WorldArchitect({
       id: 'fantasy',
       label: 'Aether Fantasy',
       desc: 'Glowing scrolls, mana spires, and bug serpents.',
-      icon: '⚔️',
+      icon: Sword,
       color: 'border-purple-500/30 text-purple-400 bg-purple-500/5',
       activeColor: 'border-purple-500/80 bg-purple-500/10 shadow-[0_0_20px_rgba(168,85,247,0.3)] text-purple-300',
     },
@@ -28,7 +28,7 @@ export default function WorldArchitect({
       id: 'cyberpunk',
       label: 'Neon Cyberpunk',
       desc: 'Grid hacks, memory overflows, and terminal nets.',
-      icon: '🌌',
+      icon: Cpu,
       color: 'border-cyan-500/30 text-cyan-400 bg-cyan-500/5',
       activeColor: 'border-cyan-500/80 bg-cyan-500/10 shadow-[0_0_20px_rgba(6,182,212,0.3)] text-cyan-300',
     },
@@ -36,7 +36,7 @@ export default function WorldArchitect({
       id: 'steampunk',
       label: 'Steampunk Keep',
       desc: 'Pressure gauges, steam valves, and clockwork cores.',
-      icon: '⚙️',
+      icon: Cog,
       color: 'border-orange-500/30 text-orange-400 bg-orange-500/5',
       activeColor: 'border-orange-500/80 bg-orange-500/10 shadow-[0_0_20px_rgba(249,115,22,0.3)] text-orange-300',
     },
@@ -105,6 +105,7 @@ export default function WorldArchitect({
         <div className="grid gap-3 sm:grid-cols-3">
           {themes.map((theme) => {
             const isActive = activeWorld.theme === theme.id
+            const IconComponent = theme.icon
             return (
               <button
                 key={theme.id}
@@ -113,7 +114,7 @@ export default function WorldArchitect({
                   isActive ? theme.activeColor : `${theme.color} hover:bg-zinc-900/10`
                 }`}
               >
-                <span className="text-2xl mb-1.5">{theme.icon}</span>
+                <IconComponent size={22} className="mb-2" />
                 <span className="text-xs font-bold">{theme.label}</span>
                 <span className="text-[9px] text-zinc-500 mt-1 line-clamp-2 leading-tight">
                   {theme.desc}

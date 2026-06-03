@@ -6,7 +6,7 @@ import type { Quest, LoreChapter } from '@/app/lib/data'
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    console.log('🤖 [Agent Hook Webhook] Received webhook call from Google Cloud Agent Builder:', body)
+    console.log('[Agent Hook Webhook] Received webhook call from Google Cloud Agent Builder:', body)
     
     // Resolve operation name, parameters, and URL path
     const url = new URL(request.url)
@@ -56,7 +56,7 @@ export async function POST(request: Request) {
     
     return NextResponse.json(result)
   } catch (error: any) {
-    console.error('❌ [Agent Hook Webhook Error] Webhook execution failed:', error)
+    console.error('[Agent Hook Webhook Error] Webhook execution failed:', error)
     return NextResponse.json({ error: error.message || 'Webhook execution failed' }, { status: 500 })
   }
 }

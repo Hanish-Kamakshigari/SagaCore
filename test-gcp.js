@@ -13,13 +13,13 @@ const CYAN = "\x1b[36m";
 const GRAY = "\x1b[90m";
 
 console.log(`${BOLD}${CYAN}====================================================${RESET}`);
-console.log(`${BOLD}${CYAN}      🛡️  SAGACORE GCP AUTHENTICATION CHECK  🛡️      ${RESET}`);
+console.log(`${BOLD}${CYAN}      [SYSTEM] SAGACORE GCP AUTHENTICATION CHECK     ${RESET}`);
 console.log(`${BOLD}${CYAN}====================================================${RESET}`);
 
 // 1. Read .env file
 const envPath = path.join(__dirname, '.env');
 if (!fs.existsSync(envPath)) {
-  console.log(`${RED}❌ Error: .env file not found at ${envPath}!${RESET}`);
+  console.log(`${RED}[ERROR] Error: .env file not found at ${envPath}!${RESET}`);
   process.exit(1);
 }
 
@@ -41,7 +41,7 @@ console.log(`${BOLD}[SERVICE ACCOUNT EMAIL]${RESET} ${email ? GREEN + email : RE
 console.log(`${BOLD}[PRIVATE KEY STATE]${RESET} ${privateKey ? GREEN + 'Detected (' + privateKey.substring(0, 40) + '...)' : RED + 'Not configured'}${RESET}`);
 
 if (!email || !privateKey) {
-  console.log(`\n${RED}❌ Connection Aborted: Please check your .env configuration fields!${RESET}`);
+  console.log(`\n${RED}[ERROR] Connection Aborted: Please check your .env configuration fields!${RESET}`);
   process.exit(1);
 }
 
@@ -75,7 +75,7 @@ async function verifyAuth() {
     const jwt = `${signatureInput}.${signature}`;
 
     console.log(`${GRAY}[JWT] Encrypted token signature generated successfully.${RESET}`);
-    console.log(`${CYAN}📡 Requesting Access Token exchange...${RESET}`);
+    console.log(`${CYAN}[INFO] Requesting Access Token exchange...${RESET}`);
 
     const response = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
@@ -90,14 +90,14 @@ async function verifyAuth() {
 
     const data = await response.json();
     
-    console.log(`\n${GREEN}✨ SUCCESS! Authentic token exchanged successfully. ✨${RESET}`);
+    console.log(`\n${GREEN}[SUCCESS] SUCCESS! Authentic token exchanged successfully.${RESET}`);
     console.log(`${BOLD}[TOKEN TYPE]${RESET} Bearer`);
     console.log(`${BOLD}[EXPIRES IN]${RESET} ${data.expires_in} seconds`);
     console.log(`${BOLD}[ACCESS TOKEN]${RESET} ${data.access_token.substring(0, 30)}... (Safe and Verified)`);
-    console.log(`\n${GREEN}🎉 Your Google Cloud Service Account is successfully linked and validated!${RESET}`);
+    console.log(`\n${GREEN}[SUCCESS] Your Google Cloud Service Account is successfully linked and validated!${RESET}`);
 
   } catch (error) {
-    console.log(`\n${RED}❌ Connection Failed!${RESET}`);
+    console.log(`\n${RED}[FAILED] Connection Failed!${RESET}`);
     console.log(`${YELLOW}Detail:${RESET} ${error.message}`);
     if (error.cause) {
       console.log(`${YELLOW}Cause:${RESET}`, error.cause);

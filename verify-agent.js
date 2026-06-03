@@ -13,13 +13,13 @@ const CYAN = "\x1b[36m";
 const GRAY = "\x1b[90m";
 
 console.log(`${BOLD}${CYAN}====================================================${RESET}`);
-console.log(`${BOLD}${CYAN}     🤖 SAGACORE AGENT BUILDER END-TO-END CHECK     ${RESET}`);
+console.log(`${BOLD}${CYAN}     [SYSTEM] SAGACORE AGENT BUILDER CHECK          ${RESET}`);
 console.log(`${BOLD}${CYAN}====================================================${RESET}`);
 
 // 1. Read .env file
 const envPath = path.join(__dirname, '.env');
 if (!fs.existsSync(envPath)) {
-  console.log(`${RED}❌ Error: .env file not found at ${envPath}!${RESET}`);
+  console.log(`${RED}[ERROR] Error: .env file not found at ${envPath}!${RESET}`);
   process.exit(1);
 }
 
@@ -40,7 +40,7 @@ const gcpLocation = getEnvVar('GCP_LOCATION') || 'global';
 privateKey = privateKey.replace(/\\n/g, '\n');
 
 if (!email || !privateKey || !gcpProject || !gcpAgent) {
-  console.log(`\n${RED}❌ Connection Aborted: Please check your .env configuration fields!${RESET}`);
+  console.log(`\n${RED}[ERROR] Connection Aborted: Please check your .env configuration fields!${RESET}`);
   console.log(`Ensure GCP_PROJECT_ID, GCP_AGENT_ID, GCP_CLIENT_EMAIL, and GCP_PRIVATE_KEY are defined.`);
   process.exit(1);
 }
@@ -84,13 +84,13 @@ async function verifyAgent() {
   try {
     console.log(`${GRAY}[SYSTEM] Generating secure JWT token...${RESET}`);
     const token = await getGCPAuthToken();
-    console.log(`${GREEN}✔ JWT authentication successful!${RESET}`);
+    console.log(`${GREEN}[SUCCESS] JWT authentication successful!${RESET}`);
 
     const sessionId = 'sagacore-verify-session-' + Date.now();
     const url = `https://${gcpLocation}-dialogflow.googleapis.com/v3/projects/${gcpProject}/locations/${gcpLocation}/agents/${gcpAgent}/sessions/${sessionId}:detectIntent`;
 
     const testQuery = 'Forge a quest campaign for: study Python loops';
-    console.log(`\n${CYAN}📡 Sending verification query to Agent Builder...${RESET}`);
+    console.log(`\n${CYAN}[INFO] Sending verification query to Agent Builder...${RESET}`);
     console.log(`${BOLD}[QUERY]${RESET} "${testQuery}"`);
 
     const response = await fetch(url, {
@@ -131,23 +131,23 @@ async function verifyAgent() {
     try {
       const clean = agentText.replace(/```json|```/g, '').trim();
       const parsed = JSON.parse(clean);
-      console.log(`\n${GREEN}✨ SUCCESS: Response is valid, parseable JSON! ✨${RESET}`);
+      console.log(`\n${GREEN}[SUCCESS] Response is valid, parseable JSON!${RESET}`);
       if (parsed.quests) {
-        console.log(`${GREEN}✔ Format matched Campaign Schema (contains ${parsed.quests.length} quests).${RESET}`);
+        console.log(`${GREEN}[SUCCESS] Format matched Campaign Schema (contains ${parsed.quests.length} quests).${RESET}`);
       } else if (parsed.title && parsed.text) {
-        console.log(`${GREEN}✔ Format matched Lore Chapter Schema (contains title & text).${RESET}`);
+        console.log(`${GREEN}[SUCCESS] Format matched Lore Chapter Schema (contains title & text).${RESET}`);
       } else {
-        console.log(`${YELLOW}⚠ JSON structure is valid but did not match expected SAGACORE schemas.${RESET}`);
+        console.log(`${YELLOW}[WARNING] JSON structure is valid but did not match expected SAGACORE schemas.${RESET}`);
       }
-      console.log(`\n${GREEN}🎉 Verification completed successfully! Your Google Cloud Agent Builder is ready to run. ${RESET}`);
+      console.log(`\n${GREEN}[SUCCESS] Verification completed successfully! Your Google Cloud Agent Builder is ready to run. ${RESET}`);
     } catch {
-      console.log(`\n${RED}❌ Warning: Response is NOT valid JSON!${RESET}`);
+      console.log(`\n${RED}[WARNING] Response is NOT valid JSON!${RESET}`);
       console.log(`${YELLOW}Reason:${RESET} SAGACORE will trigger the fallback to local Gemini because the output was conversational.`);
       console.log(`\n${YELLOW}💡 Recommendation:${RESET} Make sure you saved your examples in the Playbook console.`);
     }
 
   } catch (error) {
-    console.log(`\n${RED}❌ Verification failed!${RESET}`);
+    console.log(`\n${RED}[FAILED] Verification failed!${RESET}`);
     console.log(`${YELLOW}Detail:${RESET} ${error.message}`);
   }
 }

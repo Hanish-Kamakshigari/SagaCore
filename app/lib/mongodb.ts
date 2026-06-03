@@ -12,17 +12,17 @@ export async function connectDB() {
 
   try {
     if (mongoose.connection.readyState >= 1) {
-      console.log('✅ Mongo already connected')
+      console.log('[DB] Mongo already connected')
       return
     }
 
-    console.log('⏳ Connecting to MongoDB...')
+    console.log('[DB] Connecting to MongoDB...')
 
     await mongoose.connect(uri)
 
-    console.log('✅ MongoDB Connected Successfully!')
+    console.log('[DB] MongoDB Connected Successfully!')
   } catch (error) {
-    console.error('❌ MongoDB Connection Error:', error)
+    console.error('[DB Error] MongoDB Connection Error:', error)
     throw error
   }
 }

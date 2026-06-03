@@ -24,13 +24,13 @@ if (isFirebaseConfigured) {
   try {
     app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig)
     auth = getAuth(app)
-    console.log('🔥 Firebase Initialized Successfully!')
+    console.log('[Firebase] Initialized Successfully!')
   } catch (error) {
-    console.error('🔥 Firebase initialization error, falling back to mock mode:', error)
+    console.error('[Firebase] Initialization error, falling back to mock mode:', error)
   }
 } else {
   console.warn(
-    '⚠️ Firebase environment variables are missing! SAGACORE is running in Mock Auth Mode.\n' +
+    '[Firebase Warning] Firebase environment variables are missing! SAGACORE is running in Mock Auth Mode.\n' +
     'Please configure your NEXT_PUBLIC_FIREBASE_* keys in your .env file to use real authentication.'
   )
 }

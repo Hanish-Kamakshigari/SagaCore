@@ -10,7 +10,7 @@ export async function GET() {
     const players = await PlayerStateModel.find({}).lean()
 
     return NextResponse.json({
-      status: '✅ connected',
+      status: 'connected',
       counts: {
         quests: quests.length,
         chapters: chapters.length,
@@ -22,7 +22,7 @@ export async function GET() {
     })
   } catch (error: any) {
     return NextResponse.json(
-      { status: '❌ error', message: error.message },
+      { status: 'error', message: error.message },
       { status: 500 }
     )
   }

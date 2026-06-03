@@ -4,7 +4,7 @@ export async function getRealmState(userId: string) {
   await connectDB()
   let state = await PlayerStateModel.findOne({ id: userId })
   if (!state) {
-    console.log(`⏳ Auto-initializing default Level 1 player state for new user: ${userId}`)
+    console.log(`[INFO] Auto-initializing default Level 1 player state for new user: ${userId}`)
     state = await PlayerStateModel.create({
       id: userId,
       xp: 0,

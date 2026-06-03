@@ -148,7 +148,7 @@ async function callGemini(payload: any): Promise<string> {
   // If Agent Builder is fully configured in .env, route to Agent Builder provider!
   if (process.env.GCP_PROJECT_ID && process.env.GCP_AGENT_ID) {
     try {
-      console.log('🤖 [Agent Provider] Delegating query to Google Cloud Agent Builder...')
+      console.log('[Agent Provider] Delegating query to Google Cloud Agent Builder...')
       const result = await callAgentBuilder(payload)
       
       // Since SAGACORE's core engines expect structured JSON payloads to save into MongoDB,
@@ -160,7 +160,7 @@ async function callGemini(payload: any): Promise<string> {
         throw new Error(`Agent Builder returned natural language dialog instead of structured JSON. Response: "${result.substring(0, 150)}${result.length > 150 ? '...' : ''}"`)
       }
     } catch (err: any) {
-      console.warn('⚠️ [Agent Provider Warning] GCP Agent Builder failed or returned non-JSON, cascading to local Gemini fallback:', err.message || err)
+      console.warn('[Agent Provider Warning] GCP Agent Builder failed or returned non-JSON, cascading to local Gemini fallback:', err.message || err)
     }
   }
 
@@ -345,7 +345,7 @@ async function callGemini(payload: any): Promise<string> {
 
     if (part?.functionCall) {
       const { name, args } = part.functionCall
-      console.log(`🤖 [Agentic Tool Use] Gemini Model autonomously invoked database tool: ${name}`, args)
+      console.log(`[Agentic Tool Use] Gemini Model autonomously invoked database tool: ${name}`, args)
 
       let resultObj: any = null
       let isWriteTool = false
@@ -389,7 +389,7 @@ async function callGemini(payload: any): Promise<string> {
           isWriteTool = true
         }
       } catch (err: any) {
-        console.error(`❌ [Agentic Tool Use Error] Failed to execute tool ${name}:`, err)
+        console.error(`[Agentic Tool Use Error] Failed to execute tool ${name}:`, err)
         resultObj = { error: err.message || "Execution failed" }
       }
 

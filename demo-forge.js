@@ -13,7 +13,7 @@ const GREEN = "\x1b[32m";
 const GRAY = "\x1b[90m";
 
 console.log(`${BOLD}${PURPLE}====================================================${RESET}`);
-console.log(`${BOLD}${CYAN}         ✨ SAGACORE DREAM FORGE ENGINE ✨          ${RESET}`);
+console.log(`${BOLD}${CYAN}         [SYSTEM] SAGACORE DREAM FORGE ENGINE       ${RESET}`);
 console.log(`${BOLD}${PURPLE}====================================================${RESET}`);
 
 // 1. Parse .env file manually
@@ -28,7 +28,7 @@ if (fs.existsSync(envPath)) {
 }
 
 if (!GOOGLE_API_KEY) {
-  console.log(`${RED}❌ Error: GOOGLE_API_KEY not found in .env file!${RESET}`);
+  console.log(`${RED}[ERROR] Error: GOOGLE_API_KEY not found in .env file!${RESET}`);
   process.exit(1);
 }
 
@@ -42,7 +42,7 @@ console.log(`${BOLD}[AMBITION] "${ambition}"${RESET}`);
 console.log("");
 
 async function forgeDemo() {
-  console.log(`${CYAN}🌀 [1/3] Directing focus to the Aether grid...${RESET}`);
+  console.log(`${CYAN}[INFO] [1/3] Directing focus to the Aether grid...${RESET}`);
   
   const themeContext = "a high-fantasy realm of mana, spires, and ancient scrolls";
   const systemPrompt = `You are the Campaign Architect of SAGACORE set in ${themeContext}.
@@ -90,7 +90,7 @@ Respond ONLY with a valid JSON object of this exact shape — no prose, no markd
   ]
 }`;
 
-  console.log(`${CYAN}⚡ [2/3] Summoning Gemini API at hyper-speed...${RESET}`);
+  console.log(`${CYAN}[INFO] [2/3] Summoning Gemini API at hyper-speed...${RESET}`);
   const startTime = Date.now();
 
   try {
@@ -120,13 +120,13 @@ Respond ONLY with a valid JSON object of this exact shape — no prose, no markd
     const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
     const duration = ((Date.now() - startTime) / 1000).toFixed(2);
     
-    console.log(`${GREEN}✅ [3/3] Questline successfully forged in ${duration}s!${RESET}`);
+    console.log(`${GREEN}[SUCCESS] [3/3] Questline successfully forged in ${duration}s!${RESET}`);
     console.log("");
 
     const campaign = JSON.parse(rawText.replace(/```json|```/g, '').trim());
 
     campaign.quests.forEach((q, idx) => {
-      const catEmoji = q.category === 'wisdom' ? '📖' : q.category === 'creation' ? '🔮' : '⚔️';
+      const catMarker = q.category === 'wisdom' ? '[WISDOM]' : q.category === 'creation' ? '[CREATION]' : '[DISCIPLINE]';
       const diffColor = q.difficulty === 'Legendary' ? YELLOW : q.difficulty === 'Epic' ? PURPLE : CYAN;
       
       console.log(`${BOLD}${diffColor}[QUEST ${idx + 1}: ${q.difficulty.toUpperCase()}] ${q.title}${RESET}`);
@@ -141,7 +141,7 @@ Respond ONLY with a valid JSON object of this exact shape — no prose, no markd
     });
 
   } catch (error) {
-    console.log(`${RED}❌ Error during forge: ${error.message}${RESET}`);
+    console.log(`${RED}[ERROR] Error during forge: ${error.message}${RESET}`);
   }
 }
 

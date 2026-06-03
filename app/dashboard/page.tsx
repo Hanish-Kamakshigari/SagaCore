@@ -277,13 +277,13 @@ export default function Dashboard() {
   const handleChangeWorld = (theme: 'fantasy' | 'cyberpunk' | 'steampunk') => {
     const nextWorld = worldTemplates[theme]
     setActiveWorld(nextWorld)
-    setLore((prev) => [`🔮 REALM SHIFT: Now entering: "${nextWorld.name}"`, ...prev])
+    setLore((prev) => [`[SHIFT] REALM SHIFT: Now entering: "${nextWorld.name}"`, ...prev])
   }
 
   // ── Custom world forge — now calls Gemini instead of keyword-matching ──────
   const handleForgeCustomWorld = async (prompt: string) => {
     // Optimistic UI update with prompt as placeholder name
-    setLore((prev) => [`🌀 World Architect is shaping: "${prompt}"…`, ...prev])
+    setLore((prev) => [`[FORGING] World Architect is shaping: "${prompt}"…`, ...prev])
 
     try {
       const result = await forgeCustomWorldWithAI(prompt)
@@ -295,7 +295,7 @@ export default function Dashboard() {
       }
       setActiveWorld(customWorld)
       setLore((prev) => [
-        `🌀 WORLD FORGE: Reality grids aligned for "${result.name}" — ${result.lore}`,
+        `[FORGED] WORLD FORGE: Reality grids aligned for "${result.name}" — ${result.lore}`,
         ...prev.slice(1), // remove the placeholder
       ])
     } catch (err) {
@@ -318,7 +318,7 @@ export default function Dashboard() {
 
       setActiveWorld(fallbackWorld)
       setLore((prev) => [
-        `🌀 WORLD FORGE: Reality grids aligned for custom world: "${fallbackWorld.name}"!`,
+        `[FORGED] WORLD FORGE: Reality grids aligned for custom world: "${fallbackWorld.name}"!`,
         ...prev.slice(1), // remove the placeholder
       ])
     }
@@ -341,7 +341,7 @@ export default function Dashboard() {
       setNewGoal('')
 
       setLore((prev) => [
-        `☄️ Dream Forge aligned reality for a 3-part campaign: "${newGoal}"!`,
+        `[FORGED] Dream Forge aligned reality for a 3-part campaign: "${newGoal}"!`,
         `Quest 1 (Wisdom): "${generatedCampaign[0].title}"`,
         `Quest 2 (Creation): "${generatedCampaign[1].title}"`,
         `Quest 3 (Discipline): "${generatedCampaign[2].title}"`,
@@ -369,7 +369,7 @@ export default function Dashboard() {
       setNewGoal('')
 
       setLore((prev) => [
-        `☄️ Dream Forge conjured: "${initializedFallback.title}" (${initializedFallback.difficulty} · +${initializedFallback.xp} XP)`,
+        `[FORGED] Dream Forge conjured: "${initializedFallback.title}" (${initializedFallback.difficulty} · +${initializedFallback.xp} XP)`,
         ...prev,
       ])
     } finally {
@@ -405,7 +405,7 @@ export default function Dashboard() {
       setJustLeveledTo(nextLevel)
       setShowLevelUp(true)
       setTimeout(() => setShowLevelUp(false), 5000)
-      setLore((prev) => [`✨ CELESTIAL ASCENSION: You have reached Level ${nextLevel}!`, ...prev])
+      setLore((prev) => [`[LEVEL UP] CELESTIAL ASCENSION: You have reached Level ${nextLevel}!`, ...prev])
     }
 
     // Mark quest complete immediately and unblock UI for 0ms optimistic response
@@ -434,12 +434,12 @@ export default function Dashboard() {
         setChapters((prev) => [...prev, chapter])
         setNarratedEvents((prev) => ({ ...prev, [id]: chapter.text }))
 
-        const categoryEmoji =
-          questToComplete.category === 'wisdom' ? '📖' :
-          questToComplete.category === 'creation' ? '🔮' : '⚔️'
+        const categoryTag =
+          questToComplete.category === 'wisdom' ? '[WISDOM]' :
+          questToComplete.category === 'creation' ? '[CREATION]' : '[DISCIPLINE]'
 
         setLore((prev) => [
-          `${categoryEmoji} Triumph! "${questToComplete.title}" (+${questXp} XP)`,
+          `${categoryTag} Triumph! "${questToComplete.title}" (+${questXp} XP)`,
           `Scribed Chapter ${newChapterId}: "${chapter.title}"`,
           ...prev,
         ])
@@ -463,7 +463,7 @@ export default function Dashboard() {
         )
         setChapters((prev) => [...prev, fallbackChapter])
         setLore((prev) => [
-          `⚔️ Quest complete: "${questToComplete.title}" (+${questXp} XP)`,
+          `[COMPLETE] Quest complete: "${questToComplete.title}" (+${questXp} XP)`,
           ...prev,
         ])
       } finally {
@@ -547,7 +547,7 @@ export default function Dashboard() {
 
       setQuests((prev) => prev.map((q) => (q.id === id ? updatedQuest : q)))
       setLore((prev) => [
-        `🔮 ROADMAP GENERATED: AI has unlocked the sacred roadmap for "${quest.title}"!`,
+        `[ROADMAP] ROADMAP GENERATED: AI has unlocked the sacred roadmap for "${quest.title}"!`,
         ...prev,
       ])
 
@@ -593,7 +593,7 @@ export default function Dashboard() {
 
       setQuests((prev) => prev.map((q) => (q.id === id ? updatedQuest : q)))
       setLore((prev) => [
-        `🔮 ROADMAP UNLOCKED: Unlocked a legendary manual roadmap for "${quest.title}"!`,
+        `[ROADMAP] ROADMAP UNLOCKED: Unlocked a legendary manual roadmap for "${quest.title}"!`,
         ...prev,
       ])
     } finally {
