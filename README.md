@@ -1,7 +1,7 @@
 # SAGACORE
 ### *Forge your ambitions. Shape your realm. Become the legend.*
 
-> An autonomous AI agent that transforms real-world goals into living, evolving quest campaigns — powered by Gemini and persisted through MongoDB.
+> An autonomous AI agent that transforms real-world goals into living, evolving quest campaigns — powered primarily by Google Cloud Agent Builder with local Gemini fallback, and persisted through MongoDB.
 
 ---
 
@@ -49,10 +49,10 @@ User submits ambition
 ### Partner MCP Integration
 SAGACORE integrates **MongoDB Atlas** as its partner MCP tool layer. The Gemini agent uses MongoDB as its persistent memory — reading world state before planning, and writing structured quest data autonomously. All player progress, quest campaigns, and lore chapters are persisted per-user in MongoDB with full multi-user isolation via Firebase UID scoping.
 
-### Powered by Gemini
-All AI reasoning runs on **Gemini 2.5 Flash** with automatic fallback to **Gemini 2.5 Pro** on quota pressure. Three distinct AI engines:
+### Powered by Google Cloud Agent Builder
+All agent orchestration and multi-step reasoning runs primarily on **Google Cloud Agent Builder** (Playbook-based Conversational Agent) using secure Service Account JWT credentials, integrating your live application endpoints as custom tools. SAGACORE automatically cascades to a local **Google Gemini 2.5 Flash** fallback if Agent Builder is offline or unconfigured. Three distinct AI engines:
 
-- **DreamForge Engine** — transforms ambitions into quest campaigns via Function Calling
+- **DreamForge Engine** — transforms ambitions into quest campaigns via Agent Builder playbooks or Gemini Function Calling
 - **MythOS Narrative Engine** — generates lore chronicles on quest completion
 - **World Architect** — creates custom realm descriptions from user prompts
 
@@ -88,8 +88,9 @@ Choose or forge unique realms.
 - Realm Stability System tied to quest category performance
 - Celestial Ascension modal on level-up
 
-### Memory Engine
-- MongoDB-backed persistence with Mongoose ORM
+### Onboarding & Memory Engine
+- **Try Demo (Guest Onboarding)** — Bypass standard Firebase credentials and instantly launch a sandboxed guest session seeded with pre-filled quests, caching progress directly to `localStorage`
+- MongoDB-backed persistence with Mongoose ORM for signed-in players
 - Quest history and roadmap task tracking
 - Lore archive storage in Evolving Codex
 - Player state management (XP, level, world theme)
@@ -110,9 +111,9 @@ Choose or forge unique realms.
 │              ai.ts — Agentic Engine Layer            │
 │                                                      │
 │  callGemini() — ReAct loop (max 5 iterations)        │
-│    ├── Gemini 2.5 Flash (primary)                    │
-│    ├── Gemini 2.5 Pro  (fallback on 429/503)         │
-│    └── Function Calling: AUTO mode                   │
+│    ├── Google Cloud Agent Builder (primary engine)   │
+│    ├── Gemini 2.5 Flash (local fallback engine)      │
+│    └── Custom Webhook / Function Calling: AUTO mode  │
 │                                                      │
 │  forgeQuestlineWithAI()  → 3-quest campaign          │
 │  generateAdaptiveChapter() → lore narration          │
@@ -149,8 +150,10 @@ Choose or forge unique realms.
 - Mongoose ORM, MongoDB Atlas
 
 ### AI
-- Google Gemini 2.5 Flash (primary) / Gemini 2.5 Pro (fallback)
-- Gemini Function Calling API — agent orchestration
+- Google Cloud Agent Builder (primary) — Playbook-based conversational agent
+- Google Gemini 2.5 Flash / Pro (local fallback)
+- Vertex AI & Dialogflow CX API Integration
+- Custom OpenAPI tool declarations for Mongoose DB synchronization
 - AUTO tool-calling mode with ReAct loop (max 5 iterations)
 - Exponential backoff retry (1s → 2s → 4s)
 
