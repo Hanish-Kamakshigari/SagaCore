@@ -839,7 +839,7 @@ export default function Dashboard() {
                   ) : (
                     <Send size={14} />
                   )}
-                  <span className="hidden sm:inline">{isForging ? 'Forging…' : 'Forge'}</span>
+                  <span className="hidden sm:inline">{isForging ? 'Starting…' : 'Start Adventure'}</span>
                 </button>
               </form>
 
