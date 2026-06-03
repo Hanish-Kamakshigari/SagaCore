@@ -6,6 +6,8 @@ import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
 import { Sparkles, ArrowLeft, Mail, Lock, Loader2, KeyRound, AlertCircle, ShieldAlert, Sparkle, Compass } from 'lucide-react'
+import { sendPasswordResetEmail } from 'firebase/auth'
+import { auth, isFirebaseConfigured } from '../lib/firebase'
 
 export default function AuthPage() {
   const router = useRouter()
@@ -17,6 +19,40 @@ export default function AuthPage() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [localError, setLocalError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [resetSent, setResetSent] = useState(false)
+
+  const handleForgotPassword = async () => {
+    setLocalError(null)
+    clearError()
+    setResetSent(false)
+
+    if (!email.trim()) {
+      setLocalError('Please enter your email coordinates first to trigger a password reset.')
+      return
+    }
+
+    setIsSubmitting(true)
+    try {
+      if (isFirebaseConfigured && auth) {
+        await sendPasswordResetEmail(auth, email)
+      } else {
+        // Mock Mode password reset simulation
+        await new Promise((resolve) => setTimeout(resolve, 800))
+        console.log(`[Mock Reset] Password reset link sent to: ${email}`)
+      }
+      setResetSent(true)
+    } catch (err: any) {
+      let msg = 'Failed to send password reset email.'
+      if (err.code === 'auth/user-not-found') {
+        msg = 'No registered soul found with this email.'
+      } else if (err.code === 'auth/invalid-email') {
+        msg = 'Invalid email coordinates format.'
+      }
+      setLocalError(msg)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
 
   // Redirect if already logged in
   useEffect(() => {
@@ -260,6 +296,21 @@ export default function AuthPage() {
               )}
             </AnimatePresence>
 
+            {/* Password reset confirmation */}
+            <AnimatePresence mode="wait">
+              {resetSent && (
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                  className="rounded-2xl border border-green-500/20 bg-green-500/5 px-4.5 py-3.5 flex gap-3 items-center text-green-450 text-xs shadow-[0_0_15px_rgba(34,197,94,0.05)] animate-pulse"
+                >
+                  <Sparkle size={16} className="shrink-0 text-green-450" />
+                  <span className="leading-relaxed">A celestial reset link has been dispatched to your email coordinates! Check your inbox.</span>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             {/* Email input */}
             <div className="space-y-2">
               <label className="text-[10px] font-black text-zinc-300 uppercase tracking-widest block pl-1">Email Coordinates</label>
@@ -298,6 +349,18 @@ export default function AuthPage() {
                   required
                 />
               </div>
+              {isLoginMode && (
+                <div className="flex justify-end pt-1">
+                  <button
+                    type="button"
+                    onClick={handleForgotPassword}
+                    disabled={isSubmitting}
+                    className="text-[10.5px] font-bold text-zinc-500 hover:text-purple-450 transition-colors duration-300 uppercase tracking-wider hover:cursor-pointer"
+                  >
+                    Forgot Password?
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Confirm Password input (only registration mode) */}
