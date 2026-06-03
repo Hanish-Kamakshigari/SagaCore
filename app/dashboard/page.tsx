@@ -609,12 +609,19 @@ export default function Dashboard() {
     const updatedQuests = quests.map((quest) => {
       if (quest.id !== questId) return quest
 
-      const updatedCompletedTasks = [
-        ...(quest.completedTasks || [])
-      ]
+      const tasksCount = quest.tasks ? quest.tasks.length : 0
+      let baseArray = quest.completedTasks || []
+      
+      // Ensure array length matches task length exactly
+      if (baseArray.length !== tasksCount) {
+        baseArray = baseArray.slice(0, tasksCount)
+        while (baseArray.length < tasksCount) {
+          baseArray.push(false)
+        }
+      }
 
-      updatedCompletedTasks[taskIndex] =
-        !updatedCompletedTasks[taskIndex]
+      const updatedCompletedTasks = [...baseArray]
+      updatedCompletedTasks[taskIndex] = !updatedCompletedTasks[taskIndex]
 
       return {
         ...quest,

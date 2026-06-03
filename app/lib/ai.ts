@@ -108,6 +108,40 @@ async function callAgentBuilder(payload: any): Promise<string> {
   return finalResponse || JSON.stringify(data)
 }
 
+function extractJSONString(str: string): string {
+  const firstBrace = str.indexOf('{')
+  const lastBrace = str.lastIndexOf('}')
+  const firstBracket = str.indexOf('[')
+  const lastBracket = str.lastIndexOf(']')
+
+  let start = -1
+  let end = -1
+
+  if (firstBrace !== -1 && (firstBracket === -1 || firstBrace < firstBracket)) {
+    start = firstBrace
+    end = lastBrace
+  } else if (firstBracket !== -1) {
+    start = firstBracket
+    end = lastBracket
+  }
+
+  if (start !== -1 && end !== -1 && end > start) {
+    return str.substring(start, end + 1)
+  }
+
+  return str.replace(/```json|```/g, '').trim()
+}
+
+function isValidJSON(str: string): boolean {
+  try {
+    const clean = extractJSONString(str)
+    JSON.parse(clean)
+    return true
+  } catch {
+    return false
+  }
+}
+
 // ─── Shared fetch helper ──────────────────────────────────────────────────────
 
 async function callGemini(payload: any): Promise<string> {
@@ -115,9 +149,18 @@ async function callGemini(payload: any): Promise<string> {
   if (process.env.GCP_PROJECT_ID && process.env.GCP_AGENT_ID) {
     try {
       console.log('🤖 [Agent Provider] Delegating query to Google Cloud Agent Builder...')
-      return await callAgentBuilder(payload)
+      const result = await callAgentBuilder(payload)
+      
+      // Since SAGACORE's core engines expect structured JSON payloads to save into MongoDB,
+      // verify if the response is valid JSON. If the Agent Builder returned conversational prose,
+      // trigger the fallback to direct Gemini API generation for app stability.
+      if (isValidJSON(result)) {
+        return result
+      } else {
+        throw new Error('Agent Builder returned natural language dialog instead of structured JSON.')
+      }
     } catch (err: any) {
-      console.warn('⚠️ [Agent Provider Warning] GCP Agent Builder failed, cascading to local Gemini fallback:', err.message || err)
+      console.warn('⚠️ [Agent Provider Warning] GCP Agent Builder failed or returned non-JSON, cascading to local Gemini fallback:', err.message || err)
     }
   }
 
@@ -386,7 +429,7 @@ async function callGemini(payload: any): Promise<string> {
 // ─── Shared JSON parser ───────────────────────────────────────────────────────
 
 function parseJSON<T>(raw: string): T {
-  const clean = raw.replace(/```json|```/g, '').trim()
+  const clean = extractJSONString(raw)
   return JSON.parse(clean) as T
 }
 

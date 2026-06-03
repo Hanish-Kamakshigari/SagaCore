@@ -209,8 +209,8 @@ export default function QuestCard({
   // ── Active quest card state ───────────────────────────────────────────────
   const hasTasks = quest.tasks && quest.tasks.length > 0
   const hasMythEvent = quest.mythEvent || narratedMythEvent
-  const completedCount = quest.completedTasks ? quest.completedTasks.filter(Boolean).length : 0
   const totalCount = quest.tasks ? quest.tasks.length : 0
+  const completedCount = quest.completedTasks ? quest.completedTasks.slice(0, totalCount).filter(Boolean).length : 0
   const allTasksCompleted = hasTasks && (completedCount === totalCount)
   const isCompleteDisabled = isNarrating || !hasTasks || !allTasksCompleted
 
