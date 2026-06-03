@@ -121,6 +121,7 @@ export default function Dashboard() {
     const loadUserData = async () => {
       try {
         const uid = user.uid
+        const isGuest = uid.startsWith('guest_')
 
         // 1. Instantly Hydrate from Namespaced Cache
         const localActiveWorld = localStorage.getItem(`sagacore_${uid}_activeWorld`)
@@ -140,6 +141,15 @@ export default function Dashboard() {
         if (localChapters) _setChapters(JSON.parse(localChapters))
         if (localLore) _setLore(JSON.parse(localLore))
         if (localAudio) _setAudioActive(JSON.parse(localAudio))
+
+        // If it's a guest session, save initial/pre-filled quests to local storage if not already there
+        if (isGuest) {
+          if (!localQuests) {
+            localStorage.setItem(`sagacore_${uid}_quests`, JSON.stringify(initialQuests))
+          }
+          setIsDataLoaded(true)
+          return
+        }
 
         // 2. Fetch fresh database state in background to sync
         const [dbQuests, dbChapters, dbPlayer] = await Promise.all([
@@ -348,8 +358,8 @@ export default function Dashboard() {
         ...prev,
       ])
 
-            // Persist all 3 quests to MongoDB via Memory Engine
-      if (user) {
+            // Persist all 3 quests to MongoDB via Memory Engine (Skip for Guest Mode)
+      if (user && !user.uid.startsWith('guest_')) {
         await Promise.allSettled(generatedCampaign.map((q) => saveQuestToMongo(q, user.uid))).catch(() => {
           console.warn('MongoDB campaign save failed')
         })
@@ -444,8 +454,8 @@ export default function Dashboard() {
           ...prev,
         ])
 
-        // ── Memory Engine: persist chapter and player state ────────────────────
-        if (targetUid) {
+        // ── Memory Engine: persist chapter and player state ──────────────────── (Skip for Guest Mode)
+        if (targetUid && !targetUid.startsWith('guest_')) {
           await Promise.allSettled([
             saveChapterToMongo(chapter, targetUid),
             savePlayerStateToMongo(targetUid, remainingXp, nextLevel, targetTheme),
@@ -509,7 +519,7 @@ export default function Dashboard() {
           ...prev,
         ])
 
-        if (targetUid) {
+        if (targetUid && !targetUid.startsWith('guest_')) {
           await Promise.allSettled([
             saveChapterToMongo(chapter, targetUid),
             saveQuestToMongo({ ...quest, isCompleted: true }, targetUid),
@@ -551,8 +561,8 @@ export default function Dashboard() {
         ...prev,
       ])
 
-            // Persist to MongoDB via Memory Engine
-      if (user) {
+            // Persist to MongoDB via Memory Engine (Skip for Guest Mode)
+      if (user && !user.uid.startsWith('guest_')) {
         await saveQuestToMongo(updatedQuest, user.uid).catch(() => {
           console.warn('MongoDB quest roadmap save failed')
         })
@@ -635,7 +645,7 @@ export default function Dashboard() {
       (q) => q.id === questId
     )
 
-    if (updatedQuest && user) {
+    if (updatedQuest && user && !user.uid.startsWith('guest_')) {
       try {
         await saveQuestToMongo(updatedQuest, user.uid)
       } catch (err) {

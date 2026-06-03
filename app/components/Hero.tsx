@@ -2,11 +2,23 @@
 
 import { motion } from 'framer-motion'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useAuth } from '../context/AuthContext'
-import { LogOut, LayoutDashboard, KeyRound, Sparkles, Sparkle } from 'lucide-react'
+import { LogOut, LayoutDashboard, KeyRound, Sparkles, Sparkle, Compass } from 'lucide-react'
 
 export default function Hero() {
-  const { user, logout } = useAuth()
+  const { user, logout, loginAsGuest } = useAuth()
+  const router = useRouter()
+
+  const handleTryDemo = async () => {
+    try {
+      await loginAsGuest()
+      router.push('/dashboard')
+    } catch (err) {
+      console.error('Failed to launch guest session from landing page:', err)
+    }
+  }
+
   return (
     <section id="home" className="relative min-h-screen overflow-hidden text-white bg-black">      
       {/* ─── Premium Custom CSS Keyframe Animations for Aether Particle Drift ─── */}
@@ -47,8 +59,7 @@ export default function Hero() {
         }}
       />
 
-      {/* Star Particles Overlay */}
-      <div className="absolute inset-0 bg-[radial-gradient(1.5px_1.5px_at_10%_20%,#fff_100%,transparent),radial-gradient(2px_2px_at_30%_50%,#fff_100%,transparent),radial-gradient(1.5px_1.5px_at_50%_40%,#fff_100%,transparent),radial-gradient(2.5px_2.5px_at_70%_80%,#fff_100%,transparent),radial-gradient(1.5px_1.5px_at_80%_15%,#fff_100%,transparent),radial-gradient(2px_2px_at_90%_60%,#fff_100%,transparent)] bg-[size:250px_250px] opacity-20 pointer-events-none" />
+      {/* Star Particles Overlay removed for visual simplicity */}
 
       {/* Multi-layer premium overlay - darker at the top to pop the navbar, open in the middle for background visibility, dark at the bottom to transition */}
       <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/20 to-black/90 pointer-events-none" />
@@ -101,12 +112,21 @@ export default function Hero() {
                 </button>
               </>
             ) : (
-              <Link href="/auth">
-                <button className="rounded-full border border-white/15 bg-white/5 px-6 py-2.5 text-xs font-semibold text-white backdrop-blur-md transition-all duration-300 hover:border-purple-500/30 hover:bg-white/12 hover:scale-[1.03] active:scale-[0.98] flex items-center gap-1.5 hover:cursor-pointer">
-                  <KeyRound size={12} />
-                  <span>Sign In</span>
+              <>
+                <button
+                  onClick={handleTryDemo}
+                  className="rounded-full border border-purple-500/30 bg-purple-500/5 px-5 py-2.5 text-xs font-semibold text-purple-300 backdrop-blur-md transition-all duration-300 hover:border-pink-500/40 hover:bg-purple-500/10 hover:text-pink-300 hover:scale-[1.03] active:scale-[0.98] flex items-center gap-1.5 hover:cursor-pointer"
+                >
+                  <Compass size={12} className="text-purple-400" />
+                  <span>Try Demo</span>
                 </button>
-              </Link>
+                <Link href="/auth">
+                  <button className="rounded-full border border-white/15 bg-white/5 px-5 py-2.5 text-xs font-semibold text-white backdrop-blur-md transition-all duration-300 hover:border-purple-500/30 hover:bg-white/12 hover:scale-[1.03] active:scale-[0.98] flex items-center gap-1.5 hover:cursor-pointer">
+                    <KeyRound size={12} />
+                    <span>Sign In</span>
+                  </button>
+                </Link>
+              </>
             )}
           </div>
         </nav>

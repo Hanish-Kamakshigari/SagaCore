@@ -11,7 +11,7 @@ import { auth, isFirebaseConfigured } from '../lib/firebase'
 
 export default function AuthPage() {
   const router = useRouter()
-  const { user, login, register, loading, isMock, error, clearError } = useAuth()
+  const { user, login, register, loading, isMock, error, clearError, loginAsGuest } = useAuth()
 
   const [isLoginMode, setIsLoginMode] = useState(true)
   const [email, setEmail] = useState('')
@@ -90,6 +90,20 @@ export default function AuthPage() {
       }
     } catch (err: any) {
       console.error('Auth submission error:', err)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleTryDemo = async () => {
+    setLocalError(null)
+    clearError()
+    setIsSubmitting(true)
+    try {
+      await loginAsGuest()
+      router.push('/dashboard')
+    } catch (err: any) {
+      setLocalError(err.message || 'Failed to initialize guest session.')
     } finally {
       setIsSubmitting(false)
     }
@@ -409,6 +423,25 @@ export default function AuthPage() {
                   : (isLoginMode ? 'Enter Console' : 'Forge My Account')}
               </span>
               <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition duration-300" />
+            </button>
+
+            {/* Divider */}
+            <div className="flex items-center gap-3 my-2 select-none">
+              <span className="h-[1px] flex-1 bg-white/5" />
+              <span className="text-[9px] font-bold text-zinc-650 uppercase tracking-widest font-mono">OR</span>
+              <span className="h-[1px] flex-1 bg-white/5" />
+            </div>
+
+            {/* Try Demo button */}
+            <button
+              type="button"
+              onClick={handleTryDemo}
+              disabled={isSubmitting}
+              className="w-full relative overflow-hidden group flex items-center justify-center gap-2.5 rounded-2xl border border-purple-500/30 bg-purple-500/5 py-4 font-bold text-purple-300 transition hover:border-pink-500/40 hover:text-pink-300 hover:bg-pink-500/5 active:scale-[0.98] shadow-md hover:cursor-pointer disabled:opacity-50"
+            >
+              <Compass size={15} className="group-hover:rotate-45 transition-transform duration-500 text-purple-400 group-hover:text-pink-400" />
+              <span className="tracking-wide font-semibold">Try Demo (Guest Session)</span>
+              <div className="absolute inset-0 bg-purple-500/5 opacity-0 group-hover:opacity-100 transition duration-300" />
             </button>
 
             {/* Mode switch */}

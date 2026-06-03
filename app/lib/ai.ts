@@ -642,6 +642,7 @@ Pick the theme that best matches the prompt's aesthetic.`,
 // ─── Memory Engine (MongoDB Persistence) ───────────────────────────────────────
 
 export async function saveChapterToMongo(chapter: LoreChapter, userId: string): Promise<void> {
+  if (userId.startsWith('guest_')) return
   try {
     await connectDB()
     await LoreChapterModel.findOneAndUpdate(
@@ -660,6 +661,7 @@ export async function saveChapterToMongo(chapter: LoreChapter, userId: string): 
 }
 
 export async function fetchChaptersFromMongo(userId: string): Promise<LoreChapter[]> {
+  if (userId.startsWith('guest_')) return []
   try {
     await connectDB()
     const chapters = await LoreChapterModel.find({ userId }).sort({ id: 1 }).lean()
@@ -681,6 +683,7 @@ export async function savePlayerStateToMongo(
   level: number,
   worldTheme: string
 ): Promise<void> {
+  if (playerId.startsWith('guest_')) return
   try {
     await connectDB()
     await PlayerStateModel.findOneAndUpdate(
@@ -736,6 +739,7 @@ Difficulty: ${difficulty}`,
 }
 
 export async function saveQuestToMongo(quest: Quest, userId: string) {
+  if (userId.startsWith('guest_')) return quest
   try {
     await connectDB()
 
@@ -762,6 +766,7 @@ export async function saveQuestToMongo(quest: Quest, userId: string) {
 }
 
 export async function fetchQuestsFromMongo(userId: string): Promise<Quest[]> {
+  if (userId.startsWith('guest_')) return []
   try {
     await connectDB()
     const quests = await QuestModel.find({ userId }).sort({ id: 1 }).lean()
@@ -773,6 +778,7 @@ export async function fetchQuestsFromMongo(userId: string): Promise<Quest[]> {
 }
 
 export async function fetchPlayerStateFromMongo(userId: string) {
+  if (userId.startsWith('guest_')) return null
   try {
     await connectDB()
     const state = await PlayerStateModel.findOne({ id: userId }).lean()

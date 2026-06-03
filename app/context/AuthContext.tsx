@@ -24,6 +24,7 @@ interface AuthContextType {
   register: (email: string, password: string) => Promise<void>
   logout: () => Promise<void>
   clearError: () => void
+  loginAsGuest: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -164,6 +165,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  // Guest Sign-In (Demo Mode)
+  const loginAsGuest = async () => {
+    setError(null)
+    const guestUid = 'guest_session'
+    const guestSession = { uid: guestUid, email: 'guest@sagacore.demo' }
+
+    // Clear old guest progress to ensure a clean, fresh demo experience
+    try {
+      localStorage.removeItem(`sagacore_${guestUid}_activeWorld`)
+      localStorage.removeItem(`sagacore_${guestUid}_quests`)
+      localStorage.removeItem(`sagacore_${guestUid}_xp`)
+      localStorage.removeItem(`sagacore_${guestUid}_level`)
+      localStorage.removeItem(`sagacore_${guestUid}_chapters`)
+      localStorage.removeItem(`sagacore_${guestUid}_lore`)
+      localStorage.removeItem(`sagacore_${guestUid}_audioActive`)
+    } catch (e) {
+      console.warn('Failed to clear old guest session cache:', e)
+    }
+
+    setUser(guestSession)
+    localStorage.setItem('sagacore_mock_session', JSON.stringify(guestSession))
+  }
+
   return (
     <AuthContext.Provider
       value={{
@@ -175,6 +199,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         register,
         logout,
         clearError,
+        loginAsGuest,
       }}
     >
       {children}
