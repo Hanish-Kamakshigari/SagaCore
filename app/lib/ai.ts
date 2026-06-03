@@ -157,7 +157,7 @@ async function callGemini(payload: any): Promise<string> {
       if (isValidJSON(result)) {
         return result
       } else {
-        throw new Error('Agent Builder returned natural language dialog instead of structured JSON.')
+        throw new Error(`Agent Builder returned natural language dialog instead of structured JSON. Response: "${result.substring(0, 150)}${result.length > 150 ? '...' : ''}"`)
       }
     } catch (err: any) {
       console.warn('⚠️ [Agent Provider Warning] GCP Agent Builder failed or returned non-JSON, cascading to local Gemini fallback:', err.message || err)
