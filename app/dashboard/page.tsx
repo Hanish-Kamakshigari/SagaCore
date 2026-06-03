@@ -787,10 +787,32 @@ export default function Dashboard() {
               <p className="text-sm font-mono font-semibold text-zinc-300">Architect 0x7c9</p>
             </div>
             <div className="h-10 w-[1px] bg-zinc-800 hidden sm:block" />
+            {user.uid.startsWith('guest_') && (
+              <>
+                <span className="rounded-full px-4 py-1.5 text-xs font-semibold uppercase tracking-wider backdrop-blur-md border border-amber-500/35 bg-amber-500/10 text-amber-300 animate-pulse select-none">
+                  Demo Mode
+                </span>
+                <div className="h-10 w-[1px] bg-zinc-800 hidden sm:block" />
+              </>
+            )}
             <span className={`rounded-full px-4 py-1.5 text-xs font-semibold uppercase tracking-wider backdrop-blur-md border transition-colors duration-500 ${colors.accentBg}`}>
               {activeWorld.theme} grid active
             </span>
             <div className="h-10 w-[1px] bg-zinc-800 hidden sm:block" />
+
+            {user.uid.startsWith('guest_') && (
+              <>
+                <Link href="/auth">
+                  <button
+                    className="flex items-center gap-1.5 rounded-full border border-purple-500/30 bg-purple-500/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-purple-300 backdrop-blur-md transition-all duration-300 hover:border-purple-500/50 hover:bg-purple-500/20 hover:scale-[1.03] active:scale-[0.97] hover:cursor-pointer"
+                  >
+                    <Sparkles size={12} className="text-purple-400 animate-pulse" />
+                    <span>Forge Account</span>
+                  </button>
+                </Link>
+                <div className="h-10 w-[1px] bg-zinc-800 hidden sm:block" />
+              </>
+            )}
             
             {/* Sign Out Button */}
             <button
@@ -798,11 +820,13 @@ export default function Dashboard() {
                 await logout()
                 router.push('/auth')
               }}
-              title="Sign Out of Portal"
+              title={user.uid.startsWith('guest_') ? "Exit Demo Session" : "Sign Out of Portal"}
               className="flex items-center gap-2 rounded-full border border-red-500/25 bg-red-500/5 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-red-400 backdrop-blur-md transition-all duration-300 hover:bg-red-500/12 hover:scale-[1.03] active:scale-[0.97] hover:cursor-pointer"
             >
               <LogOut size={13} />
-              <span className="hidden sm:inline">Sign Out</span>
+              <span className="hidden sm:inline">
+                {user.uid.startsWith('guest_') ? 'Exit Demo' : 'Sign Out'}
+              </span>
             </button>
           </div>
         </header>
