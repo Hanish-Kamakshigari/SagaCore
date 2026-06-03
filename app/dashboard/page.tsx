@@ -817,8 +817,9 @@ export default function Dashboard() {
             {/* Sign Out Button */}
             <button
               onClick={async () => {
+                const isGuest = user.uid.startsWith('guest_')
                 await logout()
-                router.push('/auth')
+                router.push(isGuest ? '/' : '/auth')
               }}
               title={user.uid.startsWith('guest_') ? "Exit Demo Session" : "Sign Out of Portal"}
               className="flex items-center gap-2 rounded-full border border-red-500/25 bg-red-500/5 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-red-400 backdrop-blur-md transition-all duration-300 hover:bg-red-500/12 hover:scale-[1.03] active:scale-[0.97] hover:cursor-pointer"
