@@ -37,7 +37,6 @@ import {
   fetchQuestsFromMongo,
   fetchChaptersFromMongo,
   fetchPlayerStateFromMongo,
-  sendDiscordNotification,
 } from '@/app/lib/ai'
 
 export default function Dashboard() {
@@ -382,19 +381,6 @@ export default function Dashboard() {
         ...prev,
       ])
 
-      // Discord Webhook notification
-      const username = user?.email ? user.email.split('@')[0] : 'Scribe'
-      sendDiscordNotification(
-        `⚔️ New Campaign Forged by ${username}!`,
-        `**Master Ambition**: "${newGoal}"\n` +
-        `**Realm**: *${activeWorld.name}* (Theme: *${activeWorld.theme}*)\n\n` +
-        `**The Dream Forge has prepared the following trials**:\n` +
-        `1. 📚 **${generatedCampaign[0].title}** (Wisdom · ${generatedCampaign[0].xp} XP)\n` +
-        `2. 🛠️ **${generatedCampaign[1].title}** (Creation · ${generatedCampaign[1].xp} XP)\n` +
-        `3. 🛡️ **${generatedCampaign[2].title}** (Discipline · ${generatedCampaign[2].xp} XP)`,
-        0x8b5cf6 // Purple
-      ).catch(e => console.warn('Discord webhook error:', e))
-
       // Persist all 3 quests to MongoDB via Memory Engine (Skip for Guest Mode)
       if (user && !user.uid.startsWith('guest_')) {
         await Promise.allSettled(generatedCampaign.map((q) => saveQuestToMongo(q, user.uid))).catch(() => {
@@ -419,16 +405,6 @@ export default function Dashboard() {
         `[FORGED] Dream Forge conjured: "${initializedFallback.title}" (${initializedFallback.difficulty} · +${initializedFallback.xp} XP)`,
         ...prev,
       ])
-
-      // Discord Webhook notification
-      const username = user?.email ? user.email.split('@')[0] : 'Scribe'
-      sendDiscordNotification(
-        `⚔️ New Quest Forged by ${username}!`,
-        `**Master Ambition**: "${newGoal}"\n` +
-        `**Realm**: *${activeWorld.name}* (Theme: *${activeWorld.theme}*)\n\n` +
-        `**Quest**: **${initializedFallback.title}** (${initializedFallback.difficulty} · ${initializedFallback.xp} XP)`,
-        0x8b5cf6 // Purple
-      ).catch(e => console.warn('Discord webhook error:', e))
     } finally {
       setIsForging(false)
     }
@@ -463,15 +439,6 @@ export default function Dashboard() {
       setShowLevelUp(true)
       setTimeout(() => setShowLevelUp(false), 5000)
       setLore((prev) => [`[LEVEL UP] CELESTIAL ASCENSION: You have reached Level ${nextLevel}!`, ...prev])
-
-      // Send Discord Webhook notification for Level Up
-      const username = user?.email ? user.email.split('@')[0] : 'Scribe'
-      sendDiscordNotification(
-        `🌟 CELESTIAL ASCENSION: ${username} Leveled Up!`,
-        `**${username}** has ascended to **Level ${nextLevel}**!\n` +
-        `Current Rank: **${getRankName(nextLevel)}**`,
-        0xfac815 // Gold
-      ).catch(e => console.warn('Discord notify failed:', e))
     }
 
     // Mark quest complete immediately and unblock UI for 0ms optimistic response
@@ -510,16 +477,6 @@ export default function Dashboard() {
           ...prev,
         ])
 
-        // Discord Webhook notification
-        const username = user?.email ? user.email.split('@')[0] : 'Scribe'
-        sendDiscordNotification(
-          `🏆 Quest Completed by ${username}!`,
-          `**Quest**: *${questToComplete.title}* (+${questXp} XP)\n` +
-          `**Lore Chapter**: *${chapter.title}*\n\n` +
-          `*"${chapter.text}"*`,
-          0x10b981 // Green
-        ).catch(e => console.warn('Discord notify failed:', e))
-
         // ── Memory Engine: persist chapter and player state ──────────────────── (Skip for Guest Mode)
         if (targetUid && !targetUid.startsWith('guest_')) {
           await Promise.allSettled([
@@ -542,16 +499,6 @@ export default function Dashboard() {
           `[COMPLETE] Quest complete: "${questToComplete.title}" (+${questXp} XP)`,
           ...prev,
         ])
-
-        // Discord Webhook notification
-        const username = user?.email ? user.email.split('@')[0] : 'Scribe'
-        sendDiscordNotification(
-          `🏆 Quest Completed by ${username}!`,
-          `**Quest**: *${questToComplete.title}* (+${questXp} XP)\n` +
-          `**Lore Chapter**: *${fallbackChapter.title}*\n\n` +
-          `*"${fallbackChapter.text}"*`,
-          0x10b981 // Green
-        ).catch(e => console.warn('Discord notify failed:', e))
       } finally {
         setIsWritingChapter(false)
       }
@@ -595,16 +542,6 @@ export default function Dashboard() {
           ...prev,
         ])
 
-        // Discord Webhook notification
-        const username = user?.email ? user.email.split('@')[0] : 'Scribe'
-        sendDiscordNotification(
-          `🌑 Quest Failed/Abandoned by ${username}`,
-          `**Quest**: *${quest.title}*\n` +
-          `**Shadow Chapter**: *${chapter.title}*\n\n` +
-          `*"${chapter.text}"*`,
-          0xef4444 // Red
-        ).catch(e => console.warn('Discord notify failed:', e))
-
         if (targetUid && !targetUid.startsWith('guest_')) {
           await Promise.allSettled([
             saveChapterToMongo(chapter, targetUid),
@@ -614,15 +551,6 @@ export default function Dashboard() {
       } catch (err) {
         console.error('Shadow chronicler failed:', err)
         setLore((prev) => [`🌑 Quest abandoned: "${quest.title}" — the realm suffers.`, ...prev])
-
-        // Discord Webhook notification
-        const username = user?.email ? user.email.split('@')[0] : 'Scribe'
-        sendDiscordNotification(
-          `🌑 Quest Failed/Abandoned by ${username}`,
-          `**Quest**: *${quest.title}*\n\n` +
-          `*"The realm grows darker... shadow chronicles etched."*`,
-          0xef4444 // Red
-        ).catch(e => console.warn('Discord notify failed:', e))
       } finally {
         setIsWritingChapter(false)
       }

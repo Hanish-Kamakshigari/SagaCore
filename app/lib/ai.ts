@@ -718,40 +718,6 @@ export async function fetchLeaderboardFromMongo() {
   }
 }
 
-export async function sendDiscordNotification(title: string, description: string, colorHex: number = 0xa855f7) {
-  const webhookUrl = process.env.DISCORD_WEBHOOK_URL
-  if (!webhookUrl) {
-    console.log('[Discord Webhook] No webhook URL configured in environment variables.')
-    return
-  }
-
-  try {
-    const payload = {
-      embeds: [{
-        title,
-        description,
-        color: colorHex,
-        timestamp: new Date().toISOString(),
-        footer: { text: "SAGACORE World Engine" }
-      }]
-    }
-
-    const response = await fetch(webhookUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    })
-
-    if (!response.ok) {
-      console.error('[Discord Webhook Error] Failed to send notification:', response.status, await response.text())
-    } else {
-      console.log('[Discord Webhook] Notification sent successfully!')
-    }
-  } catch (error) {
-    console.error('[Discord Webhook Error] Connection/fetch error:', error)
-  }
-}
-
 // ─── Quest Roadmap Engine ──────────────────────────────────────────────────────
 
 export async function generateRoadmapForQuest(
