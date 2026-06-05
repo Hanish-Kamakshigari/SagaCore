@@ -108,7 +108,7 @@ export default function LandingSections() {
               Memory Engine
             </h3>
             <p className="mt-3 text-sm text-zinc-400 leading-relaxed">
-              Integrates persistent MongoDB systems to securely save active quests, player levels, experience, and custom worlds.
+              Integrates persistent MongoDB MCP layer to securely save active quests, player levels, experience, and custom worlds.
             </p>
           </motion.div>
 
