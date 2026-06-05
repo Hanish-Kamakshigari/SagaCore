@@ -681,7 +681,8 @@ export async function savePlayerStateToMongo(
   playerId: string,
   xp: number,
   level: number,
-  worldTheme: string
+  worldTheme: string,
+  email?: string | null
 ): Promise<void> {
   if (playerId.startsWith('guest_')) return
   try {
@@ -692,12 +693,62 @@ export async function savePlayerStateToMongo(
         xp,
         level,
         worldTheme,
+        email: email || undefined,
         lastUpdated: new Date().toISOString()
       },
       { upsert: true, new: true }
     )
   } catch (error: any) {
     console.warn('Mongo Save Player State Warning (Offline/Memory Mode):', error.message || error)
+  }
+}
+
+export async function fetchLeaderboardFromMongo() {
+  try {
+    await connectDB()
+    const topPlayers = await PlayerStateModel.find()
+      .sort({ level: -1, xp: -1 })
+      .limit(10)
+      .lean()
+    
+    return JSON.parse(JSON.stringify(topPlayers))
+  } catch (error: any) {
+    console.warn('Mongo Fetch Leaderboard Warning:', error.message || error)
+    return []
+  }
+}
+
+export async function sendDiscordNotification(title: string, description: string, colorHex: number = 0xa855f7) {
+  const webhookUrl = process.env.DISCORD_WEBHOOK_URL
+  if (!webhookUrl) {
+    console.log('[Discord Webhook] No webhook URL configured in environment variables.')
+    return
+  }
+
+  try {
+    const payload = {
+      embeds: [{
+        title,
+        description,
+        color: colorHex,
+        timestamp: new Date().toISOString(),
+        footer: { text: "SAGACORE World Engine" }
+      }]
+    }
+
+    const response = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+
+    if (!response.ok) {
+      console.error('[Discord Webhook Error] Failed to send notification:', response.status, await response.text())
+    } else {
+      console.log('[Discord Webhook] Notification sent successfully!')
+    }
+  } catch (error) {
+    console.error('[Discord Webhook Error] Connection/fetch error:', error)
   }
 }
 

@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Sparkles, ArrowLeft, Send, Sparkle, Award, Compass, BookOpen, Scroll as ScrollIcon, Loader2, Volume2, VolumeX, LogOut } from 'lucide-react'
+import { Sparkles, ArrowLeft, Send, Sparkle, Award, Compass, BookOpen, Scroll as ScrollIcon, Loader2, Volume2, VolumeX, LogOut, Trophy } from 'lucide-react'
 
 import KingdomStatus from '../components/KingdomStatus'
 import LoreFeed from '../components/LoreFeed'
@@ -12,6 +12,7 @@ import QuestCard from '../components/QuestCard'
 import XPBar from '../components/XPbar'
 import WorldArchitect from '../components/WorldArchitect'
 import LoreCodex from '../components/LoreCodex'
+import Leaderboard from '../components/Leaderboard'
 
 import { useAmbientAudio } from '../hooks/useAmbientAudio'
 import { useAuth } from '../context/AuthContext'
@@ -36,6 +37,7 @@ import {
   fetchQuestsFromMongo,
   fetchChaptersFromMongo,
   fetchPlayerStateFromMongo,
+  sendDiscordNotification,
 } from '@/app/lib/ai'
 
 export default function Dashboard() {
@@ -193,6 +195,16 @@ export default function Dashboard() {
           localStorage.setItem(`sagacore_${uid}_xp`, JSON.stringify(dbPlayer.xp))
           localStorage.setItem(`sagacore_${uid}_level`, JSON.stringify(dbPlayer.level))
           localStorage.setItem(`sagacore_${uid}_activeWorld`, JSON.stringify(matchedWorld))
+          // Sync email with MongoDB
+          if (user.email && dbPlayer.email !== user.email) {
+            await savePlayerStateToMongo(uid, dbPlayer.xp, dbPlayer.level, dbPlayer.worldTheme, user.email)
+          }
+        } else {
+          // If no player state in DB, initialize it with email!
+          const initialXp = localXp ? JSON.parse(localXp) : 0
+          const initialLevel = localLevel ? JSON.parse(localLevel) : 1
+          const initialTheme = localActiveWorld ? JSON.parse(localActiveWorld).theme : 'fantasy'
+          await savePlayerStateToMongo(uid, initialXp, initialLevel, initialTheme, user.email)
         }
       } catch (err) {
         console.error('Failed to sync SAGACORE user data:', err)
@@ -210,7 +222,7 @@ export default function Dashboard() {
   const [filter, setFilter]                 = useState<'all' | 'wisdom' | 'discipline' | 'creation'>('all')
   const [showLevelUp, setShowLevelUp]       = useState(false)
   const [justLeveledTo, setJustLeveledTo]   = useState(1)
-  const [activeTab, setActiveTab]           = useState<'quests' | 'codex'>('quests')
+  const [activeTab, setActiveTab]           = useState<'quests' | 'codex' | 'leaderboard'>('quests')
 
   // Dynamic ranking lookup helper for SAGACORE leveling milestones
   const getRankName = (lvl: number) => {
@@ -370,7 +382,20 @@ export default function Dashboard() {
         ...prev,
       ])
 
-            // Persist all 3 quests to MongoDB via Memory Engine (Skip for Guest Mode)
+      // Discord Webhook notification
+      const username = user?.email ? user.email.split('@')[0] : 'Scribe'
+      sendDiscordNotification(
+        `⚔️ New Campaign Forged by ${username}!`,
+        `**Master Ambition**: "${newGoal}"\n` +
+        `**Realm**: *${activeWorld.name}* (Theme: *${activeWorld.theme}*)\n\n` +
+        `**The Dream Forge has prepared the following trials**:\n` +
+        `1. 📚 **${generatedCampaign[0].title}** (Wisdom · ${generatedCampaign[0].xp} XP)\n` +
+        `2. 🛠️ **${generatedCampaign[1].title}** (Creation · ${generatedCampaign[1].xp} XP)\n` +
+        `3. 🛡️ **${generatedCampaign[2].title}** (Discipline · ${generatedCampaign[2].xp} XP)`,
+        0x8b5cf6 // Purple
+      ).catch(e => console.warn('Discord webhook error:', e))
+
+      // Persist all 3 quests to MongoDB via Memory Engine (Skip for Guest Mode)
       if (user && !user.uid.startsWith('guest_')) {
         await Promise.allSettled(generatedCampaign.map((q) => saveQuestToMongo(q, user.uid))).catch(() => {
           console.warn('MongoDB campaign save failed')
@@ -394,6 +419,16 @@ export default function Dashboard() {
         `[FORGED] Dream Forge conjured: "${initializedFallback.title}" (${initializedFallback.difficulty} · +${initializedFallback.xp} XP)`,
         ...prev,
       ])
+
+      // Discord Webhook notification
+      const username = user?.email ? user.email.split('@')[0] : 'Scribe'
+      sendDiscordNotification(
+        `⚔️ New Quest Forged by ${username}!`,
+        `**Master Ambition**: "${newGoal}"\n` +
+        `**Realm**: *${activeWorld.name}* (Theme: *${activeWorld.theme}*)\n\n` +
+        `**Quest**: **${initializedFallback.title}** (${initializedFallback.difficulty} · ${initializedFallback.xp} XP)`,
+        0x8b5cf6 // Purple
+      ).catch(e => console.warn('Discord webhook error:', e))
     } finally {
       setIsForging(false)
     }
@@ -428,6 +463,15 @@ export default function Dashboard() {
       setShowLevelUp(true)
       setTimeout(() => setShowLevelUp(false), 5000)
       setLore((prev) => [`[LEVEL UP] CELESTIAL ASCENSION: You have reached Level ${nextLevel}!`, ...prev])
+
+      // Send Discord Webhook notification for Level Up
+      const username = user?.email ? user.email.split('@')[0] : 'Scribe'
+      sendDiscordNotification(
+        `🌟 CELESTIAL ASCENSION: ${username} Leveled Up!`,
+        `**${username}** has ascended to **Level ${nextLevel}**!\n` +
+        `Current Rank: **${getRankName(nextLevel)}**`,
+        0xfac815 // Gold
+      ).catch(e => console.warn('Discord notify failed:', e))
     }
 
     // Mark quest complete immediately and unblock UI for 0ms optimistic response
@@ -466,11 +510,21 @@ export default function Dashboard() {
           ...prev,
         ])
 
+        // Discord Webhook notification
+        const username = user?.email ? user.email.split('@')[0] : 'Scribe'
+        sendDiscordNotification(
+          `🏆 Quest Completed by ${username}!`,
+          `**Quest**: *${questToComplete.title}* (+${questXp} XP)\n` +
+          `**Lore Chapter**: *${chapter.title}*\n\n` +
+          `*"${chapter.text}"*`,
+          0x10b981 // Green
+        ).catch(e => console.warn('Discord notify failed:', e))
+
         // ── Memory Engine: persist chapter and player state ──────────────────── (Skip for Guest Mode)
         if (targetUid && !targetUid.startsWith('guest_')) {
           await Promise.allSettled([
             saveChapterToMongo(chapter, targetUid),
-            savePlayerStateToMongo(targetUid, remainingXp, nextLevel, targetTheme),
+            savePlayerStateToMongo(targetUid, remainingXp, nextLevel, targetTheme, user?.email),
             saveQuestToMongo({ ...questToComplete, isCompleted: true }, targetUid),
           ]).catch((e) => console.warn('Background MongoDB persist failed:', e))
         }
@@ -488,6 +542,16 @@ export default function Dashboard() {
           `[COMPLETE] Quest complete: "${questToComplete.title}" (+${questXp} XP)`,
           ...prev,
         ])
+
+        // Discord Webhook notification
+        const username = user?.email ? user.email.split('@')[0] : 'Scribe'
+        sendDiscordNotification(
+          `🏆 Quest Completed by ${username}!`,
+          `**Quest**: *${questToComplete.title}* (+${questXp} XP)\n` +
+          `**Lore Chapter**: *${fallbackChapter.title}*\n\n` +
+          `*"${fallbackChapter.text}"*`,
+          0x10b981 // Green
+        ).catch(e => console.warn('Discord notify failed:', e))
       } finally {
         setIsWritingChapter(false)
       }
@@ -531,15 +595,34 @@ export default function Dashboard() {
           ...prev,
         ])
 
+        // Discord Webhook notification
+        const username = user?.email ? user.email.split('@')[0] : 'Scribe'
+        sendDiscordNotification(
+          `🌑 Quest Failed/Abandoned by ${username}`,
+          `**Quest**: *${quest.title}*\n` +
+          `**Shadow Chapter**: *${chapter.title}*\n\n` +
+          `*"${chapter.text}"*`,
+          0xef4444 // Red
+        ).catch(e => console.warn('Discord notify failed:', e))
+
         if (targetUid && !targetUid.startsWith('guest_')) {
           await Promise.allSettled([
             saveChapterToMongo(chapter, targetUid),
-            saveQuestToMongo({ ...quest, isCompleted: true }, targetUid),
+            saveQuestToMongo({ ...quest, isCompleted: true, failed: true }, targetUid),
           ]).catch((e) => console.warn('Background MongoDB fail-persist failed:', e))
         }
       } catch (err) {
         console.error('Shadow chronicler failed:', err)
         setLore((prev) => [`🌑 Quest abandoned: "${quest.title}" — the realm suffers.`, ...prev])
+
+        // Discord Webhook notification
+        const username = user?.email ? user.email.split('@')[0] : 'Scribe'
+        sendDiscordNotification(
+          `🌑 Quest Failed/Abandoned by ${username}`,
+          `**Quest**: *${quest.title}*\n\n` +
+          `*"The realm grows darker... shadow chronicles etched."*`,
+          0xef4444 // Red
+        ).catch(e => console.warn('Discord notify failed:', e))
       } finally {
         setIsWritingChapter(false)
       }
@@ -961,11 +1044,24 @@ export default function Dashboard() {
                   <motion.div layoutId="activeTabUnderline" className={`absolute bottom-0 left-0 h-[2px] w-full bg-gradient-to-r ${colors.btnBg}`} />
                 )}
               </button>
+
+              <button
+                onClick={() => setActiveTab('leaderboard')}
+                className={`relative pb-3 text-sm font-bold uppercase tracking-wider transition ${activeTab === 'leaderboard' ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
+              >
+                <span className="flex items-center gap-2">
+                  <Trophy size={14} />
+                  Leaderboard
+                </span>
+                {activeTab === 'leaderboard' && (
+                  <motion.div layoutId="activeTabUnderline" className={`absolute bottom-0 left-0 h-[2px] w-full bg-gradient-to-r ${colors.btnBg}`} />
+                )}
+              </button>
             </div>
 
             {/* Content tabs */}
             <div>
-              {activeTab === 'quests' ? (
+              {activeTab === 'quests' && (
                 <div className="space-y-4">
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <h2 className="text-2xl font-bold text-zinc-100 flex items-center gap-2">
@@ -1035,8 +1131,12 @@ export default function Dashboard() {
                     </motion.div>
                   )}
                 </div>
-              ) : (
+              )}
+              {activeTab === 'codex' && (
                 <LoreCodex chapters={chapters} theme={activeWorld.theme} isWriting={isWritingChapter} />
+              )}
+              {activeTab === 'leaderboard' && (
+                <Leaderboard theme={activeWorld.theme} activeUserUid={user.uid} />
               )}
             </div>
           </div>

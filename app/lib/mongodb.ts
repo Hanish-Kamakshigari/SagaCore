@@ -60,6 +60,7 @@ const PlayerStateSchema = new mongoose.Schema({
   xp: { type: Number, required: true },
   level: { type: Number, required: true },
   worldTheme: { type: String, required: true },
+  email: { type: String }, // Optional email field for leaderboard display names
   lastUpdated: { type: String, required: true }
 }, { timestamps: true })
 
