@@ -107,7 +107,6 @@ export default function XPBar({ xp, level, theme = 'fantasy' }: XPBarProps) {
     }
     return ranks[lvl] || `Ascended Creator Lvl ${lvl}`
   }
-
   return (
     <motion.div 
       animate={isFlashing ? {
@@ -115,7 +114,7 @@ export default function XPBar({ xp, level, theme = 'fantasy' }: XPBarProps) {
         boxShadow: style.boxShadowFlash
       } : {}}
       transition={{ duration: 1.0, ease: "easeInOut" }}
-      className="relative overflow-hidden rounded-3xl border border-zinc-800/80 bg-zinc-950/50 p-6 shadow-2xl backdrop-blur-xl transition-all duration-500"
+      className="relative rounded-3xl border border-zinc-800/80 bg-zinc-950/50 p-6 shadow-2xl backdrop-blur-xl transition-all duration-500"
     >
       {/* Background Accent Glow */}
       <div className={`absolute left-1/4 top-1/2 -z-10 h-24 w-80 -translate-y-1/2 blur-3xl ${style.glowBg}`} />
@@ -148,7 +147,7 @@ export default function XPBar({ xp, level, theme = 'fantasy' }: XPBarProps) {
               {level}
             </span>
           </div>
-
+ 
           <div>
             <div className="flex items-center gap-2">
               <span className="text-xs font-semibold uppercase tracking-widest text-zinc-500">Current Rank</span>
@@ -159,7 +158,7 @@ export default function XPBar({ xp, level, theme = 'fantasy' }: XPBarProps) {
             </h2>
           </div>
         </div>
-
+ 
         {/* XP Details and Progress */}
         <div className="flex-1 max-w-xl">
           <div className="mb-2 flex items-center justify-between text-sm">
@@ -183,9 +182,9 @@ export default function XPBar({ xp, level, theme = 'fantasy' }: XPBarProps) {
                     className="absolute bottom-full left-0 mb-2.5 w-72 rounded-2xl border border-white/10 bg-zinc-950/95 p-4 shadow-[0_10px_30px_rgba(0,0,0,0.5)] backdrop-blur-md z-30"
                   >
                     <div className="absolute top-full left-4 -mt-1 h-3.5 w-3.5 rotate-45 border-r border-b border-white/10 bg-zinc-950/95" />
-                    <p className="text-[11px] leading-relaxed text-zinc-300">
-                      **Earn XP** by completing real-world quests. 
-                      Reaching **1000 XP** triggers a **Celestial Ascension (Level Up)**, restoring realm stability, unlocking advanced custom roadmaps, and scribing new chapters in your evolving Codex!
+                    <p className="text-[11px] leading-relaxed text-zinc-305">
+                      <strong className="font-bold text-white">Earn XP</strong> by completing real-world quests. 
+                      Reaching <strong className="font-bold text-white">1000 XP</strong> triggers a <strong className="font-bold text-white">Celestial Ascension (Level Up)</strong>, restoring realm stability, unlocking advanced custom roadmaps, and scribing new chapters in your evolving Codex!
                     </p>
                   </motion.div>
                 )}
