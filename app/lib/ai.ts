@@ -290,11 +290,7 @@ async function callGemini(payload: any): Promise<string> {
     let data: any = null
 
     for (let attempt = 1; attempt <= maxRetries + 1; attempt++) {
-      // Cascading Fallback: on retry attempts (from 503 high demand or 429), fall back to gemini-2.5-pro to bypass quota/spikes!
       let currentModel = model
-      if (attempt > 1) {
-        currentModel = 'gemini-2.5-pro'
-      }
       try {
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${process.env.GOOGLE_API_KEY || ''}`, {
           method: 'POST',
