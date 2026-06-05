@@ -267,7 +267,7 @@ export default function LandingSections() {
           >
             {/* Chronology Dot */}
             <div className="absolute -left-[41px] top-1.5 h-5 w-5 rounded-full border border-indigo-500/40 bg-zinc-950 flex items-center justify-center">
-              <div className="h-2 w-2 rounded-full bg-indigo-500 animate-pulse" />
+              <div className="h-2 w-2 rounded-full bg-indigo-500" />
             </div>
 
             <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-6">
@@ -275,13 +275,13 @@ export default function LandingSections() {
                 Phase 02 · Chronicle Update
               </span>
               <span className="inline-flex items-center rounded-full bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-0.5 text-[10px] font-semibold text-indigo-300 tracking-wider w-fit">
-                IN PROGRESS
+                COMPLETED
               </span>
             </div>
 
             <h3 className="text-xl font-bold text-zinc-200 mt-2 font-cinzel">Persistent Memory Grids</h3>
             <p className="mt-2 text-sm text-zinc-400 leading-relaxed max-w-2xl">
-              Currently implementing secure MongoDB MCP memory layers to persistently save forged realms, quest status cards, task checklists, and comprehensive player codex chapter logs.
+              Implemented secure MongoDB MCP memory layers to persistently save forged realms, quest status cards, task checklists, and comprehensive player codex chapter logs.
             </p>
           </motion.div>
 
@@ -292,22 +292,22 @@ export default function LandingSections() {
             className="relative"
           >
             {/* Chronology Dot */}
-            <div className="absolute -left-[41px] top-1.5 h-5 w-5 rounded-full border border-zinc-800 bg-zinc-950 flex items-center justify-center">
-              <div className="h-2 w-2 rounded-full bg-zinc-800" />
+            <div className="absolute -left-[41px] top-1.5 h-5 w-5 rounded-full border border-pink-500/40 bg-zinc-950 flex items-center justify-center">
+              <div className="h-2 w-2 rounded-full bg-pink-500 animate-pulse" />
             </div>
 
             <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-6">
-              <span className="text-xs font-mono font-bold tracking-widest text-zinc-500 uppercase">
+              <span className="text-xs font-mono font-bold tracking-widest text-pink-400 uppercase">
                 Phase 03 · Nexus Campaigns
               </span>
-              <span className="inline-flex items-center rounded-full bg-zinc-900 border border-zinc-850 px-2.5 py-0.5 text-[10px] font-semibold text-zinc-400 tracking-wider w-fit">
-                PLANNED
+              <span className="inline-flex items-center rounded-full bg-pink-500/10 border border-pink-500/20 px-2.5 py-0.5 text-[10px] font-semibold text-pink-300 tracking-wider w-fit">
+                IN PROGRESS
               </span>
             </div>
 
             <h3 className="text-xl font-bold text-zinc-200 mt-2 font-cinzel">Multiplayer World Sharing</h3>
             <p className="mt-2 text-sm text-zinc-400 leading-relaxed max-w-2xl">
-              Adding support for cooperative player parties, shared realm campaigns, group-crafted quests, live leaderboard statistics, and rich Discord webhook tracking.
+              Currently adding support for cooperative player parties, shared realm campaigns, group-crafted quests, live leaderboard statistics, and rich Discord webhook tracking.
             </p>
           </motion.div>
 
