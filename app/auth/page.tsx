@@ -293,6 +293,12 @@ export default function AuthPage() {
           </p>
         </div>
 
+        {isMock && (
+          <div className="mb-4 rounded-2xl border border-amber-500/35 bg-amber-500/10 px-4 py-2.5 text-center text-[10px] font-bold tracking-wider text-amber-300 animate-pulse font-mono uppercase select-none">
+            ⚠️ Running in Mock Auth Mode (Keys Missing)
+          </div>
+        )}
+
         {/* Auth form card */}
         <div className="rounded-[32px] border border-white/5 bg-[#0a0a0c]/40 p-8 shadow-[0_20px_50px_rgba(0,0,0,0.6)] shadow-purple-500/5 backdrop-blur-3xl relative overflow-hidden transition-all duration-500 hover:border-purple-500/15 hover:shadow-[0_20px_50px_rgba(168,85,247,0.08)]">
           <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-purple-500/35 to-transparent" />
