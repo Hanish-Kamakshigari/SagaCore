@@ -82,31 +82,112 @@ export default function XPBar({ xp, level, theme = 'fantasy' }: XPBarProps) {
   const progressPercentage = Math.min(100, Math.max(0, (xp / 1000) * 100))
 
   // Premium granular ranking system — distinct, rewarding rank name for every single level
-  const getRankName = (lvl: number) => {
-    const ranks: Record<number, string> = {
-      1: 'Neophyte Scribe',
-      2: 'Apprentice Spellweaver',
-      3: 'Focus Adept',
-      4: 'Habit Vanguard',
-      5: 'Realm Architect',
-      6: 'Aether Sculptor',
-      7: 'Chrono Weaver',
-      8: 'Iron Sentinel',
-      9: 'Mindset Alchemist',
-      10: 'Mythos Scriptor',
-      11: 'Void Breaker',
-      12: 'Star Forge Warden',
-      13: 'Celestial Sentry',
-      14: 'Grand Spellbreaker',
-      15: 'Astral Overseer',
-      16: 'Eternal Dynamo',
-      17: 'Paradigm Shifter',
-      18: 'Sovereign Scriptor',
-      19: 'Cosmic Prime',
-      20: 'Grand Sage Paragon'
+  const getRankName = (lvl: number, currentTheme: 'fantasy' | 'cyberpunk' | 'steampunk') => {
+    if (currentTheme === 'cyberpunk') {
+      if (lvl <= 2) return 'Ghost Node'
+      if (lvl === 3) return 'Glitch Runner'
+      if (lvl <= 5) return 'Circuit Breaker'
+      if (lvl <= 7) return 'Neon Phantom'
+      return 'Grid Sovereign'
     }
-    return ranks[lvl] || `Ascended Creator Lvl ${lvl}`
+    
+    if (currentTheme === 'steampunk') {
+      if (lvl <= 2) return 'Copper Tinkerer'
+      if (lvl === 3) return 'Gear Warden'
+      if (lvl <= 5) return 'Vault Engineer'
+      if (lvl <= 7) return 'Iron Chancellor'
+      return 'Steam Sovereign'
+    }
+    
+    // Aether Fantasy (Default)
+    const fantasyRanks: Record<number, string> = {
+      1: 'Neophyte Scribe',
+      2: 'Wandering Seeker',
+      3: 'Oath-Bound Apprentice',
+      4: 'Ironwill Adept',
+      5: 'Runebound Artisan',
+      6: 'Veilwalker',
+      7: 'Stormforged Knight',
+      8: 'Arcane Sovereign',
+      9: 'Legendary Architect'
+    }
+    return fantasyRanks[lvl] || fantasyRanks[9] || `Ascended Creator Lvl ${lvl}`
   }
+
+  const getRankFlavour = (lvl: number, currentTheme: 'fantasy' | 'cyberpunk' | 'steampunk') => {
+    if (currentTheme === 'cyberpunk') {
+      if (lvl <= 2) return 'Undetected in the dark web.'
+      if (lvl === 3) return 'Bypassing firewall protocols.'
+      if (lvl <= 5) return 'Overloading the mainframe grids.'
+      if (lvl <= 7) return 'Flickering between physical and digital states.'
+      return 'The entire network bows to your code.'
+    }
+    
+    if (currentTheme === 'steampunk') {
+      if (lvl <= 2) return 'Striking the first brass gear.'
+      if (lvl === 3) return 'Keeping the main mainspring wound.'
+      if (lvl <= 5) return 'Taming the heavy high-pressure lines.'
+      if (lvl <= 7) return 'Forging structural steam seals with steel.'
+      return 'Superheating the engine of progress.'
+    }
+    
+    // Aether Fantasy (Default)
+    const fantasyFlavours: Record<number, string> = {
+      1: 'Just picked up the quill',
+      2: 'First steps into the unknown',
+      3: 'Made the first real commitment',
+      4: 'Survived the grind, still standing',
+      5: 'Crafting real things now',
+      6: 'Crossing into serious territory',
+      7: 'Built through chaos and pressure',
+      8: 'Commanding the craft',
+      9: 'The world bends to your ambition'
+    }
+    return fantasyFlavours[lvl] || fantasyFlavours[9] || 'Transcending the bounds of mortal creation.'
+  }
+
+  const getTierShieldStyle = (lvl: number) => {
+    if (lvl <= 3) {
+      return {
+        starColor: 'text-zinc-500',
+        shieldOuter: 'text-zinc-500/40',
+        shieldInner: 'rgba(113,113,122,0.08)',
+        levelText: 'from-white to-zinc-350',
+        badgeFilter: 'drop-shadow-[0_0_10px_rgba(113,113,122,0.2)] hover:drop-shadow-[0_0_20px_rgba(113,113,122,0.35)]',
+        rankColorClass: 'text-zinc-400'
+      }
+    } else if (lvl <= 5) {
+      return {
+        starColor: 'text-teal-400',
+        shieldOuter: 'text-teal-550/45',
+        shieldInner: 'rgba(20,184,166,0.08)',
+        levelText: 'from-white to-teal-200',
+        badgeFilter: 'drop-shadow-[0_0_10px_rgba(20,184,166,0.25)] hover:drop-shadow-[0_0_20px_rgba(20,184,166,0.45)]',
+        rankColorClass: 'text-teal-450'
+      }
+    } else if (lvl <= 7) {
+      return {
+        starColor: 'text-purple-400',
+        shieldOuter: 'text-purple-500/40',
+        shieldInner: 'rgba(168,85,247,0.08)',
+        levelText: 'from-white to-purple-200',
+        badgeFilter: 'drop-shadow-[0_0_10px_rgba(168,85,247,0.25)] hover:drop-shadow-[0_0_20px_rgba(168,85,247,0.45)]',
+        rankColorClass: 'text-purple-300'
+      }
+    } else {
+      return {
+        starColor: 'text-amber-400',
+        shieldOuter: 'text-amber-500/40',
+        shieldInner: 'rgba(245,158,11,0.08)',
+        levelText: 'from-white to-amber-200',
+        badgeFilter: 'drop-shadow-[0_0_10px_rgba(245,158,11,0.3)] hover:drop-shadow-[0_0_20px_rgba(245,158,11,0.5)]',
+        rankColorClass: 'text-amber-500'
+      }
+    }
+  }
+
+  const tier = getTierShieldStyle(level)
+
   return (
     <motion.div 
       animate={isFlashing ? {
@@ -123,9 +204,9 @@ export default function XPBar({ xp, level, theme = 'fantasy' }: XPBarProps) {
         
         {/* Level Badge and Title */}
         <div className="flex items-center gap-4">
-          <div className={`relative h-16 w-16 flex items-center justify-center select-none shrink-0 transition-all duration-300 ${style.badgeFilter}`}>
+          <div className={`relative h-16 w-16 flex items-center justify-center select-none shrink-0 transition-all duration-300 ${tier.badgeFilter}`}>
             {/* Rotating Star Background */}
-            <Star className={`absolute h-10 w-10 animate-spin-slow opacity-20 ${style.starColor}`} />
+            <Star className={`absolute h-10 w-10 animate-spin-slow opacity-20 ${tier.starColor}`} />
             
             {/* Shield Vector SVG */}
             <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" fill="currentColor">
@@ -134,16 +215,16 @@ export default function XPBar({ xp, level, theme = 'fantasy' }: XPBarProps) {
                 d="M50,6 L88,19.5 L88,52 C88,71.5 73,88 50,93 C27,88 12,71.5 12,52 L12,19.5 Z" 
                 stroke="currentColor" 
                 strokeWidth="4.5" 
-                className={style.shieldOuter}
+                className={tier.shieldOuter}
               />
               {/* Inner Shield Overlay */}
               <path 
                 d="M50,12 L81.5,23.5 L81.5,52 C81.5,68 69,82 50,86 C31,82 18.5,68 18.5,52 L18.5,23.5 Z" 
-                fill={style.shieldInner} 
+                fill={tier.shieldInner} 
               />
             </svg>
             
-            <span className={`relative z-10 text-2xl font-black bg-gradient-to-b bg-clip-text text-transparent font-cinzel ${style.levelText}`}>
+            <span className={`relative z-10 text-2xl font-black bg-gradient-to-b bg-clip-text text-transparent font-cinzel ${tier.levelText}`}>
               {level}
             </span>
           </div>
@@ -154,11 +235,14 @@ export default function XPBar({ xp, level, theme = 'fantasy' }: XPBarProps) {
               <Trophy size={12} className="text-yellow-400" />
             </div>
             <h2 className="text-2xl font-bold bg-gradient-to-r from-zinc-100 to-zinc-400 bg-clip-text text-transparent">
-              {getRankName(level)} <span className={style.rankText}>Level {level}</span>
+              {getRankName(level, theme)} <span className={tier.rankColorClass}>Level {level}</span>
             </h2>
+            <p className="text-xs text-zinc-400 mt-1 italic font-medium tracking-wide">
+              &quot;{getRankFlavour(level, theme)}&quot;
+            </p>
           </div>
         </div>
- 
+        
         {/* XP Details and Progress */}
         <div className="flex-1 max-w-xl">
           <div className="mb-2 flex items-center justify-between text-sm">

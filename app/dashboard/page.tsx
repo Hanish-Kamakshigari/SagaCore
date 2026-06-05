@@ -224,30 +224,36 @@ export default function Dashboard() {
   const [activeTab, setActiveTab]           = useState<'quests' | 'codex' | 'leaderboard'>('quests')
 
   // Dynamic ranking lookup helper for SAGACORE leveling milestones
-  const getRankName = (lvl: number) => {
-    const ranks: Record<number, string> = {
-      1: 'Neophyte Scribe',
-      2: 'Apprentice Spellweaver',
-      3: 'Focus Adept',
-      4: 'Habit Vanguard',
-      5: 'Realm Architect',
-      6: 'Aether Sculptor',
-      7: 'Chrono Weaver',
-      8: 'Iron Sentinel',
-      9: 'Mindset Alchemist',
-      10: 'Mythos Scriptor',
-      11: 'Void Breaker',
-      12: 'Star Forge Warden',
-      13: 'Celestial Sentry',
-      14: 'Grand Spellbreaker',
-      15: 'Astral Overseer',
-      16: 'Eternal Dynamo',
-      17: 'Paradigm Shifter',
-      18: 'Sovereign Scriptor',
-      19: 'Cosmic Prime',
-      20: 'Grand Sage Paragon'
+  const getRankName = (lvl: number, currentTheme: 'fantasy' | 'cyberpunk' | 'steampunk' = 'fantasy') => {
+    if (currentTheme === 'cyberpunk') {
+      if (lvl <= 2) return 'Ghost Node'
+      if (lvl === 3) return 'Glitch Runner'
+      if (lvl <= 5) return 'Circuit Breaker'
+      if (lvl <= 7) return 'Neon Phantom'
+      return 'Grid Sovereign'
     }
-    return ranks[lvl] || `Ascended Creator Lvl ${lvl}`
+    
+    if (currentTheme === 'steampunk') {
+      if (lvl <= 2) return 'Copper Tinkerer'
+      if (lvl === 3) return 'Gear Warden'
+      if (lvl <= 5) return 'Vault Engineer'
+      if (lvl <= 7) return 'Iron Chancellor'
+      return 'Steam Sovereign'
+    }
+    
+    // Aether Fantasy (Default)
+    const fantasyRanks: Record<number, string> = {
+      1: 'Neophyte Scribe',
+      2: 'Wandering Seeker',
+      3: 'Oath-Bound Apprentice',
+      4: 'Ironwill Adept',
+      5: 'Runebound Artisan',
+      6: 'Veilwalker',
+      7: 'Stormforged Knight',
+      8: 'Arcane Sovereign',
+      9: 'Legendary Architect'
+    }
+    return fantasyRanks[lvl] || fantasyRanks[9] || `Ascended Creator Lvl ${lvl}`
   }
 
   // Dynamic rotating placeholders for SAGACORE Dream Forge
@@ -768,7 +774,7 @@ export default function Dashboard() {
                 <div className="mt-6 w-full rounded-2xl bg-yellow-500/10 border border-yellow-500/20 px-6 py-4 shadow-[0_0_20px_rgba(234,179,8,0.1)]">
                   <span className="block text-zinc-400 font-mono text-[10px] uppercase tracking-widest">New Rank Obtained</span>
                   <span className="block mt-1 font-cinzel text-xl font-black text-yellow-300 tracking-wide uppercase">
-                    {getRankName(justLeveledTo)}
+                    {getRankName(justLeveledTo, activeWorld.theme)}
                   </span>
                   <span className="block mt-1 text-zinc-500 text-[10px] font-mono font-bold">LEVEL {justLeveledTo} ASCENSION</span>
                 </div>
