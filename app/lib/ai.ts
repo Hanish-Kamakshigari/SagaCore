@@ -142,6 +142,59 @@ function isValidJSON(str: string): boolean {
   }
 }
 
+async function callGroq(systemPrompt: string, messages: any[] = []): Promise<string> {
+  const apiKey = process.env.GROQ_API_KEY
+  if (!apiKey) {
+    throw new Error('GROQ_API_KEY is not defined in the environment')
+  }
+
+  // Map roles and content formats from Gemini to OpenAI/Groq standards
+  const mappedMessages: any[] = []
+  if (systemPrompt) {
+    mappedMessages.push({ role: 'system', content: systemPrompt })
+  }
+
+  for (const m of messages) {
+    let textContent = ''
+    if (typeof m.content === 'string') {
+      textContent = m.content
+    } else if (m.parts && Array.isArray(m.parts)) {
+      textContent = m.parts.map((p: any) => p.text || '').join('\n')
+    } else if (m.parts && typeof m.parts === 'object') {
+      textContent = (m.parts as any).text || ''
+    }
+
+    mappedMessages.push({
+      role: m.role === 'model' ? 'assistant' : m.role,
+      content: textContent
+    })
+  }
+
+  console.log('[AI Engine] Delegating prompt execution to Groq API (Llama 3.3)...')
+  
+  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      model: 'llama-3.3-70b-versatile',
+      messages: mappedMessages,
+      temperature: 0.7,
+      response_format: { type: 'json_object' }
+    })
+  })
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}))
+    throw new Error(`Groq API failure ${response.status}: ${JSON.stringify(err)}`)
+  }
+
+  const data = await response.json()
+  return data.choices?.[0]?.message?.content || ''
+}
+
 // ─── Shared fetch helper ──────────────────────────────────────────────────────
 
 async function callGemini(payload: any): Promise<string> {
@@ -264,8 +317,9 @@ async function callGemini(payload: any): Promise<string> {
   let loopCount = 0
   const maxLoops = 5
 
-  while (loopCount < maxLoops) {
-    loopCount++
+  try {
+    while (loopCount < maxLoops) {
+      loopCount++
     const body: any = {
       contents: currentContents,
       tools: dbTools,
@@ -419,7 +473,21 @@ async function callGemini(payload: any): Promise<string> {
     return text
   }
 
-  throw new Error('Gemini API call failed: ReAct loop max iterations reached')
+    throw new Error('Gemini API call failed: ReAct loop max iterations reached')
+  } catch (geminiError: any) {
+    if (process.env.GROQ_API_KEY) {
+      try {
+        console.warn(`[AI Engine] Gemini API failed (${geminiError.message || geminiError}). Attempting tertiary fallback via Groq API...`)
+        const groqResult = await callGroq(systemPrompt, payload.messages)
+        return groqResult
+      } catch (groqError: any) {
+        console.error(`[AI Engine] Groq fallback also failed: ${groqError.message || groqError}`)
+        throw geminiError
+      }
+    } else {
+      throw geminiError
+    }
+  }
 }
 
 // ─── Shared JSON parser ───────────────────────────────────────────────────────
