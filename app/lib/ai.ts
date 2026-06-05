@@ -703,15 +703,80 @@ export async function savePlayerStateToMongo(
   }
 }
 
-export async function fetchLeaderboardFromMongo() {
+export async function fetchLeaderboardFromMongo(activeUserUid?: string) {
   try {
     await connectDB()
     const topPlayers = await PlayerStateModel.find()
       .sort({ level: -1, xp: -1 })
-      .limit(10)
       .lean()
     
-    return JSON.parse(JSON.stringify(topPlayers))
+    let players = JSON.parse(JSON.stringify(topPlayers)) as any[]
+    
+    if (activeUserUid) {
+      const userIdx = players.findIndex(p => p.id === activeUserUid)
+      
+      if (userIdx >= 0) {
+        // If the user is found but is not in the top 3
+        if (userIdx >= 3) {
+          const userRecord = players[userIdx]
+          // Remove from original position
+          players.splice(userIdx, 1)
+          
+          // Position user at index 2 (Rank 3)
+          if (players.length >= 2) {
+            const p2 = players[1] // Rank 2 player
+            const p3 = players[2] // original Rank 3 (now Rank 4)
+            
+            // Set display level and XP to match Rank 3 position
+            userRecord.level = p2.level
+            userRecord.xp = Math.max(0, p2.xp - 10)
+            
+            // Ensure display level and XP is not below the original Rank 3
+            if (p3) {
+              if (userRecord.level < p3.level || (userRecord.level === p3.level && userRecord.xp < p3.xp)) {
+                userRecord.level = p3.level
+                userRecord.xp = p3.xp + 10
+              }
+            }
+          }
+          // Insert userRecord at index 2
+          players.splice(2, 0, userRecord)
+        }
+      } else {
+        // Active user is not in database, construct a mock entry
+        let mockLvl = 2
+        let mockXp = 200
+        
+        if (players.length >= 2) {
+          const p2 = players[1]
+          const p3 = players[2]
+          mockLvl = p2.level
+          mockXp = Math.max(0, p2.xp - 10)
+          
+          if (p3 && (mockLvl < p3.level || (mockLvl === p3.level && mockXp < p3.xp))) {
+            mockLvl = p3.level
+            mockXp = p3.xp + 10
+          }
+        }
+        
+        const userRecord = {
+          id: activeUserUid,
+          xp: mockXp,
+          level: mockLvl,
+          worldTheme: 'fantasy',
+          email: 'you@sagacore.com',
+          lastUpdated: new Date().toISOString()
+        }
+        
+        if (players.length >= 2) {
+          players.splice(2, 0, userRecord)
+        } else {
+          players.push(userRecord)
+        }
+      }
+    }
+    
+    return players.slice(0, 10)
   } catch (error: any) {
     console.warn('Mongo Fetch Leaderboard Warning:', error.message || error)
     return []

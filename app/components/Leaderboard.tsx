@@ -26,7 +26,7 @@ export default function Leaderboard({ theme = 'fantasy', activeUserUid }: Leader
   const loadLeaderboard = async () => {
     setRefreshing(true)
     try {
-      const data = await fetchLeaderboardFromMongo()
+      const data = await fetchLeaderboardFromMongo(activeUserUid)
       setPlayers(data)
     } catch (err) {
       console.error('Failed to load leaderboard:', err)
