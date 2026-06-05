@@ -326,10 +326,15 @@ export default function AuthPage() {
                   initial={{ opacity: 0, scale: 0.95, y: -10 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                  className="rounded-2xl border border-green-500/20 bg-green-500/5 px-4.5 py-3.5 flex gap-3 items-center text-green-450 text-xs shadow-[0_0_15px_rgba(34,197,94,0.05)] animate-pulse"
+                  className="rounded-2xl border border-green-500/20 bg-green-500/5 px-4.5 py-3.5 flex flex-col gap-2 shadow-[0_0_15px_rgba(34,197,94,0.05)]"
                 >
-                  <Sparkle size={16} className="shrink-0 text-green-450" />
-                  <span className="leading-relaxed">A celestial reset link has been dispatched to your email coordinates! Check your inbox.</span>
+                  <div className="flex gap-3 items-center text-green-450 text-xs">
+                    <Sparkle size={16} className="shrink-0 text-green-450" />
+                    <span className="leading-relaxed font-semibold">A celestial reset link has been dispatched to your email coordinates! Check your inbox.</span>
+                  </div>
+                  <div className="pl-7 text-[11px] text-zinc-400">
+                    Be sure to check your spam or junk folder if the transmission does not appear in your inbox.
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
