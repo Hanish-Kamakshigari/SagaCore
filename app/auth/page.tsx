@@ -42,11 +42,14 @@ export default function AuthPage() {
       }
       setResetSent(true)
     } catch (err: any) {
-      let msg = 'Failed to send password reset email.'
+      console.error('[Firebase Password Reset Error]:', err)
+      let msg = err.message || 'Failed to send password reset email.'
       if (err.code === 'auth/user-not-found') {
         msg = 'No registered soul found with this email.'
       } else if (err.code === 'auth/invalid-email') {
         msg = 'Invalid email coordinates format.'
+      } else if (err.code) {
+        msg = `Firebase Auth Error (${err.code}): ${err.message}`
       }
       setLocalError(msg)
     } finally {
