@@ -63,6 +63,7 @@ const PlayerStateSchema = new mongoose.Schema({
   level: { type: Number, required: true },
   worldTheme: { type: String, required: true },
   email: { type: String }, // Optional email field for leaderboard display names
+  displayName: { type: String }, // Custom scribe handle/display name
   stability: { type: Number, default: 100 },
   streak: { type: Number, default: 0 },
   lastDailyChallengeDate: { type: String },

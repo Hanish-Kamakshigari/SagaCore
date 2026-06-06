@@ -10,6 +10,7 @@ interface LeaderboardPlayer {
   level: number
   worldTheme: string
   email?: string
+  displayName?: string
   lastUpdated: string
 }
 
@@ -66,19 +67,18 @@ export default function Leaderboard({ theme = 'fantasy', activeUserUid }: Leader
   }
 
   const formatUsername = (player: LeaderboardPlayer) => {
+    const nameToUse = player.displayName || (player.email ? player.email.split('@')[0] : '') || `Scribe_${player.id.substring(0, 5)}`
+    const truncatedName = nameToUse.length > 15 ? `${nameToUse.substring(0, 15)}...` : nameToUse
+
     if (player.id === activeUserUid) {
       return (
         <span className="font-bold text-white flex items-center gap-1.5">
-          You ({player.email ? player.email.split('@')[0] : 'Scribe'})
+          You ({truncatedName})
           <span className="rounded-full bg-purple-500/20 border border-purple-500/30 px-1.5 py-0.2 text-[8px] text-purple-300 uppercase tracking-widest font-mono">Hero</span>
         </span>
       )
     }
-    if (player.email) {
-      const name = player.email.split('@')[0]
-      return name.length > 15 ? `${name.substring(0, 15)}...` : name
-    }
-    return `Scribe_${player.id.substring(0, 5)}`
+    return truncatedName
   }
 
   return (

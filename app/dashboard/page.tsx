@@ -162,6 +162,17 @@ export default function Dashboard() {
   const [isDataLoaded, setIsDataLoaded] = useState(false)
   const [showAccountDetails, setShowAccountDetails] = useState<boolean>(false)
   const [showStreakNotice, setShowStreakNotice] = useState<boolean>(false)
+  const [displayName, _setDisplayName] = useState<string>('')
+  const [isEditingName, setIsEditingName] = useState<boolean>(false)
+  const [tempName, setTempName] = useState<string>('')
+
+  const setDisplayName = (value: string | ((prev: string) => string)) => {
+    _setDisplayName((prev) => {
+      const next = typeof value === 'function' ? (value as Function)(prev) : value
+      if (user) localStorage.setItem(`sagacore_${user.uid}_displayName`, next)
+      return next
+    })
+  }
 
   // Scoped setters to write directly to Namespaced local storage
   const setActiveWorld = (newWorld: World) => {
@@ -290,6 +301,7 @@ export default function Dashboard() {
         const localLastDailyChallengeDate = localStorage.getItem(`sagacore_${uid}_lastDailyChallengeDate`)
         const localLastActiveDate = localStorage.getItem(`sagacore_${uid}_lastActiveDate`)
         const localDailyChallenge = localStorage.getItem(`sagacore_${uid}_dailyChallenge`)
+        const localDisplayName = localStorage.getItem(`sagacore_${uid}_displayName`)
 
         if (localActiveWorld) _setActiveWorld(JSON.parse(localActiveWorld))
         if (localQuests) _setQuests(JSON.parse(localQuests))
@@ -307,6 +319,7 @@ export default function Dashboard() {
         if (localLastDailyChallengeDate) _setLastDailyChallengeDate(localLastDailyChallengeDate)
         if (localLastActiveDate) _setLastActiveDate(localLastActiveDate)
         if (localDailyChallenge) _setDailyChallenge(JSON.parse(localDailyChallenge))
+        if (localDisplayName) _setDisplayName(localDisplayName)
 
         // If it's a guest session, save initial/pre-filled quests to local storage if not already there
         if (isGuest) {
@@ -346,6 +359,10 @@ export default function Dashboard() {
           _setStreak(dbPlayer.streak !== undefined ? dbPlayer.streak : 0)
           _setLastDailyChallengeDate(dbPlayer.lastDailyChallengeDate || '')
           _setLastActiveDate(dbPlayer.lastActiveDate || '')
+          if (dbPlayer.displayName) {
+            _setDisplayName(dbPlayer.displayName)
+            localStorage.setItem(`sagacore_${uid}_displayName`, dbPlayer.displayName)
+          }
 
           const matchedWorld = Object.values(worldTemplates).find(w => w.theme === dbPlayer.worldTheme) || worldTemplates.fantasy
           _setActiveWorld(matchedWorld)
@@ -368,7 +385,8 @@ export default function Dashboard() {
               dbPlayer.stability !== undefined ? dbPlayer.stability : 100,
               dbPlayer.streak !== undefined ? dbPlayer.streak : 0,
               dbPlayer.lastDailyChallengeDate || undefined,
-              dbPlayer.lastActiveDate || undefined
+              dbPlayer.lastActiveDate || undefined,
+              dbPlayer.displayName || localDisplayName || undefined
             )
           }
         } else {
@@ -387,7 +405,8 @@ export default function Dashboard() {
             initialStability, 
             initialStreak, 
             localLastDailyChallengeDate || undefined, 
-            localLastActiveDate || undefined
+            localLastActiveDate || undefined,
+            localDisplayName || undefined
           )
         }
       } catch (err) {
@@ -506,7 +525,8 @@ export default function Dashboard() {
             newStability,
             nextStreak,
             lastDailyChallengeDate || undefined,
-            todayStr
+            todayStr,
+            displayName || undefined
           ).catch((e) => console.warn('Failed saving daily decay check state:', e))
         }
       }
@@ -596,7 +616,8 @@ export default function Dashboard() {
             nextStability,
             streak,
             lastDailyChallengeDate || undefined,
-            lastActiveDate || undefined
+            lastActiveDate || undefined,
+            displayName || undefined
           ).catch((e) => console.warn('Failed saving expired state stability update:', e))
         }
       }
@@ -623,7 +644,7 @@ export default function Dashboard() {
     ])
     
     if (user && !user.uid.startsWith('guest_')) {
-      await savePlayerStateToMongo(user.uid, xp, level, activeWorld.theme, user.email, 50, streak, lastDailyChallengeDate, lastActiveDate)
+      await savePlayerStateToMongo(user.uid, xp, level, activeWorld.theme, user.email, 50, streak, lastDailyChallengeDate, lastActiveDate, displayName || undefined)
         .catch((e) => console.warn('Failed to save restoration state:', e))
     }
   }
@@ -732,6 +753,39 @@ export default function Dashboard() {
     const nextWorld = worldTemplates[theme]
     setActiveWorld(nextWorld)
     setLore((prev) => [`[SHIFT] REALM SHIFT: Now entering: "${nextWorld.name}"`, ...prev])
+  }
+
+  const handleSaveDisplayName = async (newName: string) => {
+    const trimmed = newName.trim()
+    if (!trimmed) return
+    setDisplayName(trimmed)
+    setIsEditingName(false)
+    
+    // Add to lore codex logs
+    setLore((prev) => [
+      `✍️ Scribe handle registered as "${trimmed}"`,
+      ...prev
+    ])
+
+    // Save state to Mongo
+    if (user && !user.uid.startsWith('guest_')) {
+      try {
+        await savePlayerStateToMongo(
+          user.uid,
+          xp,
+          level,
+          activeWorld.theme,
+          user.email,
+          stability,
+          streak,
+          lastDailyChallengeDate || undefined,
+          lastActiveDate || undefined,
+          trimmed
+        )
+      } catch (err) {
+        console.warn('Failed saving updated Scribe Handle:', err)
+      }
+    }
   }
 
   // ── Custom world forge — now calls Gemini instead of keyword-matching ──────
@@ -1536,7 +1590,9 @@ export default function Dashboard() {
             <div 
               className="relative py-2"
               onMouseEnter={() => setShowAccountDetails(true)}
-              onMouseLeave={() => setShowAccountDetails(false)}
+              onMouseLeave={() => {
+                if (!isEditingName) setShowAccountDetails(false)
+              }}
             >
               <button
                 className="flex items-center gap-1.5 rounded-full border border-zinc-800 bg-zinc-900/40 p-1.5 text-xs font-medium backdrop-blur-md hover:border-zinc-700 hover:bg-zinc-900/60 transition-all duration-300 select-none cursor-default"
@@ -1561,11 +1617,55 @@ export default function Dashboard() {
                       <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-purple-500/10 border border-purple-500/25 text-sm font-black uppercase text-purple-300 font-mono">
                         {user.uid.startsWith('guest_') ? 'G' : (user.email?.[0] || 'U')}
                       </div>
-                      <div className="overflow-hidden">
+                      <div className="overflow-hidden flex-1">
                         <span className="block text-[9px] font-bold uppercase tracking-widest text-zinc-550 font-mono">Active Scribe</span>
-                        <span className="block text-xs font-semibold text-zinc-200 truncate font-mono" title={user.email || 'Guest'}>
-                          {user.uid.startsWith('guest_') ? 'Guest Scribe' : user.email}
-                        </span>
+                        {isEditingName ? (
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <input
+                              type="text"
+                              value={tempName}
+                              onChange={(e) => setTempName(e.target.value)}
+                              placeholder="Choose Handle"
+                              maxLength={15}
+                              className="w-full bg-zinc-900 border border-zinc-800 rounded px-1.5 py-0.5 text-xs text-zinc-200 font-mono focus:outline-none focus:border-purple-500/50"
+                            />
+                            <button
+                              onClick={() => handleSaveDisplayName(tempName)}
+                              className="text-green-400 hover:text-green-300 p-0.5"
+                              title="Save Handle"
+                            >
+                              <Check size={13} strokeWidth={3} />
+                            </button>
+                            <button
+                              onClick={() => setIsEditingName(false)}
+                              className="text-zinc-500 hover:text-zinc-400 p-0.5"
+                              title="Cancel"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-between gap-1 group/name">
+                            <span className="block text-xs font-semibold text-zinc-200 truncate font-mono" title={displayName || user.email || 'Guest'}>
+                              {displayName || (user.uid.startsWith('guest_') ? 'Guest Scribe' : user.email?.split('@')[0])}
+                            </span>
+                            <button
+                              onClick={() => {
+                                setTempName(displayName || (user.uid.startsWith('guest_') ? 'Guest Scribe' : user.email?.split('@')[0] || ''))
+                                setIsEditingName(true)}
+                              }
+                              className="text-zinc-550 hover:text-purple-400 opacity-0 group-hover/name:opacity-100 transition-opacity p-0.5 cursor-pointer"
+                              title="Edit Scribe Handle"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-pencil"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>
+                            </button>
+                          </div>
+                        )}
+                        {!user.uid.startsWith('guest_') && !isEditingName && (
+                          <span className="block text-[9px] text-zinc-500 truncate font-mono mt-0.5">
+                            {user.email}
+                          </span>
+                        )}
                       </div>
                     </div>
 

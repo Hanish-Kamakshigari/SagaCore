@@ -913,7 +913,8 @@ export async function savePlayerStateToMongo(
   stability?: number,
   streak?: number,
   lastDailyChallengeDate?: string,
-  lastActiveDate?: string
+  lastActiveDate?: string,
+  displayName?: string
 ): Promise<void> {
   if (playerId.startsWith('guest_')) return
   try {
@@ -925,6 +926,7 @@ export async function savePlayerStateToMongo(
         level,
         worldTheme,
         email: email || undefined,
+        displayName: displayName || undefined,
         stability: stability !== undefined ? stability : 100,
         streak: streak !== undefined ? streak : 0,
         lastDailyChallengeDate,
