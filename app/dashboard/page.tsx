@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Sparkles, ArrowLeft, Send, Sparkle, Award, Compass, BookOpen, Scroll as ScrollIcon, Loader2, Volume2, VolumeX, LogOut, Trophy, AlertCircle, RefreshCw, Check, ChevronDown } from 'lucide-react'
+import { Sparkles, ArrowLeft, Send, Sparkle, Award, Compass, BookOpen, Scroll as ScrollIcon, Loader2, Volume2, VolumeX, LogOut, Trophy, AlertCircle, RefreshCw, Check, ChevronDown, Flame, Zap, Calendar, TrendingUp, Clock, ShieldAlert } from 'lucide-react'
 
 import KingdomStatus from '../components/KingdomStatus'
 import LoreFeed from '../components/LoreFeed'
@@ -119,6 +119,13 @@ const getChallengeRarity = (title: string): 'common' | 'rare' | 'epic' | 'legend
   if (index < 80) return 'rare'         // 30%
   if (index < 95) return 'epic'         // 15%
   return 'legendary'                    // 5%
+}
+
+const getStreakMultiplier = (streakCount: number): number => {
+  if (streakCount >= 14) return 1.5
+  if (streakCount >= 7) return 1.25
+  if (streakCount >= 3) return 1.1
+  return 1.0
 }
 
 function LevelUpConfetti() {
@@ -977,7 +984,9 @@ export default function Dashboard() {
 
     // XP + level progression (improved logic to handle multiple level ups)
     const questXp    = questToComplete.xp
-    const newXpTotal = xp + questXp
+    const multiplier = getStreakMultiplier(streak)
+    const rewardedXp = Math.round(questXp * multiplier)
+    const newXpTotal = xp + rewardedXp
     let nextLevel    = level
     let remainingXp  = newXpTotal
 
@@ -1047,7 +1056,7 @@ export default function Dashboard() {
           questToComplete.category === 'creation' ? '[CREATION]' : '[DISCIPLINE]'
 
         setLore((prev) => [
-          `${categoryTag} Triumph! "${questToComplete.title}" (+${questXp} XP, +10% Stability)`,
+          `${categoryTag} Triumph! "${questToComplete.title}" (+${rewardedXp} XP${multiplier > 1 ? ` [${Math.round((multiplier - 1) * 100)}% Streak Bonus]` : ''}, +10% Stability)`,
           `Scribed Chapter ${newChapterId}: "${chapter.title}"`,
           ...prev,
         ])
@@ -1071,7 +1080,7 @@ export default function Dashboard() {
         )
         setChapters((prev) => [...prev, fallbackChapter])
         setLore((prev) => [
-          `[COMPLETE] Quest complete: "${questToComplete.title}" (+${questXp} XP, +10% Stability)`,
+          `[COMPLETE] Quest complete: "${questToComplete.title}" (+${rewardedXp} XP${multiplier > 1 ? ` [${Math.round((multiplier - 1) * 100)}% Streak Bonus]` : ''}, +10% Stability)`,
           ...prev,
         ])
       } finally {
@@ -1152,7 +1161,9 @@ export default function Dashboard() {
     const challengeStability = rarity === 'legendary' ? 35 : rarity === 'epic' ? 25 : rarity === 'rare' ? 20 : 15
 
     // XP + level progression
-    const newXpTotal = xp + challengeXp
+    const multiplier = getStreakMultiplier(streak)
+    const rewardedXp = Math.round(challengeXp * multiplier)
+    const newXpTotal = xp + rewardedXp
     let nextLevel = level
     let remainingXp = newXpTotal
 
@@ -1217,7 +1228,7 @@ export default function Dashboard() {
 
       setChapters((prev) => [...prev, chapter])
       setLore((prev) => [
-        `🏆 Daily Challenge Triumph! Completed: "${dailyChallenge.title}" (+100 XP, +15% Stability)`,
+        `🏆 Daily Challenge Triumph! Completed: "${dailyChallenge.title}" (+${rewardedXp} XP${multiplier > 1 ? ` [${Math.round((multiplier - 1) * 100)}% Streak Bonus]` : ''}, +${challengeStability}% Stability)`,
         `🔥 Streak updated: ${nextStreak} Days!`,
         `Scribed Daily Chapter ${chapterId}: "${chapter.title}"`,
         ...prev,
@@ -1246,7 +1257,7 @@ export default function Dashboard() {
       }
       setChapters((prev) => [...prev, fallbackChapter])
       setLore((prev) => [
-        `🏆 Completed Daily Challenge: "${dailyChallenge.title}" (+100 XP, +15% Stability)`,
+        `🏆 Completed Daily Challenge: "${dailyChallenge.title}" (+${rewardedXp} XP${multiplier > 1 ? ` [${Math.round((multiplier - 1) * 100)}% Streak Bonus]` : ''}, +${challengeStability}% Stability)`,
         ...prev,
       ])
     } finally {
@@ -1492,30 +1503,31 @@ export default function Dashboard() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4 backdrop-blur-md"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 px-4 backdrop-blur-md overflow-y-auto py-8"
           >
             <motion.div
-              initial={{ scale: 0.85, y: 30, opacity: 0 }}
+              initial={{ scale: 0.9, y: 30, opacity: 0 }}
               animate={{ scale: 1, y: 0, opacity: 1 }}
-              exit={{ scale: 0.85, y: -30, opacity: 0 }}
-              transition={{ type: 'spring', damping: 18, stiffness: 90 }}
-              className="relative max-w-sm w-full overflow-hidden rounded-[2.25rem] border border-amber-500/25 bg-zinc-950 p-7 text-center shadow-[0_0_50px_rgba(245,158,11,0.15)]"
+              exit={{ scale: 0.9, y: -30, opacity: 0 }}
+              transition={{ type: 'spring', damping: 20, stiffness: 80 }}
+              className="relative max-w-2xl w-full overflow-hidden rounded-[2.5rem] border border-amber-500/25 bg-zinc-950 p-6 md:p-8 text-center shadow-[0_0_60px_rgba(245,158,11,0.2)] my-auto"
             >
               {/* Radial gradient background highlights */}
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(245,158,11,0.06),transparent_65%)]" />
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(245,158,11,0.08),transparent_70%)] pointer-events-none" />
               
               <div className="relative z-10 flex flex-col items-center">
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-amber-500/35 bg-amber-500/10 text-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.2)] mb-5 animate-pulse">
-                  <span className="text-2xl font-mono">🔥</span>
+                {/* Pulsing Flame Icon */}
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-amber-500/35 bg-amber-500/10 text-amber-400 shadow-[0_0_25px_rgba(245,158,11,0.25)] mb-4 animate-pulse">
+                  <Flame size={32} className="animate-bounce text-orange-500 fill-amber-500" />
                 </div>
 
-                <span className="text-[10px] font-black uppercase tracking-widest text-amber-500 font-mono">Realm Connection Est.</span>
-                <h2 className="text-2xl font-extrabold text-white mt-1.5 font-cinzel tracking-wide">WELCOME BACK, SCRIBE</h2>
+                <span className="text-[10px] font-black uppercase tracking-widest text-amber-500 font-mono">Cognitive Connection Established</span>
+                <h2 className="text-3xl font-extrabold text-white mt-1.5 font-cinzel tracking-wider">WELCOME BACK, SCRIBE</h2>
                 
-                <p className="mt-4 text-xs text-zinc-400 leading-relaxed max-w-xs mx-auto">
+                <p className="mt-3 text-xs text-zinc-400 leading-relaxed max-w-md mx-auto">
                   {streak > 0 ? (
                     <>
-                      Your daily check-in is synchronized! Keep your streak burning hot by completing today's focus trial.
+                      Your daily check-in is synchronized! Keep your streak burning hot by completing today's focus trial to earn bonus multipliers.
                     </>
                   ) : (
                     <>
@@ -1525,19 +1537,71 @@ export default function Dashboard() {
                 </p>
 
                 {/* Big streak showcase banner */}
-                <div className="mt-5 w-full rounded-2xl bg-amber-500/10 border border-amber-500/20 py-4 px-6 shadow-[0_0_15px_rgba(245,158,11,0.05)]">
+                <div className="mt-5 w-full rounded-2xl bg-amber-500/10 border border-amber-500/20 py-3.5 px-6 shadow-[0_0_15px_rgba(245,158,11,0.05)]">
                   <span className="block text-zinc-550 font-mono text-[9px] uppercase tracking-wider">Active consistency record</span>
-                  <span className="block mt-1 font-mono text-2xl font-black text-amber-400 tracking-wider">
+                  <span className="block mt-0.5 font-mono text-3xl font-black text-amber-400 tracking-wider">
                     {streak} DAY STREAK
                   </span>
-                  <span className="block mt-1 text-[9px] text-zinc-450 uppercase font-mono tracking-widest">
+                  <span className="block mt-0.5 text-[9px] text-zinc-450 uppercase font-mono tracking-widest">
                     {streak > 0 ? "🔥 RETAIN THE COGNITIVE FLOW" : "⚡ IGNITE DAILY PROTOCOLS"}
                   </span>
                 </div>
 
+                {/* 3-Step Educational Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 w-full text-left">
+                  {/* Step 1 */}
+                  <div className="bg-zinc-900/40 border border-zinc-800/80 rounded-2xl p-4 flex flex-col items-start transition hover:border-amber-500/20">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-400 mb-3">
+                      <Zap size={16} />
+                    </div>
+                    <span className="font-mono text-xs font-bold uppercase tracking-wider text-amber-400">1. Ignite Streak</span>
+                    <p className="text-[11px] text-zinc-400 mt-2 leading-relaxed">
+                      Complete any Quest or your Daily Focus Trial on an active day. Your streak counter ignites to <strong className="text-zinc-200">1 Day</strong>.
+                    </p>
+                  </div>
+
+                  {/* Step 2 */}
+                  <div className="bg-zinc-900/40 border border-zinc-800/80 rounded-2xl p-4 flex flex-col items-start transition hover:border-amber-500/20">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-400 mb-3">
+                      <Calendar size={16} />
+                    </div>
+                    <span className="font-mono text-xs font-bold uppercase tracking-wider text-amber-400">2. Keep it Burning</span>
+                    <p className="text-[11px] text-zinc-400 mt-2 leading-relaxed">
+                      Log in and complete at least one Quest or Focus Trial within each <strong className="text-zinc-200">24-hour cycle</strong> to maintain the fire.
+                    </p>
+                  </div>
+
+                  {/* Step 3 */}
+                  <div className="bg-zinc-900/40 border border-zinc-800/80 rounded-2xl p-4 flex flex-col items-start transition hover:border-amber-500/20">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-400 mb-3">
+                      <TrendingUp size={16} />
+                    </div>
+                    <span className="font-mono text-xs font-bold uppercase tracking-wider text-amber-400">3. Amplify Rewards</span>
+                    <p className="text-[11px] text-zinc-400 mt-2 leading-relaxed">
+                      Get powerful XP multipliers for all quest completions:
+                    </p>
+                    <ul className="text-[10px] text-zinc-500 font-mono mt-1.5 space-y-0.5">
+                      <li>• 3+ Days: <strong className="text-amber-400">1.1x XP</strong></li>
+                      <li>• 7+ Days: <strong className="text-amber-400">1.25x XP</strong></li>
+                      <li>• 14+ Days: <strong className="text-amber-400">1.5x XP</strong></li>
+                    </ul>
+                  </div>
+                </div>
+
+                {/* Consequences Warning callout */}
+                <div className="mt-6 w-full rounded-2xl bg-red-950/15 border border-red-500/20 p-4 text-left flex items-start gap-3">
+                  <ShieldAlert size={18} className="text-red-400 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-red-400 block">Consequences of Disconnection</span>
+                    <p className="text-[11px] text-zinc-400 mt-1 leading-relaxed">
+                      Missing a day resets your streak to <strong className="text-zinc-200">0</strong>. Additionally, incomplete active quests will decay your <strong className="text-zinc-200">Realm Stability by 10% daily</strong>. At 0%, the cores collapse, freezing quest forging until a Restoration Trial is complete.
+                    </p>
+                  </div>
+                </div>
+
                 <button
                   onClick={() => setShowStreakNotice(false)}
-                  className="mt-6 w-full rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white py-2.5 text-xs font-bold transition hover:brightness-110 active:scale-95 shadow-[0_0_15px_rgba(245,158,11,0.2)]"
+                  className="mt-6 w-full rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 text-white py-3 text-sm font-bold transition hover:brightness-110 active:scale-98 shadow-[0_0_20px_rgba(245,158,11,0.25)]"
                 >
                   Enter Sanctum
                 </button>
