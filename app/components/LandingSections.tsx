@@ -307,7 +307,7 @@ export default function LandingSections() {
 
             <h3 className="text-xl font-bold text-zinc-200 mt-2 font-cinzel">Multiplayer World Sharing</h3>
             <p className="mt-2 text-sm text-zinc-400 leading-relaxed max-w-2xl">
-              Currently adding support for cooperative player parties, shared realm campaigns, group-crafted quests, live leaderboard statistics, and rich Discord webhook tracking.
+              Currently adding support for cooperative player parties and live leaderboard statistics.
             </p>
           </motion.div>
 
@@ -352,7 +352,7 @@ export default function LandingSections() {
             </span>
           </div>
           <p className="text-xs text-zinc-600 font-mono">
-            &copy; 2026 SAGACORE HUB · Forge Ambitions Into Legends. All Realms Reserved.
+            © 2026 SagaCore Hub · All rights reserved.
           </p>
         </div>
       </footer>
