@@ -333,7 +333,7 @@ export default function LandingSections() {
 
             <h3 className="text-xl font-bold text-zinc-200 mt-2 font-cinzel">Sovereign Proof-of-Action</h3>
             <p className="mt-2 text-sm text-zinc-400 leading-relaxed max-w-2xl">
-              Integrating accomplishment proofs on sovereign decentralized ledgers, complete offline soundscape generators, and iOS/Android companion companion applications.
+              Integrating accomplishment proofs on sovereign decentralized ledgers, complete offline soundscape generators, and iOS/Android companion applications.
             </p>
           </motion.div>
 
