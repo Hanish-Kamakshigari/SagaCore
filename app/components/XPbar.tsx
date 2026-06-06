@@ -9,9 +9,10 @@ interface XPBarProps {
   level: number
   theme?: 'fantasy' | 'cyberpunk' | 'steampunk'
   streak?: number
+  onStreakClick?: () => void
 }
 
-export default function XPBar({ xp, level, theme = 'fantasy', streak = 0 }: XPBarProps) {
+export default function XPBar({ xp, level, theme = 'fantasy', streak = 0, onStreakClick }: XPBarProps) {
   const [showTooltip, setShowTooltip] = useState(false)
   const [prevXp, setPrevXp] = useState(xp)
   const [prevLevel, setPrevLevel] = useState(level)
@@ -241,7 +242,8 @@ export default function XPBar({ xp, level, theme = 'fantasy', streak = 0 }: XPBa
                   initial={{ scale: 0.8, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   whileHover={{ scale: 1.05 }}
-                  className="flex items-center gap-1.5 rounded-full bg-orange-500/10 border border-orange-500/25 px-2.5 py-0.5 text-[10px] font-bold text-orange-400 shadow-[0_0_10px_rgba(249,115,22,0.15)] select-none"
+                  onClick={onStreakClick}
+                  className={`flex items-center gap-1.5 rounded-full bg-orange-500/10 border border-orange-500/25 px-2.5 py-0.5 text-[10px] font-bold text-orange-400 shadow-[0_0_10px_rgba(249,115,22,0.15)] select-none ${onStreakClick ? 'cursor-pointer hover:bg-orange-500/20 hover:border-orange-500/40 active:scale-95 transition-all' : ''}`}
                 >
                   <span className="animate-pulse">🔥</span>
                   <span>{streak}-DAY STREAK</span>
@@ -289,9 +291,14 @@ export default function XPBar({ xp, level, theme = 'fantasy', streak = 0 }: XPBa
               </AnimatePresence>
             </div>
             
-            <span className="font-mono text-zinc-200">
-              <span className={`font-bold ${style.rankText}`}>{xp}</span> / 1000 XP
-            </span>
+            <div className="text-right">
+              <span className="font-mono text-zinc-200">
+                <span className={`font-bold ${style.rankText}`}>{xp}</span> / 1000 XP
+              </span>
+              <span className="block text-[10px] font-mono text-zinc-500 mt-0.5">
+                Total: <span className={`font-bold ${style.rankText}`}>{((level - 1) * 1000 + xp).toLocaleString()}</span> XP earned
+              </span>
+            </div>
           </div>
 
           <div className="relative h-6 w-full overflow-hidden rounded-full bg-zinc-900 border border-zinc-800/50">

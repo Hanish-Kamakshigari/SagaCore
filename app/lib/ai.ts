@@ -948,6 +948,9 @@ export async function fetchLeaderboardFromMongo(activeUserUid?: string) {
       .lean()
     
     let players = JSON.parse(JSON.stringify(topPlayers)) as any[]
+
+    // Helper: cumulative XP = completed levels * 1000 + remainder in current level
+    const totalXp = (p: any) => (p.level - 1) * 1000 + p.xp
     
     if (activeUserUid) {
       const userIdx = players.findIndex(p => p.id === activeUserUid)
@@ -970,7 +973,7 @@ export async function fetchLeaderboardFromMongo(activeUserUid?: string) {
             
             // Ensure display level and XP is not below the original Rank 3
             if (p3) {
-              if (userRecord.level < p3.level || (userRecord.level === p3.level && userRecord.xp < p3.xp)) {
+              if (totalXp(userRecord) < totalXp(p3)) {
                 userRecord.level = p3.level
                 userRecord.xp = p3.xp + 10
               }
@@ -990,7 +993,7 @@ export async function fetchLeaderboardFromMongo(activeUserUid?: string) {
           mockLvl = p2.level
           mockXp = Math.max(0, p2.xp - 10)
           
-          if (p3 && (mockLvl < p3.level || (mockLvl === p3.level && mockXp < p3.xp))) {
+          if (p3 && totalXp({ level: mockLvl, xp: mockXp }) < totalXp(p3)) {
             mockLvl = p3.level
             mockXp = p3.xp + 10
           }

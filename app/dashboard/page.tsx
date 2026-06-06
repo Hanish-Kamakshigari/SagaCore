@@ -109,7 +109,8 @@ const playDailyTriumphChime = () => {
   }
 }
 
-const getChallengeRarity = (title: string): 'common' | 'rare' | 'epic' | 'legendary' => {
+const getChallengeRarity = (title: string | undefined | null): 'common' | 'rare' | 'epic' | 'legendary' => {
+  if (!title) return 'common'
   let hash = 0
   for (let i = 0; i < title.length; i++) {
     hash = title.charCodeAt(i) + ((hash << 5) - hash)
@@ -494,6 +495,16 @@ export default function Dashboard() {
     }
   }
 
+  // ── Show streak notice on EVERY visit once data is ready ───────────────────
+  const hasShownStreakRef = useRef(false)
+  useEffect(() => {
+    if (!isDataLoaded || !user || hasShownStreakRef.current) return
+    hasShownStreakRef.current = true
+    // Small delay so the dashboard renders before the modal appears
+    const t = setTimeout(() => setShowStreakNotice(true), 600)
+    return () => clearTimeout(t)
+  }, [isDataLoaded, user])
+
   // Daily Check-In effect (Streak, decay, daily challenge)
   useEffect(() => {
     if (!isDataLoaded || !user || checkedDailyRef.current) return
@@ -508,7 +519,6 @@ export default function Dashboard() {
       if (!lastActiveDate) {
         setLastActiveDate(todayStr)
         await generateDailyChallenge(todayStr, activeWorld.theme)
-        setShowStreakNotice(true)
         return
       }
 
@@ -564,9 +574,6 @@ export default function Dashboard() {
         if (lastDailyChallengeDate !== todayStr) {
           await generateDailyChallenge(todayStr, activeWorld.theme)
         }
-
-        // Show streak notice on new day login
-        setShowStreakNotice(true)
 
         // Persist updates to DB
         if (!isGuest) {
@@ -1814,10 +1821,13 @@ export default function Dashboard() {
 
                       {/* Streak & Stability Grid */}
                       <div className="grid grid-cols-2 gap-2.5 pt-1">
-                        <div className="rounded-xl border border-zinc-900 bg-zinc-900/20 p-2.5">
+                        <button 
+                          onClick={() => setShowStreakNotice(true)}
+                          className="rounded-xl border border-zinc-900 bg-zinc-900/20 p-2.5 text-left cursor-pointer hover:border-amber-500/30 hover:bg-amber-500/5 transition-all focus:outline-none focus:ring-1 focus:ring-amber-500/30"
+                        >
                           <span className="block text-[8px] font-bold uppercase tracking-wider text-zinc-550 font-mono">Streak</span>
                           <span className="block text-xs font-black text-amber-400 mt-0.5 font-mono">🔥 {streak} Days</span>
-                        </div>
+                        </button>
                         <div className="rounded-xl border border-zinc-900 bg-zinc-900/20 p-2.5">
                           <span className="block text-[8px] font-bold uppercase tracking-wider text-zinc-550 font-mono">Stability</span>
                           <span className={`block text-xs font-black mt-0.5 font-mono ${stability < 30 ? 'text-red-400' : 'text-green-400'}`}>
@@ -1880,7 +1890,7 @@ export default function Dashboard() {
         </header>
 
         {/* XP Bar */}
-        <XPBar xp={xp} level={level} theme={activeWorld.theme} streak={streak} />
+        <XPBar xp={xp} level={level} theme={activeWorld.theme} streak={streak} onStreakClick={() => setShowStreakNotice(true)} />
 
         {/* Layout grid */}
         <div className="mt-8 grid gap-6 lg:grid-cols-3">

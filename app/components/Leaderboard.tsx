@@ -53,6 +53,9 @@ export default function Leaderboard({ theme = 'fantasy', activeUserUid }: Leader
     steampunk: 'text-orange-400',
   }[theme]
 
+  // Cumulative XP = completed levels * 1000 + remainder XP in current level
+  const totalXp = (p: LeaderboardPlayer) => (p.level - 1) * 1000 + p.xp
+
   const getRankBadge = (rank: number) => {
     switch (rank) {
       case 1:
@@ -127,7 +130,7 @@ export default function Leaderboard({ theme = 'fantasy', activeUserUid }: Leader
                   <th className="pb-3">Scribe</th>
                   <th className="pb-3">Active Grid</th>
                   <th className="pb-3 text-right">Level</th>
-                  <th className="pb-3 pr-2 text-right">XP</th>
+                  <th className="pb-3 pr-2 text-right">Total XP</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-900/60">
@@ -160,7 +163,7 @@ export default function Leaderboard({ theme = 'fantasy', activeUserUid }: Leader
                         {player.level}
                       </td>
                       <td className="py-4 pr-2 text-right font-mono text-zinc-400">
-                        {player.xp}
+                        {totalXp(player).toLocaleString()}
                       </td>
                     </tr>
                   )
