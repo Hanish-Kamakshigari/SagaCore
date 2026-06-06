@@ -39,3 +39,46 @@ body {
   50%  { box-shadow: 0 0 18px rgba(200, 100, 255, 0.9); }
   100% { box-shadow: none; }
 }
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes goldGlow {
+  0%, 100% {
+    border-color: rgba(245, 158, 11, 0.4);
+    box-shadow: 0 0 20px rgba(245, 158, 11, 0.1);
+  }
+  50% {
+    border-color: rgba(251, 191, 36, 0.8);
+    box-shadow: 0 0 35px rgba(251, 191, 36, 0.25);
+  }
+}
+
+.legendary-card {
+  animation: goldGlow 4s ease-in-out infinite;
+}
+
+.shimmer-btn {
+  position: relative;
+  overflow: hidden;
+}
+
+.shimmer-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.2) 50%,
+    transparent 100%
+  );
+  animation: shimmer 3s infinite;
+}

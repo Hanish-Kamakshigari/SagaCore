@@ -75,6 +75,52 @@ const playLevelUpFanfare = (theme: 'fantasy' | 'cyberpunk' | 'steampunk') => {
   }
 }
 
+const playDailyTriumphChime = () => {
+  try {
+    const AudioContext = window.AudioContext || (window as any).webkitAudioContext
+    if (!AudioContext) return
+    const ctx = new AudioContext()
+    const baseTime = ctx.currentTime
+    
+    // Play a delightful, sparkling major pentatonic arpeggio (C5, E5, G5, C6)
+    const frequencies = [523.25, 659.25, 783.99, 1046.50]
+    frequencies.forEach((freq, index) => {
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+      
+      osc.type = 'sine'
+      osc.frequency.value = freq
+      
+      const start = baseTime + index * 0.08
+      const duration = 0.4
+      
+      gain.gain.setValueAtTime(0, start)
+      gain.gain.linearRampToValueAtTime(0.08, start + 0.03)
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + duration)
+      
+      osc.connect(gain)
+      gain.connect(ctx.destination)
+      
+      osc.start(start)
+      osc.stop(start + duration)
+    })
+  } catch (err) {
+    console.warn('Audio chime failed:', err)
+  }
+}
+
+const getChallengeRarity = (title: string): 'common' | 'rare' | 'epic' | 'legendary' => {
+  let hash = 0
+  for (let i = 0; i < title.length; i++) {
+    hash = title.charCodeAt(i) + ((hash << 5) - hash)
+  }
+  const index = Math.abs(hash) % 100
+  if (index < 50) return 'common'       // 50%
+  if (index < 80) return 'rare'         // 30%
+  if (index < 95) return 'epic'         // 15%
+  return 'legendary'                    // 5%
+}
+
 function LevelUpConfetti() {
   const particles = Array.from({ length: 80 })
   return (
@@ -162,6 +208,7 @@ export default function Dashboard() {
   const [isDataLoaded, setIsDataLoaded] = useState(false)
   const [showAccountDetails, setShowAccountDetails] = useState<boolean>(false)
   const [showStreakNotice, setShowStreakNotice] = useState<boolean>(false)
+  const [showDailyConfetti, setShowDailyConfetti] = useState<boolean>(false)
   const [displayName, _setDisplayName] = useState<string>('')
   const [isEditingName, setIsEditingName] = useState<boolean>(false)
   const [tempName, setTempName] = useState<string>('')
@@ -1099,8 +1146,12 @@ export default function Dashboard() {
     const completedChallenge = { ...dailyChallenge, isCompleted: true }
     setDailyChallenge(completedChallenge)
 
+    // Dynamic XP + Stability reward based on rarity
+    const rarity = getChallengeRarity(dailyChallenge.title)
+    const challengeXp = rarity === 'legendary' ? 300 : rarity === 'epic' ? 200 : rarity === 'rare' ? 150 : 100
+    const challengeStability = rarity === 'legendary' ? 35 : rarity === 'epic' ? 25 : rarity === 'rare' ? 20 : 15
+
     // XP + level progression
-    const challengeXp = 100
     const newXpTotal = xp + challengeXp
     let nextLevel = level
     let remainingXp = newXpTotal
@@ -1115,8 +1166,8 @@ export default function Dashboard() {
     setXp(remainingXp)
     setLevel(nextLevel)
 
-    // Daily Challenge completion adds +15% stability (cap at 100)
-    let nextStability = Math.min(100, stability + 15)
+    // Daily Challenge completion adds stability
+    let nextStability = Math.min(100, stability + challengeStability)
     if (levelUpOccurred) {
       nextStability = 100
     }
@@ -1135,6 +1186,11 @@ export default function Dashboard() {
 
     setLastDailyChallengeDate(todayStr)
     setNarratingId(null)
+
+    // Trigger daily success effects
+    playDailyTriumphChime()
+    setShowDailyConfetti(true)
+    setTimeout(() => setShowDailyConfetti(false), 4000)
 
     if (levelUpOccurred) {
       setJustLeveledTo(nextLevel)
@@ -1345,6 +1401,7 @@ export default function Dashboard() {
   // ─────────────────────────────────────────────────────────────────────────────
   return (
     <main className="relative min-h-screen bg-gradient-to-b from-black via-zinc-950 to-black px-6 py-8 text-white transition-colors duration-500 overflow-hidden">
+      {showDailyConfetti && <LevelUpConfetti />}
       {/* Dynamic backdrop grid */}
       <div className="absolute inset-0 -z-20 bg-[linear-gradient(rgba(255,255,255,0.015)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.015)_1px,transparent_1px)] bg-[size:40px_40px] opacity-60" />
       
@@ -1987,114 +2044,150 @@ export default function Dashboard() {
               {activeTab === 'quests' && (
                 <div className="space-y-4">
                   {/* Daily Challenge Section */}
-                  {dailyChallenge && (filter === 'all' || dailyChallenge.category === filter) && (
-                    <div className="relative overflow-hidden rounded-[2rem] border border-amber-500/30 bg-gradient-to-br from-amber-500/10 via-zinc-950/80 to-zinc-950/90 p-8 shadow-[0_0_30px_rgba(245,158,11,0.08)] mb-8 transition hover:border-amber-500/50">
-                      {/* Decorative background pulse glow */}
-                      <div className="absolute -right-16 -top-16 h-36 w-36 rounded-full bg-amber-500/15 blur-3xl pointer-events-none animate-pulse" />
-                      
-                      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2.5">
-                            <span className="flex h-5 items-center justify-center rounded-full bg-amber-500/20 border border-amber-500/30 px-3 text-[10px] font-bold text-amber-300 tracking-wider uppercase font-mono">
-                              ⭐ Daily Focus Trial
-                            </span>
-                            {dailyChallenge.isCompleted ? (
-                              <span className="flex h-5 items-center justify-center rounded-full bg-green-500/20 border border-green-500/30 px-3 text-[10px] font-bold text-green-400 tracking-wider uppercase font-mono">
-                                Chronicled
+                  {dailyChallenge && (filter === 'all' || dailyChallenge.category === filter) && (() => {
+                    const rarity = getChallengeRarity(dailyChallenge.title)
+                    const rarityStyles = {
+                      common: {
+                        cardClass: 'border-zinc-800/80 bg-zinc-950/40 shadow-md',
+                        badgeClass: 'bg-zinc-800/20 border-zinc-700/30 text-zinc-400',
+                        badgeText: '⚔️ Common Trial',
+                        glowDot: 'bg-zinc-500'
+                      },
+                      rare: {
+                        cardClass: 'border-cyan-500/20 bg-gradient-to-br from-cyan-500/5 via-zinc-950/80 to-zinc-950/90 shadow-[0_0_20px_rgba(6,182,212,0.04)]',
+                        badgeClass: 'bg-cyan-500/20 border-cyan-500/30 text-cyan-300',
+                        badgeText: '🌀 Rare Trial',
+                        glowDot: 'bg-cyan-400'
+                      },
+                      epic: {
+                        cardClass: 'border-purple-500/30 bg-gradient-to-br from-purple-500/10 via-zinc-950/80 to-zinc-950/90 shadow-[0_0_25px_rgba(168,85,247,0.08)]',
+                        badgeClass: 'bg-purple-500/20 border-purple-500/30 text-purple-300',
+                        badgeText: '⚡ Epic Trial',
+                        glowDot: 'bg-purple-400 animate-pulse'
+                      },
+                      legendary: {
+                        cardClass: 'border-amber-400/80 bg-gradient-to-br from-amber-500/10 via-zinc-950/80 to-black shadow-[0_0_35px_rgba(245,158,11,0.15)] legendary-card',
+                        badgeClass: 'bg-amber-500/20 border-amber-500/30 text-amber-300',
+                        badgeText: '👑 Legendary Trial',
+                        glowDot: 'bg-amber-400 animate-pulse'
+                      }
+                    }[rarity]
+
+                    return (
+                      <div className={`relative overflow-hidden rounded-[2rem] border p-8 mb-8 transition-all duration-500 ${rarityStyles.cardClass}`}>
+                        {/* Decorative background pulse glow */}
+                        <div className="absolute -right-16 -top-16 h-36 w-36 rounded-full bg-amber-500/10 blur-3xl pointer-events-none animate-pulse" />
+                        
+                        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+                          <div className="flex-1">
+                            <div className="flex flex-wrap items-center gap-2.5">
+                              <span className={`flex h-5 items-center justify-center rounded-full border px-3 text-[10px] font-bold tracking-wider uppercase font-mono ${rarityStyles.badgeClass}`}>
+                                <span className={`h-1.5 w-1.5 rounded-full mr-1.5 ${rarityStyles.glowDot}`} />
+                                {rarityStyles.badgeText}
                               </span>
-                            ) : (
-                              <span className="flex h-5 items-center justify-center rounded-full bg-zinc-850 border border-zinc-700 px-3 text-[10px] font-bold text-zinc-400 tracking-wider uppercase font-mono">
-                                Active
-                              </span>
+                              {dailyChallenge.isCompleted ? (
+                                <span className="flex h-5 items-center justify-center rounded-full bg-green-500/20 border border-green-500/30 px-3 text-[10px] font-bold text-green-400 tracking-wider uppercase font-mono">
+                                  Chronicled
+                                </span>
+                              ) : (
+                                <span className="flex h-5 items-center justify-center rounded-full bg-zinc-850 border border-zinc-700 px-3 text-[10px] font-bold text-zinc-400 tracking-wider uppercase font-mono">
+                                  Active
+                                </span>
+                              )}
+                              {streak > 0 && (
+                                <span className="flex h-5 items-center justify-center rounded-full bg-amber-500/10 border border-amber-500/25 px-2.5 text-[9px] font-black text-amber-300 uppercase tracking-widest font-mono">
+                                  🔥 {(1 + streak * 0.1).toFixed(1)}x XP Combo
+                                </span>
+                              )}
+                            </div>
+                            
+                            <h3 className={`text-2xl font-black mt-3.5 tracking-tight font-cinzel ${dailyChallenge.isCompleted ? 'line-through text-zinc-500' : 'text-zinc-100'}`}>
+                              {dailyChallenge.title}
+                            </h3>
+                            <p className="mt-2 text-sm text-zinc-400 leading-relaxed font-serif italic">
+                              {dailyChallenge.description}
+                            </p>
+                            
+                            {/* Task Checkbox */}
+                            {dailyChallenge.tasks && dailyChallenge.tasks.length > 0 && (
+                              <div className="mt-5">
+                                {dailyChallenge.tasks.map((task, i) => {
+                                  const parts = task.split('|')
+                                  const mainTask = parts[0]?.trim() || task
+                                  const loreSubtitle = parts[1]?.trim() || ''
+                                  return (
+                                    <button
+                                      key={i}
+                                      onClick={() => handleCompleteDailyChallenge()}
+                                      disabled={dailyChallenge.isCompleted || narratingId !== null || stability === 0}
+                                      className={`flex items-start gap-4 w-full text-left p-4 rounded-2xl border transition-all duration-300 ${
+                                        dailyChallenge.isCompleted 
+                                          ? 'bg-green-500/5 border-green-500/10 shadow-[0_0_12px_rgba(34,197,94,0.04)] cursor-default' 
+                                          : 'bg-zinc-900/20 border-zinc-850/55 hover:bg-amber-500/5 hover:border-amber-500/20 hover:shadow-[0_0_15px_rgba(245,158,11,0.05)] group cursor-pointer'
+                                      }`}
+                                    >
+                                      <div className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-all duration-300 ${
+                                        dailyChallenge.isCompleted 
+                                          ? 'border-green-500 bg-green-500 text-white shadow-[0_0_8px_rgba(34,197,94,0.4)]' 
+                                          : 'bg-zinc-950 border-zinc-750 group-hover:border-amber-400 group-hover:bg-amber-500/5 shadow-inner'
+                                      }`}>
+                                        {dailyChallenge.isCompleted && <Check size={11} strokeWidth={4} />}
+                                      </div>
+                                      <div className="flex-1 flex flex-col">
+                                        <span className={`text-base font-semibold transition-all duration-300 ${
+                                          dailyChallenge.isCompleted ? 'text-zinc-550 line-through' : 'text-zinc-200 group-hover:text-white'
+                                        }`}>
+                                          {mainTask}
+                                        </span>
+                                        {loreSubtitle && (
+                                          <span className={`text-xs italic mt-1.5 font-serif tracking-wide transition-all duration-300 ${
+                                            dailyChallenge.isCompleted ? 'text-zinc-650' : 'text-zinc-500'
+                                          }`}>
+                                            “{loreSubtitle}”
+                                          </span>
+                                        )}
+                                      </div>
+                                    </button>
+                                  )
+                                })}
+                              </div>
                             )}
                           </div>
-                          
-                          <h3 className={`text-2xl font-black mt-3.5 tracking-tight font-cinzel ${dailyChallenge.isCompleted ? 'line-through text-zinc-500' : 'text-zinc-100'}`}>
-                            {dailyChallenge.title}
-                          </h3>
-                          <p className="mt-2 text-sm text-zinc-400 leading-relaxed font-serif italic">
-                            {dailyChallenge.description}
-                          </p>
-                          
-                          {/* Task Checkbox */}
-                          {dailyChallenge.tasks && dailyChallenge.tasks.length > 0 && (
-                            <div className="mt-5">
-                              {dailyChallenge.tasks.map((task, i) => {
-                                const parts = task.split('|')
-                                const mainTask = parts[0]?.trim() || task
-                                const loreSubtitle = parts[1]?.trim() || ''
-                                return (
-                                  <button
-                                    key={i}
-                                    onClick={() => handleCompleteDailyChallenge()}
-                                    disabled={dailyChallenge.isCompleted || narratingId !== null || stability === 0}
-                                    className={`flex items-start gap-4 w-full text-left p-4 rounded-2xl border border-amber-500/10 transition-all duration-300 ${
-                                      dailyChallenge.isCompleted 
-                                        ? 'bg-green-500/5 border-green-500/10 shadow-[0_0_12px_rgba(34,197,94,0.04)] cursor-default' 
-                                        : 'bg-zinc-900/10 hover:bg-amber-500/5 hover:border-amber-500/20 group'
-                                    }`}
-                                  >
-                                    <div className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-all duration-300 ${
-                                      dailyChallenge.isCompleted 
-                                        ? 'border-green-500 bg-green-500 text-white shadow-[0_0_8px_rgba(34,197,94,0.4)]' 
-                                        : 'bg-zinc-950 border-zinc-750 group-hover:border-amber-500/50 shadow-inner'
-                                    }`}>
-                                      {dailyChallenge.isCompleted && <Check size={11} strokeWidth={4} />}
-                                    </div>
-                                    <div className="flex-1 flex flex-col">
-                                      <span className={`text-base font-semibold transition-all duration-300 ${
-                                        dailyChallenge.isCompleted ? 'text-zinc-500 line-through' : 'text-zinc-200 group-hover:text-white'
-                                      }`}>
-                                        {mainTask}
-                                      </span>
-                                      {loreSubtitle && (
-                                        <span className={`text-sm italic mt-1.5 font-serif tracking-wide transition-all duration-300 ${
-                                          dailyChallenge.isCompleted ? 'text-zinc-600' : 'text-zinc-500'
-                                        }`}>
-                                          “{loreSubtitle}”
-                                        </span>
-                                      )}
-                                    </div>
-                                  </button>
-                                )
-                              })}
-                            </div>
-                          )}
-                        </div>
 
-                        <div className="flex flex-col items-center md:items-end justify-center gap-3 select-none">
-                          <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 font-mono">Rewards</span>
-                          <div className="flex gap-2.5">
-                            <span className="h-9 flex items-center justify-center rounded-xl border border-amber-500/20 bg-amber-500/10 px-3.5 text-xs font-bold text-amber-300 font-mono">
-                              +100 XP
-                            </span>
-                            <span className="h-9 flex items-center justify-center rounded-xl border border-amber-500/20 bg-amber-500/10 px-3.5 text-xs font-bold text-amber-300 font-mono">
-                              +15% Stability
-                            </span>
+                          <div className="flex flex-col items-center md:items-end justify-center gap-3 select-none">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-550 font-mono">Rewards</span>
+                            <div className="flex gap-2.5">
+                              <span className="h-9 flex items-center justify-center rounded-xl border border-amber-500/20 bg-amber-500/10 px-3.5 text-xs font-bold text-amber-300 font-mono">
+                                +{rarity === 'legendary' ? 300 : rarity === 'epic' ? 200 : rarity === 'rare' ? 150 : 100} XP
+                              </span>
+                              <span className="h-9 flex items-center justify-center rounded-xl border border-amber-500/20 bg-amber-500/10 px-3.5 text-xs font-bold text-amber-300 font-mono">
+                                +{rarity === 'legendary' ? 35 : rarity === 'epic' ? 25 : rarity === 'rare' ? 20 : 15}% Stability
+                              </span>
+                            </div>
+                            {!dailyChallenge.isCompleted && (
+                              <button
+                                onClick={() => handleCompleteDailyChallenge()}
+                                disabled={narratingId !== null || stability === 0}
+                                className="w-full mt-2 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 border border-amber-500/30 px-5 py-2.5 text-xs font-bold text-white transition hover:brightness-110 active:scale-95 disabled:opacity-50 shimmer-btn"
+                              >
+                                {narratingId === 9999 ? (
+                                  <>
+                                    <Loader2 size={12} className="animate-spin" />
+                                    <span>Recording Trial...</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Check size={12} />
+                                    <span>Complete Trial</span>
+                                  </>
+                                )}
+                              </button>
+                            )}
                           </div>
-                          {!dailyChallenge.isCompleted && (
-                            <button
-                              onClick={() => handleCompleteDailyChallenge()}
-                              disabled={narratingId !== null || stability === 0}
-                              className="w-full mt-2 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 border border-amber-500/30 px-5 py-2.5 text-xs font-bold text-white transition hover:brightness-110 active:scale-95 disabled:opacity-50"
-                            >
-                              {narratingId === 9999 ? (
-                                <>
-                                  <Loader2 size={12} className="animate-spin" />
-                                  <span>Recording Trial...</span>
-                                </>
-                              ) : (
-                                <>
-                                  <Check size={12} />
-                                  <span>Complete Trial</span>
-                                </>
-                              )}
-                            </button>
-                          )}
                         </div>
                       </div>
-                    </div>
-                  )}
+                    )
+                  })()}
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <h2 className="text-2xl font-bold text-zinc-100 flex items-center gap-2">
                       Active Quests
