@@ -503,7 +503,9 @@ export async function forgeQuestWithAI(
   goal: string,
   newId: number,
   worldTheme: 'fantasy' | 'cyberpunk' | 'steampunk',
-  userId?: string
+  userId?: string,
+  categoryOverride?: 'wisdom' | 'discipline' | 'creation',
+  durationDays: number = 3
 ): Promise<Quest> {
   const themeContext = {
     fantasy:   'a high-fantasy realm of mana, spires, and ancient scrolls',
@@ -520,7 +522,7 @@ Respond ONLY with valid JSON matching this exact shape — no prose, no markdown
 {
   "title": "Quest title (4-7 words) highly specific to the actual goal",
   "description": "1-2 sentences describing the quest and detailing the actual real-world goal with an epic, thematic flair",
-  "category": "wisdom" | "discipline" | "creation",
+  "category": "${categoryOverride || 'wisdom\" | \"discipline\" | \"creation'}",
   "difficulty": "Common" | "Rare" | "Epic" | "Legendary",
   "xp": number between 50 and 300,
   "tasks": ["Main actionable task | Thematic lore subtitle", "Main actionable task | Thematic lore subtitle"],
@@ -535,17 +537,22 @@ Rules:
   })
 
   const parsed = parseJSON<any>(raw)
+  const now = new Date()
+  const deadline = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000)
 
   return {
     id: newId,
     title: parsed.title,
     description: parsed.description,
-    category: parsed.category,
+    category: categoryOverride || parsed.category || 'discipline',
     difficulty: parsed.difficulty,
     xp: parsed.xp,
     tasks: parsed.tasks ?? [],
+    completedTasks: new Array(parsed.tasks?.length ?? 0).fill(false),
     mythEvent: parsed.mythEvent ?? '',
     isCompleted: false,
+    createdAtString: now.toISOString(),
+    deadline: deadline.toISOString(),
   }
 }
 
@@ -554,7 +561,8 @@ export async function forgeQuestlineWithAI(
   startId: number,
   worldTheme: 'fantasy' | 'cyberpunk' | 'steampunk',
   playerLevel: number = 1,
-  userId?: string
+  userId?: string,
+  durationDays: number = 3
 ): Promise<Quest[]> {
   const themeContext = {
     fantasy:   'a high-fantasy realm of mana, spires, and ancient scrolls',
@@ -617,19 +625,174 @@ Rules:
   })
 
   const parsed = parseJSON<{ quests: any[] }>(raw)
-  return parsed.quests.map((q, idx) => ({
-    id: startId + idx,
-    title: q.title,
-    description: q.description,
-    category: q.category,
-    difficulty: q.difficulty,
-    xp: q.xp,
-    tasks: q.tasks ?? [],
-    completedTasks: new Array(q.tasks?.length ?? 0).fill(false),
-    mythEvent: q.mythEvent ?? '',
-    isCompleted: false,
-    dependsOnQuestId: idx > 0 ? (startId + idx - 1) : undefined,
-  }))
+  const now = new Date()
+
+  return parsed.quests.map((q, idx) => {
+    // Stage-based deadlines: first quest gets durationDays, second gets 2*durationDays, etc.
+    const deadline = new Date(now.getTime() + durationDays * (idx + 1) * 24 * 60 * 60 * 1000)
+    return {
+      id: startId + idx,
+      title: q.title,
+      description: q.description,
+      category: q.category,
+      difficulty: q.difficulty,
+      xp: q.xp,
+      tasks: q.tasks ?? [],
+      completedTasks: new Array(q.tasks?.length ?? 0).fill(false),
+      mythEvent: q.mythEvent ?? '',
+      isCompleted: false,
+      dependsOnQuestId: idx > 0 ? (startId + idx - 1) : undefined,
+      createdAtString: now.toISOString(),
+      deadline: deadline.toISOString(),
+    }
+  })
+}
+
+export async function forgeDailyChallengeWithAI(
+  worldTheme: 'fantasy' | 'cyberpunk' | 'steampunk',
+  userId?: string
+): Promise<Quest> {
+  const themeContext = {
+    fantasy:   'a high-fantasy realm of mana, spires, and ancient scrolls',
+    cyberpunk: 'a neon-lit cyberpunk grid of memory overflows and terminal nets',
+    steampunk: 'a steampunk empire of pressure gauges, clockwork cores, and steam valves',
+  }[worldTheme]
+
+  try {
+    const raw = await callGemini({
+      model: 'gemini-1.5-flash',
+      max_tokens: 800,
+      system: `You are the Daily Trial Arbiter of SAGACORE set in ${themeContext}.
+Generate a single daily focus challenge (a quest) for the player.
+The challenge must be a realistic, short daily habit or simple task (e.g., "Clear inbox", "Drink 2L water", "Review code changes", "Do 15 mins stretching") wrapped in the lore of the theme.
+Respond ONLY with a valid JSON object matching this exact shape — no prose, no markdown fences:
+{
+  "title": "Evocative daily trial title (3-6 words)",
+  "description": "1 sentence describing the daily commitment and its real-world benefit under a thematic light",
+  "category": "wisdom" | "discipline" | "creation",
+  "difficulty": "Common" | "Rare",
+  "xp": 100,
+  "tasks": ["Real-world daily task | Thematic lore subtitle"],
+  "mythEvent": "What daily blessing or small event occurs in the realm when this trial is completed (1 short sentence)"
+}
+Rules:
+- The daily challenge should feel manageable, taking less than 30 minutes.
+- The task array must contain exactly ONE task formatted exactly as "Real Task | Fantasy Lore Subtitle".`,
+      messages: [{ role: 'user', content: `Generate a new daily trial challenge. Player ID: "${userId || 'guest'}"` }],
+    })
+
+    const parsed = parseJSON<any>(raw)
+    return {
+      id: 9999, // Special ID for Daily Challenge
+      title: parsed.title,
+      description: parsed.description,
+      category: parsed.category ?? 'discipline',
+      difficulty: parsed.difficulty ?? 'Common',
+      xp: 100,
+      tasks: parsed.tasks ?? ['Daily trial task | Complete the ritual'],
+      completedTasks: new Array(parsed.tasks?.length ?? 1).fill(false),
+      mythEvent: parsed.mythEvent ?? 'The daily standard alignment completes.',
+      isCompleted: false,
+    }
+  } catch (err) {
+    console.warn('Daily Challenge AI generation failed, using local fallback:', err)
+    const fallbacks = {
+      fantasy: [
+        {
+          title: "Daily Scroll Synthesis",
+          description: "Transcribe 15 minutes of technical documentation to preserve the sacred library.",
+          category: "wisdom" as const,
+          difficulty: "Common" as const,
+          tasks: ["Read technical docs | Study the runic scriptures"],
+          mythEvent: "A warm amber light glimmers from the ancient library tower."
+        },
+        {
+          title: "Pillar Fortification Rites",
+          description: "Clear your desk and physical workspace of clutter to stabilize your mana focus.",
+          category: "discipline" as const,
+          difficulty: "Common" as const,
+          tasks: ["Clean workspace | Purge the workspace of stray miasma"],
+          mythEvent: "A shield of clarity sweeps across your inner sanctum."
+        },
+        {
+          title: "Forge Spark Ignition",
+          description: "Write or refactor a single small function to keep the creative fires burning.",
+          category: "creation" as const,
+          difficulty: "Rare" as const,
+          tasks: ["Refactor a function | Cast the sparks of automated magic"],
+          mythEvent: "An energetic wave ripples from the creative forge."
+        }
+      ],
+      cyberpunk: [
+        {
+          title: "Terminal Buffer Clear",
+          description: "Organize your desktop files and clear cache to maximize neural bandwidth.",
+          category: "discipline" as const,
+          difficulty: "Common" as const,
+          tasks: ["Organize desktop | Flush stray packets from the buffer core"],
+          mythEvent: "Neon grid lines glow with greater throughput."
+        },
+        {
+          title: "Neural Node Sync",
+          description: "Perform 10 minutes of silent deep breathing to align code logic.",
+          category: "wisdom" as const,
+          difficulty: "Common" as const,
+          tasks: ["Meditate 10 minutes | Reboot the neural interface nodes"],
+          mythEvent: "Cerebral telemetry reads stable at all endpoints."
+        },
+        {
+          title: "Sub-System Patching",
+          description: "Resolve one warning or bug in your current codebase to reinforce grid defenses.",
+          category: "creation" as const,
+          difficulty: "Rare" as const,
+          tasks: ["Fix a minor warning | Patch security nodes in Chiba matrix"],
+          mythEvent: "Firewall nodes flicker bright cyan, locking out external anomalies."
+        }
+      ],
+      steampunk: [
+        {
+          title: "Pressure Valve Calibration",
+          description: "Drink a full glass of water and stretch to regulate bodily heat flow.",
+          category: "discipline" as const,
+          difficulty: "Common" as const,
+          tasks: ["Hydrate and stretch | Calibrate the main pressure valve"],
+          mythEvent: "The iron furnaces hiss in perfectly timed release."
+        },
+        {
+          title: "Schematics Indexing",
+          description: "Outline the logic workflow for your next major component on paper.",
+          category: "wisdom" as const,
+          difficulty: "Common" as const,
+          tasks: ["Draft layout on paper | Sketch the steam engine blueprints"],
+          mythEvent: "The gears of calculation rotate with smooth precision."
+        },
+        {
+          title: "Piston Rod Polishing",
+          description: "Review and comment on your latest git commit to refine the mechanical gearwork.",
+          category: "creation" as const,
+          difficulty: "Rare" as const,
+          tasks: ["Review git diff | Clean the soot off the engine valves"],
+          mythEvent: "The copper pistons hum under ideal friction ratios."
+        }
+      ]
+    }[worldTheme]
+
+    const seed = Math.floor(Math.random() * fallbacks.length)
+    const selected = fallbacks[seed]
+
+    return {
+      id: 9999,
+      title: selected.title,
+      description: selected.description,
+      category: selected.category,
+      difficulty: selected.difficulty,
+      xp: 100,
+      tasks: selected.tasks,
+      completedTasks: [false],
+      mythEvent: selected.mythEvent,
+      isCompleted: false,
+    }
+  }
 }
 
 // ─── Adaptive AI Engine ────────────────────────────────────────────────────────
@@ -746,7 +909,11 @@ export async function savePlayerStateToMongo(
   xp: number,
   level: number,
   worldTheme: string,
-  email?: string | null
+  email?: string | null,
+  stability?: number,
+  streak?: number,
+  lastDailyChallengeDate?: string,
+  lastActiveDate?: string
 ): Promise<void> {
   if (playerId.startsWith('guest_')) return
   try {
@@ -758,6 +925,10 @@ export async function savePlayerStateToMongo(
         level,
         worldTheme,
         email: email || undefined,
+        stability: stability !== undefined ? stability : 100,
+        streak: streak !== undefined ? streak : 0,
+        lastDailyChallengeDate,
+        lastActiveDate,
         lastUpdated: new Date().toISOString()
       },
       { upsert: true, new: true }

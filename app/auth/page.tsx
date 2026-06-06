@@ -473,6 +473,20 @@ export default function AuthPage() {
             </div>
           </form>
         </div>
+
+        {/* Daily Streak Feature Highlight */}
+        <div className="mt-6 rounded-2xl border border-amber-500/10 bg-amber-500/5 p-4 flex items-start gap-3.5 shadow-[0_4px_20px_rgba(245,158,11,0.02)] select-none">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-400 shrink-0 text-sm font-mono">
+            🔥
+          </div>
+          <div>
+            <span className="block text-[10px] font-black uppercase tracking-wider text-amber-400 font-mono">Retain Consistency</span>
+            <span className="block text-xs font-bold text-zinc-200 mt-0.5">Daily Streak & Realm Stability</span>
+            <p className="text-[11px] text-zinc-400 mt-1 leading-normal">
+              Log in daily to secure focus rewards. Leaving active quests unchecked triggers Realm Coherence decay (-10% stability per day). Keep the fire burning!
+            </p>
+          </div>
+        </div>
       </div>
     </main>
   )

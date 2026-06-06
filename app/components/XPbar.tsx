@@ -8,9 +8,10 @@ interface XPBarProps {
   xp: number
   level: number
   theme?: 'fantasy' | 'cyberpunk' | 'steampunk'
+  streak?: number
 }
 
-export default function XPBar({ xp, level, theme = 'fantasy' }: XPBarProps) {
+export default function XPBar({ xp, level, theme = 'fantasy', streak = 0 }: XPBarProps) {
   const [showTooltip, setShowTooltip] = useState(false)
   const [prevXp, setPrevXp] = useState(xp)
   const [prevLevel, setPrevLevel] = useState(level)
@@ -153,7 +154,7 @@ export default function XPBar({ xp, level, theme = 'fantasy' }: XPBarProps) {
         shieldOuter: 'text-zinc-500/40',
         shieldInner: 'rgba(113,113,122,0.08)',
         levelText: 'from-white to-zinc-350',
-        badgeFilter: 'drop-shadow-[0_0_10px_rgba(113,113,122,0.2)] hover:drop-shadow-[0_0_20px_rgba(113,113,122,0.35)]',
+        badgeFilter: 'drop-shadow-[0_0_10px_rgba(113,113,122,0.25)] hover:drop-shadow-[0_0_20px_rgba(113,113,122,0.45)]',
         rankColorClass: 'text-zinc-400'
       }
     } else if (lvl <= 5) {
@@ -230,9 +231,22 @@ export default function XPBar({ xp, level, theme = 'fantasy' }: XPBarProps) {
           </div>
  
           <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold uppercase tracking-widest text-zinc-500">Current Rank</span>
-              <Trophy size={12} className="text-yellow-400" />
+            <div className="flex items-center gap-3 flex-wrap">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold uppercase tracking-widest text-zinc-500">Current Rank</span>
+                <Trophy size={12} className="text-yellow-400" />
+              </div>
+              {streak > 0 && (
+                <motion.div
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  whileHover={{ scale: 1.05 }}
+                  className="flex items-center gap-1.5 rounded-full bg-orange-500/10 border border-orange-500/25 px-2.5 py-0.5 text-[10px] font-bold text-orange-400 shadow-[0_0_10px_rgba(249,115,22,0.15)] select-none"
+                >
+                  <span className="animate-pulse">🔥</span>
+                  <span>{streak}-DAY STREAK</span>
+                </motion.div>
+              )}
             </div>
             <h2 className="text-2xl font-bold bg-gradient-to-r from-zinc-100 to-zinc-400 bg-clip-text text-transparent">
               {getRankName(level, theme)} <span className={tier.rankColorClass}>Level {level}</span>

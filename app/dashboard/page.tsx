@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Sparkles, ArrowLeft, Send, Sparkle, Award, Compass, BookOpen, Scroll as ScrollIcon, Loader2, Volume2, VolumeX, LogOut, Trophy } from 'lucide-react'
+import { Sparkles, ArrowLeft, Send, Sparkle, Award, Compass, BookOpen, Scroll as ScrollIcon, Loader2, Volume2, VolumeX, LogOut, Trophy, AlertCircle, RefreshCw, Check, ChevronDown } from 'lucide-react'
 
 import KingdomStatus from '../components/KingdomStatus'
 import LoreFeed from '../components/LoreFeed'
@@ -37,7 +37,92 @@ import {
   fetchQuestsFromMongo,
   fetchChaptersFromMongo,
   fetchPlayerStateFromMongo,
+  forgeDailyChallengeWithAI,
 } from '@/app/lib/ai'
+
+const playLevelUpFanfare = (theme: 'fantasy' | 'cyberpunk' | 'steampunk') => {
+  try {
+    const AudioContext = window.AudioContext || (window as any).webkitAudioContext
+    if (!AudioContext) return
+    const ctx = new AudioContext()
+    
+    const type = theme === 'cyberpunk' ? 'sawtooth' : theme === 'steampunk' ? 'triangle' : 'sine'
+    const frequencies = [261.63, 329.63, 392.00, 523.25] // C4, E4, G4, C5 major arpeggio
+    const baseTime = ctx.currentTime
+    
+    frequencies.forEach((freq, index) => {
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+      
+      osc.type = type
+      osc.frequency.value = freq
+      
+      const start = baseTime + index * 0.15
+      const duration = 0.6
+      
+      gain.gain.setValueAtTime(0, start)
+      gain.gain.linearRampToValueAtTime(0.12, start + 0.05)
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + duration)
+      
+      osc.connect(gain)
+      gain.connect(ctx.destination)
+      
+      osc.start(start)
+      osc.stop(start + duration)
+    })
+  } catch (err) {
+    console.warn('Audio level up playback failed:', err)
+  }
+}
+
+function LevelUpConfetti() {
+  const particles = Array.from({ length: 80 })
+  return (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden z-40">
+      {particles.map((_, i) => {
+        const x = Math.random() * 100 // initial x%
+        const delay = Math.random() * 1.5 // random animation delay
+        const duration = 2.0 + Math.random() * 2 // duration of fall
+        const size = 6 + Math.random() * 8 // size in px
+        const colors = [
+          'bg-yellow-400', 'bg-amber-500', 'bg-orange-500', 'bg-purple-500',
+          'bg-pink-500', 'bg-cyan-400', 'bg-teal-400', 'bg-rose-500'
+        ]
+        const color = colors[Math.floor(Math.random() * colors.length)]
+        
+        return (
+          <motion.div
+            key={i}
+            initial={{ 
+              y: -20, 
+              x: `${x}vw`, 
+              scale: 0.5, 
+              rotate: 0, 
+              opacity: 1 
+            }}
+            animate={{ 
+              y: '110vh', 
+              x: `${x + (Math.random() * 20 - 10)}vw`, 
+              scale: [0.5, 1, 0.8], 
+              rotate: 360 + Math.random() * 720, 
+              opacity: [1, 1, 0] 
+            }}
+            transition={{ 
+              duration: duration, 
+              delay: delay, 
+              ease: "easeOut" 
+            }}
+            className={`absolute rounded-sm ${color}`}
+            style={{
+              width: `${size}px`,
+              height: `${size}px`,
+            }}
+          />
+        )
+      })}
+    </div>
+  )
+}
 
 export default function Dashboard() {
   const { user, loading: authLoading, logout } = useAuth()
@@ -55,15 +140,28 @@ export default function Dashboard() {
   const [quests, _setQuests]           = useState<Quest[]>([])
   const [xp, _setXp]                   = useState<number>(0)
   const [level, _setLevel]             = useState<number>(1)
+  const [stability, _setStability]     = useState<number>(100)
+  const [streak, _setStreak]           = useState<number>(0)
+  const [lastDailyChallengeDate, _setLastDailyChallengeDate] = useState<string>('')
+  const [lastActiveDate, _setLastActiveDate] = useState<string>('')
+  const [dailyChallenge, _setDailyChallenge] = useState<Quest | null>(null)
+  const [isForgingDaily, setIsForgingDaily] = useState<boolean>(false)
+  const [isReviving, setIsReviving]     = useState<boolean>(false)
+  const [forgeCategory, setForgeCategory] = useState<'auto' | 'wisdom' | 'discipline' | 'creation'>('auto')
+  const [forgeDuration, setForgeDuration] = useState<number>(3)
+
   const [lore, _setLore]               = useState<string[]>([
     'The Ancient Library expands once more under your focus.',
     'The Valley of Distraction has weakened due to your high productivity.',
     'The Fortress of Algorithms has risen, establishing order in the digital realms.',
   ])
   const [chapters, _setChapters]       = useState<LoreChapter[]>([])
+
   const [isWritingChapter, setIsWritingChapter] = useState<boolean>(false)
   const [audioActive, _setAudioActive] = useState<boolean>(false)
   const [isDataLoaded, setIsDataLoaded] = useState(false)
+  const [showAccountDetails, setShowAccountDetails] = useState<boolean>(false)
+  const [showStreakNotice, setShowStreakNotice] = useState<boolean>(false)
 
   // Scoped setters to write directly to Namespaced local storage
   const setActiveWorld = (newWorld: World) => {
@@ -91,6 +189,49 @@ export default function Dashboard() {
     _setLevel((prev) => {
       const next = typeof value === 'function' ? (value as Function)(prev) : value
       if (user) localStorage.setItem(`sagacore_${user.uid}_level`, JSON.stringify(next))
+      return next
+    })
+  }
+
+  const setStability = (value: number | ((prev: number) => number)) => {
+    _setStability((prev) => {
+      const next = typeof value === 'function' ? (value as Function)(prev) : value
+      if (user) localStorage.setItem(`sagacore_${user.uid}_stability`, JSON.stringify(next))
+      return next
+    })
+  }
+
+  const setStreak = (value: number | ((prev: number) => number)) => {
+    _setStreak((prev) => {
+      const next = typeof value === 'function' ? (value as Function)(prev) : value
+      if (user) localStorage.setItem(`sagacore_${user.uid}_streak`, JSON.stringify(next))
+      return next
+    })
+  }
+
+  const setLastDailyChallengeDate = (value: string | ((prev: string) => string)) => {
+    _setLastDailyChallengeDate((prev) => {
+      const next = typeof value === 'function' ? (value as Function)(prev) : value
+      if (user) localStorage.setItem(`sagacore_${user.uid}_lastDailyChallengeDate`, next)
+      return next
+    })
+  }
+
+  const setLastActiveDate = (value: string | ((prev: string) => string)) => {
+    _setLastActiveDate((prev) => {
+      const next = typeof value === 'function' ? (value as Function)(prev) : value
+      if (user) localStorage.setItem(`sagacore_${user.uid}_lastActiveDate`, next)
+      return next
+    })
+  }
+
+  const setDailyChallenge = (value: Quest | null | ((prev: Quest | null) => Quest | null)) => {
+    _setDailyChallenge((prev) => {
+      const next = typeof value === 'function' ? (value as Function)(prev) : value
+      if (user) {
+        if (next) localStorage.setItem(`sagacore_${user.uid}_dailyChallenge`, JSON.stringify(next))
+        else localStorage.removeItem(`sagacore_${user.uid}_dailyChallenge`)
+      }
       return next
     })
   }
@@ -144,6 +285,11 @@ export default function Dashboard() {
         const localChapters = localStorage.getItem(`sagacore_${uid}_chapters`)
         const localLore = localStorage.getItem(`sagacore_${uid}_lore`)
         const localAudio = localStorage.getItem(`sagacore_${uid}_audioActive`)
+        const localStability = localStorage.getItem(`sagacore_${uid}_stability`)
+        const localStreak = localStorage.getItem(`sagacore_${uid}_streak`)
+        const localLastDailyChallengeDate = localStorage.getItem(`sagacore_${uid}_lastDailyChallengeDate`)
+        const localLastActiveDate = localStorage.getItem(`sagacore_${uid}_lastActiveDate`)
+        const localDailyChallenge = localStorage.getItem(`sagacore_${uid}_dailyChallenge`)
 
         if (localActiveWorld) _setActiveWorld(JSON.parse(localActiveWorld))
         if (localQuests) _setQuests(JSON.parse(localQuests))
@@ -154,6 +300,13 @@ export default function Dashboard() {
         if (localChapters) _setChapters(JSON.parse(localChapters))
         if (localLore) _setLore(JSON.parse(localLore))
         if (localAudio) _setAudioActive(JSON.parse(localAudio))
+        if (localStability) _setStability(JSON.parse(localStability))
+        else _setStability(100)
+        if (localStreak) _setStreak(JSON.parse(localStreak))
+        else _setStreak(0)
+        if (localLastDailyChallengeDate) _setLastDailyChallengeDate(localLastDailyChallengeDate)
+        if (localLastActiveDate) _setLastActiveDate(localLastActiveDate)
+        if (localDailyChallenge) _setDailyChallenge(JSON.parse(localDailyChallenge))
 
         // If it's a guest session, save initial/pre-filled quests to local storage if not already there
         if (isGuest) {
@@ -189,21 +342,53 @@ export default function Dashboard() {
         if (dbPlayer) {
           _setXp(dbPlayer.xp)
           _setLevel(dbPlayer.level)
+          _setStability(dbPlayer.stability !== undefined ? dbPlayer.stability : 100)
+          _setStreak(dbPlayer.streak !== undefined ? dbPlayer.streak : 0)
+          _setLastDailyChallengeDate(dbPlayer.lastDailyChallengeDate || '')
+          _setLastActiveDate(dbPlayer.lastActiveDate || '')
+
           const matchedWorld = Object.values(worldTemplates).find(w => w.theme === dbPlayer.worldTheme) || worldTemplates.fantasy
           _setActiveWorld(matchedWorld)
           localStorage.setItem(`sagacore_${uid}_xp`, JSON.stringify(dbPlayer.xp))
           localStorage.setItem(`sagacore_${uid}_level`, JSON.stringify(dbPlayer.level))
           localStorage.setItem(`sagacore_${uid}_activeWorld`, JSON.stringify(matchedWorld))
+          localStorage.setItem(`sagacore_${uid}_stability`, JSON.stringify(dbPlayer.stability !== undefined ? dbPlayer.stability : 100))
+          localStorage.setItem(`sagacore_${uid}_streak`, JSON.stringify(dbPlayer.streak !== undefined ? dbPlayer.streak : 0))
+          if (dbPlayer.lastDailyChallengeDate) localStorage.setItem(`sagacore_${uid}_lastDailyChallengeDate`, dbPlayer.lastDailyChallengeDate)
+          if (dbPlayer.lastActiveDate) localStorage.setItem(`sagacore_${uid}_lastActiveDate`, dbPlayer.lastActiveDate)
+
           // Sync email with MongoDB
           if (user.email && dbPlayer.email !== user.email) {
-            await savePlayerStateToMongo(uid, dbPlayer.xp, dbPlayer.level, dbPlayer.worldTheme, user.email)
+            await savePlayerStateToMongo(
+              uid, 
+              dbPlayer.xp, 
+              dbPlayer.level, 
+              dbPlayer.worldTheme, 
+              user.email,
+              dbPlayer.stability !== undefined ? dbPlayer.stability : 100,
+              dbPlayer.streak !== undefined ? dbPlayer.streak : 0,
+              dbPlayer.lastDailyChallengeDate || undefined,
+              dbPlayer.lastActiveDate || undefined
+            )
           }
         } else {
           // If no player state in DB, initialize it with email!
           const initialXp = localXp ? JSON.parse(localXp) : 0
           const initialLevel = localLevel ? JSON.parse(localLevel) : 1
           const initialTheme = localActiveWorld ? JSON.parse(localActiveWorld).theme : 'fantasy'
-          await savePlayerStateToMongo(uid, initialXp, initialLevel, initialTheme, user.email)
+          const initialStability = localStability ? JSON.parse(localStability) : 100
+          const initialStreak = localStreak ? JSON.parse(localStreak) : 0
+          await savePlayerStateToMongo(
+            uid, 
+            initialXp, 
+            initialLevel, 
+            initialTheme, 
+            user.email, 
+            initialStability, 
+            initialStreak, 
+            localLastDailyChallengeDate || undefined, 
+            localLastActiveDate || undefined
+          )
         }
       } catch (err) {
         console.error('Failed to sync SAGACORE user data:', err)
@@ -214,6 +399,234 @@ export default function Dashboard() {
 
     loadUserData()
   }, [user, authLoading, router])
+
+  // Ref to guarantee daily login check runs exactly once per session hydration
+  const checkedDailyRef = useRef(false)
+
+  // Generate today's Daily Challenge Quest
+  const generateDailyChallenge = async (todayStr: string, theme: 'fantasy' | 'cyberpunk' | 'steampunk') => {
+    if (isForgingDaily) return
+    setIsForgingDaily(true)
+    try {
+      const challenge = await forgeDailyChallengeWithAI(theme, user?.uid)
+      setDailyChallenge(challenge)
+      setLore((prev) => [
+        `✨ Today's Daily Trial has been forged: "${challenge.title}"`,
+        ...prev
+      ])
+    } catch (err) {
+      console.error('Failed generating daily challenge:', err)
+    } finally {
+      setIsForgingDaily(false)
+    }
+  }
+
+  // Daily Check-In effect (Streak, decay, daily challenge)
+  useEffect(() => {
+    if (!isDataLoaded || !user || checkedDailyRef.current) return
+    checkedDailyRef.current = true
+
+    const checkDailyLogin = async () => {
+      const today = new Date()
+      const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+      const uid = user.uid
+      const isGuest = uid.startsWith('guest_')
+
+      if (!lastActiveDate) {
+        setLastActiveDate(todayStr)
+        await generateDailyChallenge(todayStr, activeWorld.theme)
+        setShowStreakNotice(true)
+        return
+      }
+
+      if (lastActiveDate === todayStr) {
+        if (!dailyChallenge && lastDailyChallengeDate !== todayStr) {
+          await generateDailyChallenge(todayStr, activeWorld.theme)
+        }
+        return
+      }
+
+      // Calculate elapsed days
+      const lastActive = new Date(lastActiveDate)
+      const current = new Date(todayStr)
+      const diffTime = Math.abs(current.getTime() - lastActive.getTime())
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+
+      if (diffDays >= 1) {
+        let nextStreak = streak
+        if (diffDays > 1) {
+          nextStreak = 0
+          setStreak(0)
+          setLore((prev) => [`🔥 Streak lost! Complete daily quests to maintain consistency.`, ...prev])
+        }
+
+        // Apply Realm Stability decay for incomplete active quests
+        const activeIncompleteQuests = quests.filter(q => !q.isCompleted && q.id !== 9999)
+        let decayAmount = 0
+        let newStability = stability
+
+        if (activeIncompleteQuests.length > 0) {
+          decayAmount = 10 * diffDays
+          newStability = Math.max(0, stability - decayAmount)
+          setStability(newStability)
+
+          if (newStability === 0) {
+            setLore((prev) => [
+              `⚠️ CRITICAL ALERT: Realm Stability collapsed to 0%!`,
+              `A Restoration Trial is required to revive the core.`,
+              ...prev
+            ])
+          } else {
+            setLore((prev) => [
+              `⚠️ Realm Stability decayed by ${decayAmount}% due to ${activeIncompleteQuests.length} incomplete quests.`,
+              ...prev
+            ])
+          }
+        }
+
+        // Update active date
+        setLastActiveDate(todayStr)
+
+        // Generate today's daily challenge
+        if (lastDailyChallengeDate !== todayStr) {
+          await generateDailyChallenge(todayStr, activeWorld.theme)
+        }
+
+        // Show streak notice on new day login
+        setShowStreakNotice(true)
+
+        // Persist updates to DB
+        if (!isGuest) {
+          await savePlayerStateToMongo(
+            uid,
+            xp,
+            level,
+            activeWorld.theme,
+            user.email,
+            newStability,
+            nextStreak,
+            lastDailyChallengeDate || undefined,
+            todayStr
+          ).catch((e) => console.warn('Failed saving daily decay check state:', e))
+        }
+      }
+    }
+
+    checkDailyLogin()
+  }, [isDataLoaded, user, quests, stability, streak, lastActiveDate, lastDailyChallengeDate, activeWorld.theme, dailyChallenge])
+
+  // ── Automatic Quest Expiration Sweep ───────────────────────────────────────
+  const [hasCheckedExpiration, setHasCheckedExpiration] = useState(false)
+
+  useEffect(() => {
+    if (!isDataLoaded || !user || hasCheckedExpiration || quests.length === 0) return
+    setHasCheckedExpiration(true)
+
+    const sweepExpiredQuests = async () => {
+      const now = new Date()
+      let updatedCount = 0
+      let penalty = 0
+      const targetUid = user.uid
+      const isGuest = targetUid.startsWith('guest_')
+      
+      const newQuestsState = await Promise.all(quests.map(async (q) => {
+        if (!q.isCompleted && q.deadline) {
+          const deadlineDate = new Date(q.deadline)
+          if (now > deadlineDate) {
+            updatedCount++
+            penalty += 15
+            
+            const failedQuest = {
+              ...q,
+              isCompleted: true,
+              failed: true
+            }
+
+            try {
+              const chapterId = chapters.length + updatedCount
+              const chapter = await generateAdaptiveChapter(
+                q.title,
+                q.category,
+                activeWorld.theme,
+                chapterId,
+                `FAILED: The deadline passed. ${q.mythEvent || 'The realm grows darker.'}`,
+                targetUid
+              )
+              
+              setChapters((prev) => [...prev, chapter])
+              setLore((prev) => [
+                `🌑 Quest expired: "${q.title}" failed deadline check (-15% Stability).`,
+                `Shadow Chapter ${chapterId} etched into the Codex.`,
+                ...prev,
+              ])
+              
+              if (!isGuest) {
+                await saveChapterToMongo(chapter, targetUid)
+              }
+            } catch (err) {
+              console.warn('Failed to generate adaptive failure chapter:', err)
+              setLore((prev) => [
+                `🌑 Quest expired: "${q.title}" failed deadline check (-15% Stability).`,
+                ...prev,
+              ])
+            }
+
+            if (!isGuest) {
+              await saveQuestToMongo(failedQuest, targetUid).catch(() => {})
+            }
+
+            return failedQuest
+          }
+        }
+        return q
+      }))
+
+      if (updatedCount > 0) {
+        setQuests(newQuestsState)
+        const nextStability = Math.max(0, stability - penalty)
+        setStability(nextStability)
+        
+        if (!isGuest) {
+          await savePlayerStateToMongo(
+            targetUid,
+            xp,
+            level,
+            activeWorld.theme,
+            user.email,
+            nextStability,
+            streak,
+            lastDailyChallengeDate || undefined,
+            lastActiveDate || undefined
+          ).catch((e) => console.warn('Failed saving expired state stability update:', e))
+        }
+      }
+    }
+
+    sweepExpiredQuests()
+  }, [isDataLoaded, user, quests, stability, chapters.length, activeWorld.theme])
+
+  const handleRestorationTrial = async () => {
+    if (stability > 0 || isReviving) return
+    setIsReviving(true)
+    
+    // Simulate restoration calibration time
+    await new Promise((resolve) => setTimeout(resolve, 2000))
+    
+    const nextStability = 50
+    setStability(nextStability)
+    setIsReviving(false)
+    
+    setLore((prev) => [
+      `❇️ REALM RESTORED: Core stabilized back to 50% Stability!`,
+      `Distortion fields collapsed. Normal quest activities are unblocked.`,
+      ...prev
+    ])
+    
+    if (user && !user.uid.startsWith('guest_')) {
+      await savePlayerStateToMongo(user.uid, xp, level, activeWorld.theme, user.email, 50, streak, lastDailyChallengeDate, lastActiveDate)
+        .catch((e) => console.warn('Failed to save restoration state:', e))
+    }
+  }
 
   // Trigger procedural atmospheric soundscapes
   useAmbientAudio(activeWorld.theme, audioActive)
@@ -258,13 +671,15 @@ export default function Dashboard() {
 
   // Dynamic rotating placeholders for SAGACORE Dream Forge
   const forgePlaceholders = [
-    "study binary search tree traversal algorithms",
-    "clear a 5-kilometer running routine at sunrise",
-    "build a custom Firebase user context provider",
-    "design vector database index search schemas",
-    "practice 20 minutes of deep focus meditation",
-    "isolate and fix local memory heap leaks",
-    "weld solid brass rods for clockwork furnace cores"
+    "forge a brand new responsive landing page layout",
+    "conquer the dragon of morning cardio exercises",
+    "read three chapters of that dusty system design book",
+    "slay the compiler bug hidden in the server route",
+    "draft an epic lore script for the quest log",
+    "configure a local database backup pipeline",
+    "refactor a messy legacy React component library",
+    "complete 45 minutes of intensive language practice",
+    "sketch the primary blueprints for a mechanical core"
   ]
   const [currentPlaceholderIdx, setCurrentPlaceholderIdx] = useState(0)
 
@@ -373,23 +788,53 @@ export default function Dashboard() {
 
     try {
       const startId = quests.length + 1
-      const generatedCampaign = await forgeQuestlineWithAI(newGoal, startId, activeWorld.theme, level, user?.uid)
+      let generatedQuests: Quest[] = []
 
-      // Prepend all 3 sequential campaign quests to state
-      setQuests((prev) => [...generatedCampaign, ...prev])
+      if (level < 3) {
+        // Forge a single quest
+        const singleQuest = await forgeQuestWithAI(
+          newGoal,
+          startId,
+          activeWorld.theme,
+          user?.uid,
+          forgeCategory === 'auto' ? undefined : forgeCategory,
+          forgeDuration
+        )
+        generatedQuests = [singleQuest]
+      } else {
+        // Forge a campaign (3 quests)
+        generatedQuests = await forgeQuestlineWithAI(
+          newGoal,
+          startId,
+          activeWorld.theme,
+          level,
+          user?.uid,
+          forgeDuration
+        )
+      }
+
+      // Prepend all forged quests to state
+      setQuests((prev) => [...generatedQuests, ...prev])
       setNewGoal('')
 
-      setLore((prev) => [
-        `[FORGED] Dream Forge aligned reality for a 3-part campaign: "${newGoal}"!`,
-        `Quest 1 (Wisdom): "${generatedCampaign[0].title}"`,
-        `Quest 2 (Creation): "${generatedCampaign[1].title}"`,
-        `Quest 3 (Discipline): "${generatedCampaign[2].title}"`,
-        ...prev,
-      ])
+      if (level < 3) {
+        setLore((prev) => [
+          `[FORGED] Dream Forge aligned reality for quest: "${generatedQuests[0].title}" (${generatedQuests[0].difficulty} · +${generatedQuests[0].xp} XP)`,
+          ...prev,
+        ])
+      } else {
+        setLore((prev) => [
+          `[FORGED] Dream Forge aligned reality for a 3-part campaign: "${newGoal}"!`,
+          `Quest 1 (Wisdom): "${generatedQuests[0].title}"`,
+          `Quest 2 (Creation): "${generatedQuests[1].title}"`,
+          `Quest 3 (Discipline): "${generatedQuests[2].title}"`,
+          ...prev,
+        ])
+      }
 
-      // Persist all 3 quests to MongoDB via Memory Engine (Skip for Guest Mode)
+      // Persist to MongoDB via Memory Engine (Skip for Guest Mode)
       if (user && !user.uid.startsWith('guest_')) {
-        await Promise.allSettled(generatedCampaign.map((q) => saveQuestToMongo(q, user.uid))).catch(() => {
+        await Promise.allSettled(generatedQuests.map((q) => saveQuestToMongo(q, user.uid))).catch(() => {
           console.warn('MongoDB campaign save failed')
         })
       }
@@ -399,8 +844,13 @@ export default function Dashboard() {
       const { forgeQuestFromGoal } = await import('../lib/data')
       const newId = quests.length + 1
       const fallbackQuest = forgeQuestFromGoal(newGoal, newId, level)
+      const now = new Date()
+      const deadline = new Date(now.getTime() + forgeDuration * 24 * 60 * 60 * 1000)
       const initializedFallback: Quest = {
         ...fallbackQuest,
+        category: level < 3 && forgeCategory !== 'auto' ? forgeCategory : fallbackQuest.category,
+        createdAtString: now.toISOString(),
+        deadline: deadline.toISOString(),
         completedTasks: fallbackQuest.tasks ? new Array(fallbackQuest.tasks.length).fill(false) : []
       }
 
@@ -418,7 +868,7 @@ export default function Dashboard() {
 
   // ── Quest completion — runs Adaptive AI Engine + Memory Engine ─────────────
   const handleCompleteQuest = async (id: number) => {
-    if (narratingId !== null) return
+    if (narratingId !== null || stability === 0) return
     const questToComplete = quests.find((q) => q.id === id)
     if (!questToComplete || questToComplete.isCompleted) return
 
@@ -440,9 +890,27 @@ export default function Dashboard() {
     setXp(remainingXp)
     setLevel(nextLevel)
 
+    // Complete Quest adds +10% stability
+    let nextStability = Math.min(100, stability + 10)
+    if (levelUpOccurred) {
+      nextStability = 100
+    }
+    setStability(nextStability)
+
+    // Complete Quest updates streak
+    let nextStreak = streak
+    const today = new Date()
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+    if (lastActiveDate !== todayStr) {
+      nextStreak = streak === 0 ? 1 : streak + 1
+      setStreak(nextStreak)
+      setLastActiveDate(todayStr)
+    }
+
     if (levelUpOccurred) {
       setJustLeveledTo(nextLevel)
       setShowLevelUp(true)
+      playLevelUpFanfare(activeWorld.theme)
       setTimeout(() => setShowLevelUp(false), 5000)
       setLore((prev) => [`[LEVEL UP] CELESTIAL ASCENSION: You have reached Level ${nextLevel}!`, ...prev])
     }
@@ -478,7 +946,7 @@ export default function Dashboard() {
           questToComplete.category === 'creation' ? '[CREATION]' : '[DISCIPLINE]'
 
         setLore((prev) => [
-          `${categoryTag} Triumph! "${questToComplete.title}" (+${questXp} XP)`,
+          `${categoryTag} Triumph! "${questToComplete.title}" (+${questXp} XP, +10% Stability)`,
           `Scribed Chapter ${newChapterId}: "${chapter.title}"`,
           ...prev,
         ])
@@ -487,7 +955,7 @@ export default function Dashboard() {
         if (targetUid && !targetUid.startsWith('guest_')) {
           await Promise.allSettled([
             saveChapterToMongo(chapter, targetUid),
-            savePlayerStateToMongo(targetUid, remainingXp, nextLevel, targetTheme, user?.email),
+            savePlayerStateToMongo(targetUid, remainingXp, nextLevel, targetTheme, user?.email, nextStability, nextStreak, lastDailyChallengeDate || undefined, todayStr),
             saveQuestToMongo({ ...questToComplete, isCompleted: true }, targetUid),
           ]).catch((e) => console.warn('Background MongoDB persist failed:', e))
         }
@@ -502,7 +970,7 @@ export default function Dashboard() {
         )
         setChapters((prev) => [...prev, fallbackChapter])
         setLore((prev) => [
-          `[COMPLETE] Quest complete: "${questToComplete.title}" (+${questXp} XP)`,
+          `[COMPLETE] Quest complete: "${questToComplete.title}" (+${questXp} XP, +10% Stability)`,
           ...prev,
         ])
       } finally {
@@ -518,6 +986,10 @@ export default function Dashboard() {
     if (!quest || quest.isCompleted) return
 
     setNarratingId(id)
+
+    // Fail Quest decays stability by 15%
+    const nextStability = Math.max(0, stability - 15)
+    setStability(nextStability)
     
     // Mark failed instantly and unblock UI for 0ms optimistic response
     setQuests((prev) => prev.map((q) => (q.id === id ? { ...q, isCompleted: true, failed: true } : q)))
@@ -543,7 +1015,7 @@ export default function Dashboard() {
         setChapters((prev) => [...prev, chapter])
         setNarratedEvents((prev) => ({ ...prev, [id]: chapter.text }))
         setLore((prev) => [
-          `🌑 Darkness spreads: "${quest.title}" was abandoned.`,
+          `🌑 Darkness spreads: "${quest.title}" was abandoned (-15% Stability).`,
           `Shadow Chapter ${newChapterId} etched into the Codex.`,
           ...prev,
         ])
@@ -551,16 +1023,125 @@ export default function Dashboard() {
         if (targetUid && !targetUid.startsWith('guest_')) {
           await Promise.allSettled([
             saveChapterToMongo(chapter, targetUid),
+            savePlayerStateToMongo(targetUid, xp, level, targetTheme, user?.email, nextStability, streak, lastDailyChallengeDate || undefined, lastActiveDate || undefined),
             saveQuestToMongo({ ...quest, isCompleted: true, failed: true }, targetUid),
           ]).catch((e) => console.warn('Background MongoDB fail-persist failed:', e))
         }
       } catch (err) {
         console.error('Shadow chronicler failed:', err)
-        setLore((prev) => [`🌑 Quest abandoned: "${quest.title}" — the realm suffers.`, ...prev])
+        setLore((prev) => [`🌑 Quest abandoned: "${quest.title}" — the realm suffers (-15% Stability).`, ...prev])
       } finally {
         setIsWritingChapter(false)
       }
     })()
+  }
+
+  const handleCompleteDailyChallenge = async () => {
+    if (!dailyChallenge || dailyChallenge.isCompleted || narratingId !== null || stability === 0) return
+
+    setNarratingId(9999)
+
+    // Mark completed optimistically
+    const completedChallenge = { ...dailyChallenge, isCompleted: true }
+    setDailyChallenge(completedChallenge)
+
+    // XP + level progression
+    const challengeXp = 100
+    const newXpTotal = xp + challengeXp
+    let nextLevel = level
+    let remainingXp = newXpTotal
+
+    let levelUpOccurred = false
+    while (remainingXp >= 1000) {
+      nextLevel += 1
+      remainingXp = remainingXp - 1000
+      levelUpOccurred = true
+    }
+
+    setXp(remainingXp)
+    setLevel(nextLevel)
+
+    // Daily Challenge completion adds +15% stability (cap at 100)
+    let nextStability = Math.min(100, stability + 15)
+    if (levelUpOccurred) {
+      nextStability = 100
+    }
+    setStability(nextStability)
+
+    // Update streak:
+    let nextStreak = streak
+    const today = new Date()
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+    
+    const alreadyDidChallengeToday = lastDailyChallengeDate === todayStr
+    if (!alreadyDidChallengeToday) {
+      nextStreak = streak + 1
+      setStreak(nextStreak)
+    }
+
+    setLastDailyChallengeDate(todayStr)
+    setNarratingId(null)
+
+    if (levelUpOccurred) {
+      setJustLeveledTo(nextLevel)
+      setShowLevelUp(true)
+      playLevelUpFanfare(activeWorld.theme)
+      setTimeout(() => setShowLevelUp(false), 5000)
+      setLore((prev) => [`[LEVEL UP] CELESTIAL ASCENSION: You have reached Level ${nextLevel}!`, ...prev])
+    }
+
+    const targetUid = user?.uid
+    const targetTheme = activeWorld.theme
+
+    setIsWritingChapter(true)
+    try {
+      const chapterId = chapters.length + 1
+      const chapter = await generateAdaptiveChapter(
+        dailyChallenge.title,
+        dailyChallenge.category,
+        targetTheme,
+        chapterId,
+        dailyChallenge.mythEvent ?? 'The realm celebrates completing the daily trial.',
+        targetUid
+      )
+
+      setChapters((prev) => [...prev, chapter])
+      setLore((prev) => [
+        `🏆 Daily Challenge Triumph! Completed: "${dailyChallenge.title}" (+100 XP, +15% Stability)`,
+        `🔥 Streak updated: ${nextStreak} Days!`,
+        `Scribed Daily Chapter ${chapterId}: "${chapter.title}"`,
+        ...prev,
+      ])
+
+      // Save player state and chapter to DB (Skip for guest)
+      if (targetUid && !targetUid.startsWith('guest_')) {
+        await Promise.allSettled([
+          saveChapterToMongo(chapter, targetUid),
+          savePlayerStateToMongo(targetUid, remainingXp, nextLevel, targetTheme, user?.email, nextStability, nextStreak, todayStr, todayStr)
+        ]).catch((e) => console.warn('Background MongoDB daily challenge persist failed:', e))
+      }
+    } catch (err) {
+      console.error('Daily challenge adaptive chapter failed, using fallback:', err)
+      const fallbackTitle = `Chapter ${chapters.length + 1}: Triumph of ${dailyChallenge.title}`
+      const fallbackText = `The daily alignment ritual was successfully completed. The realm hums with steady power, granting +15% stability.`
+      const fallbackChapter = {
+        id: chapters.length + 1,
+        title: fallbackTitle,
+        text: fallbackText,
+        timestamp: new Date().toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+        })
+      }
+      setChapters((prev) => [...prev, fallbackChapter])
+      setLore((prev) => [
+        `🏆 Completed Daily Challenge: "${dailyChallenge.title}" (+100 XP, +15% Stability)`,
+        ...prev,
+      ])
+    } finally {
+      setIsWritingChapter(false)
+    }
   }
 
   // ── Quest Roadmap Generation — Unlocks interactive checklists ──────────────
@@ -747,15 +1328,17 @@ export default function Dashboard() {
         />
       </div>
 
-      {/* Level Up modal — unchanged */}
+      {/* Level Up modal — with Confetti */}
       <AnimatePresence>
         {showLevelUp && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4 backdrop-blur-md"
-          >
+          <>
+            <LevelUpConfetti />
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4 backdrop-blur-md"
+            >
             <motion.div
               initial={{ scale: 0.8, y: 50, opacity: 0 }}
               animate={{ scale: 1, y: 0, opacity: 1 }}
@@ -783,6 +1366,128 @@ export default function Dashboard() {
                   className="mt-8 rounded-xl bg-white text-black px-6 py-2.5 font-bold hover:bg-zinc-200 transition-colors"
                 >
                   Receive Blessing
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        </>
+      )}
+      </AnimatePresence>
+
+      {/* Streak Daily Check-In Notice Modal */}
+      <AnimatePresence>
+        {showStreakNotice && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4 backdrop-blur-md"
+          >
+            <motion.div
+              initial={{ scale: 0.85, y: 30, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.85, y: -30, opacity: 0 }}
+              transition={{ type: 'spring', damping: 18, stiffness: 90 }}
+              className="relative max-w-sm w-full overflow-hidden rounded-[2.25rem] border border-amber-500/25 bg-zinc-950 p-7 text-center shadow-[0_0_50px_rgba(245,158,11,0.15)]"
+            >
+              {/* Radial gradient background highlights */}
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(245,158,11,0.06),transparent_65%)]" />
+              
+              <div className="relative z-10 flex flex-col items-center">
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-amber-500/35 bg-amber-500/10 text-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.2)] mb-5 animate-pulse">
+                  <span className="text-2xl font-mono">🔥</span>
+                </div>
+
+                <span className="text-[10px] font-black uppercase tracking-widest text-amber-500 font-mono">Realm Connection Est.</span>
+                <h2 className="text-2xl font-extrabold text-white mt-1.5 font-cinzel tracking-wide">WELCOME BACK, SCRIBE</h2>
+                
+                <p className="mt-4 text-xs text-zinc-400 leading-relaxed max-w-xs mx-auto">
+                  {streak > 0 ? (
+                    <>
+                      Your daily check-in is synchronized! Keep your streak burning hot by completing today's focus trial.
+                    </>
+                  ) : (
+                    <>
+                      Ignite a new consistency fire today! Forge your active ambitions to lock in daily progression.
+                    </>
+                  )}
+                </p>
+
+                {/* Big streak showcase banner */}
+                <div className="mt-5 w-full rounded-2xl bg-amber-500/10 border border-amber-500/20 py-4 px-6 shadow-[0_0_15px_rgba(245,158,11,0.05)]">
+                  <span className="block text-zinc-550 font-mono text-[9px] uppercase tracking-wider">Active consistency record</span>
+                  <span className="block mt-1 font-mono text-2xl font-black text-amber-400 tracking-wider">
+                    {streak} DAY STREAK
+                  </span>
+                  <span className="block mt-1 text-[9px] text-zinc-450 uppercase font-mono tracking-widest">
+                    {streak > 0 ? "🔥 RETAIN THE COGNITIVE FLOW" : "⚡ IGNITE DAILY PROTOCOLS"}
+                  </span>
+                </div>
+
+                <button
+                  onClick={() => setShowStreakNotice(false)}
+                  className="mt-6 w-full rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white py-2.5 text-xs font-bold transition hover:brightness-110 active:scale-95 shadow-[0_0_15px_rgba(245,158,11,0.2)]"
+                >
+                  Enter Sanctum
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Realm Collapse Overlay */}
+      <AnimatePresence>
+        {stability === 0 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 px-4 backdrop-blur-lg"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 30, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              transition={{ type: 'spring', damping: 20 }}
+              className="relative max-w-lg w-full overflow-hidden rounded-[2.5rem] border border-red-500/30 bg-zinc-950 p-10 text-center shadow-[0_0_60px_rgba(239,68,68,0.2)]"
+            >
+              {/* Pulsing red vector grid */}
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(239,68,68,0.08),transparent_70%)] -z-10" />
+              <div className="absolute inset-0 bg-[linear-gradient(rgba(239,68,68,0.01)_1px,transparent_1px),linear-gradient(90deg,rgba(239,68,68,0.01)_1px,transparent_1px)] bg-[size:30px_30px] opacity-30 pointer-events-none -z-10" />
+              
+              <div className="relative z-10 flex flex-col items-center">
+                <div className="flex h-20 w-20 items-center justify-center rounded-3xl border border-red-500/30 bg-red-500/10 text-red-500 shadow-[0_0_30px_rgba(239,68,68,0.3)] animate-pulse mb-6">
+                  <AlertCircle size={44} className="animate-bounce" />
+                </div>
+                <span className="text-xs font-black uppercase tracking-widest text-red-400 font-mono">System Catastrophe</span>
+                <h2 className="text-3xl font-black text-white mt-3 font-cinzel tracking-wider">REALM CORES COLLAPSED</h2>
+                <p className="mt-4 text-sm text-zinc-400 max-w-sm mx-auto leading-relaxed">
+                  Your neglected commitments have caused reality synchronization to decay. Time flows are frozen, blocking quest forging and completion.
+                </p>
+                
+                <div className="mt-8 w-full rounded-2xl bg-zinc-900/60 border border-zinc-850 p-6 text-left">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 font-mono block mb-1">Restoration Requirement</span>
+                  <span className="font-cinzel text-lg font-bold text-zinc-200">The Calibration Ritual</span>
+                  <p className="text-xs text-zinc-555 mt-1 leading-normal">
+                    Initiate a diagnostics sequence to calibrate the realm oscillators and restore baseline coherence (50% stability).
+                  </p>
+                </div>
+                
+                <button
+                  onClick={handleRestorationTrial}
+                  disabled={isReviving}
+                  className="mt-8 w-full flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-red-600 to-rose-500 text-white py-3.5 font-bold hover:brightness-110 active:scale-[0.98] transition-all shadow-[0_0_20px_rgba(239,68,68,0.25)] hover:shadow-[0_0_30px_rgba(239,68,68,0.45)] disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isReviving ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 size={16} className="animate-spin" />
+                      <span>Calibrating Realm Cores…</span>
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-2">
+                      <RefreshCw size={16} />
+                      <span>Execute Restoration Trial</span>
+                    </span>
+                  )}
                 </button>
               </div>
             </motion.div>
@@ -828,21 +1533,115 @@ export default function Dashboard() {
               {activeWorld.theme} grid active
             </span>
             <div className="h-10 w-[1px] bg-zinc-800 hidden sm:block" />
+            <div 
+              className="relative py-2"
+              onMouseEnter={() => setShowAccountDetails(true)}
+              onMouseLeave={() => setShowAccountDetails(false)}
+            >
+              <button
+                className="flex items-center gap-1.5 rounded-full border border-zinc-800 bg-zinc-900/40 p-1.5 text-xs font-medium backdrop-blur-md hover:border-zinc-700 hover:bg-zinc-900/60 transition-all duration-300 select-none cursor-default"
+              >
+                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-zinc-850 border border-zinc-750 text-xs font-black uppercase text-zinc-300 font-mono">
+                  {user.uid.startsWith('guest_') ? 'G' : (user.email?.[0] || 'U')}
+                </div>
+                <ChevronDown size={14} className="text-zinc-500 mr-0.5" />
+              </button>
 
-            {user.uid.startsWith('guest_') && (
-              <>
-                <Link href="/auth">
-                  <button
-                    className="flex items-center gap-1.5 rounded-full border border-purple-500/30 bg-purple-500/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-purple-300 backdrop-blur-md transition-all duration-300 hover:border-purple-500/50 hover:bg-purple-500/20 hover:scale-[1.03] active:scale-[0.97] hover:cursor-pointer"
+              {/* Popover Card */}
+              <AnimatePresence>
+                {showAccountDetails && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 8, scale: 0.96 }}
+                    transition={{ duration: 0.15, ease: 'easeOut' }}
+                    className="absolute right-0 mt-1 w-72 z-40 rounded-2xl border border-zinc-800 bg-zinc-950 p-5 shadow-[0_20px_50px_rgba(0,0,0,0.7)] backdrop-blur-xl"
                   >
-                    <Sparkles size={12} className="text-purple-400 animate-pulse" />
-                    <span>Forge Account</span>
-                  </button>
-                </Link>
-                <div className="h-10 w-[1px] bg-zinc-800 hidden sm:block" />
-              </>
-            )}
-            
+                    <div className="flex items-center gap-3 border-b border-zinc-850/60 pb-3">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-purple-500/10 border border-purple-500/25 text-sm font-black uppercase text-purple-300 font-mono">
+                        {user.uid.startsWith('guest_') ? 'G' : (user.email?.[0] || 'U')}
+                      </div>
+                      <div className="overflow-hidden">
+                        <span className="block text-[9px] font-bold uppercase tracking-widest text-zinc-550 font-mono">Active Scribe</span>
+                        <span className="block text-xs font-semibold text-zinc-200 truncate font-mono" title={user.email || 'Guest'}>
+                          {user.uid.startsWith('guest_') ? 'Guest Scribe' : user.email}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 space-y-3">
+                      {/* Level & XP */}
+                      <div>
+                        <div className="flex justify-between text-[9px] font-bold uppercase tracking-wider text-zinc-550 font-mono mb-1">
+                          <span>Scribe Rank</span>
+                          <span className="text-purple-400 font-black">Lvl {level}</span>
+                        </div>
+                        <div className="flex items-center gap-2 justify-between text-[11px] font-bold text-zinc-350">
+                          <span className="font-cinzel truncate max-w-[150px]">
+                            {getRankName(level, activeWorld.theme)}
+                          </span>
+                          <span className="font-mono text-[9px] shrink-0">{xp} / 1000 XP</span>
+                        </div>
+                        <div className="h-1.5 w-full bg-zinc-900 rounded-full overflow-hidden mt-1.5 border border-zinc-850/40 shadow-inner">
+                          <motion.div 
+                            initial={{ width: 0 }}
+                            animate={{ width: `${(xp / 1000) * 100}%` }}
+                            className="h-full bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full" 
+                          />
+                        </div>
+                      </div>
+
+                      {/* Streak & Stability Grid */}
+                      <div className="grid grid-cols-2 gap-2.5 pt-1">
+                        <div className="rounded-xl border border-zinc-900 bg-zinc-900/20 p-2.5">
+                          <span className="block text-[8px] font-bold uppercase tracking-wider text-zinc-550 font-mono">Streak</span>
+                          <span className="block text-xs font-black text-amber-400 mt-0.5 font-mono">🔥 {streak} Days</span>
+                        </div>
+                        <div className="rounded-xl border border-zinc-900 bg-zinc-900/20 p-2.5">
+                          <span className="block text-[8px] font-bold uppercase tracking-wider text-zinc-550 font-mono">Stability</span>
+                          <span className={`block text-xs font-black mt-0.5 font-mono ${stability < 30 ? 'text-red-400' : 'text-green-400'}`}>
+                            ⚡ {stability}%
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Core Themes Quick Switch */}
+                      <div className="border-t border-zinc-850/60 pt-3">
+                        <span className="block text-[8px] font-bold uppercase tracking-wider text-zinc-550 font-mono mb-2">
+                          Summon Core Themes
+                        </span>
+                        <div className="grid grid-cols-3 gap-1.5">
+                          {([
+                            { id: 'fantasy', label: 'Fantasy', icon: '⚔️' },
+                            { id: 'cyberpunk', label: 'Cyber', icon: '💻' },
+                            { id: 'steampunk', label: 'Steam', icon: '⚙️' }
+                          ] as const).map((t) => {
+                            const isActive = activeWorld.theme === t.id
+                            return (
+                              <button
+                                key={t.id}
+                                onClick={() => handleChangeWorld(t.id)}
+                                className={`py-1.5 px-1 rounded-xl text-[10px] font-bold border transition-all duration-300 flex flex-col items-center justify-center gap-1 cursor-pointer ${
+                                  isActive
+                                    ? 'border-purple-500/80 bg-purple-500/10 text-purple-300 shadow-[0_0_10px_rgba(168,85,247,0.15)]'
+                                    : 'border-zinc-900 bg-zinc-900/40 text-zinc-500 hover:border-zinc-700 hover:text-zinc-300'
+                                }`}
+                              >
+                                <span className="text-[12px]">{t.icon}</span>
+                                <span>{t.label}</span>
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            <div className="h-10 w-[1px] bg-zinc-800 hidden sm:block" />
+
             {/* Sign Out Button */}
             <button
               onClick={async () => {
@@ -860,7 +1659,7 @@ export default function Dashboard() {
         </header>
 
         {/* XP Bar */}
-        <XPBar xp={xp} level={level} theme={activeWorld.theme} />
+        <XPBar xp={xp} level={level} theme={activeWorld.theme} streak={streak} />
 
         {/* Layout grid */}
         <div className="mt-8 grid gap-6 lg:grid-cols-3">
@@ -904,6 +1703,96 @@ export default function Dashboard() {
                   <span className="hidden sm:inline">{isForging ? 'Starting…' : 'Start Adventure'}</span>
                 </button>
               </form>
+
+              {/* Campaign Architect Level Lock/Notice */}
+              <div className="mt-3 flex items-center select-none">
+                {level < 3 ? (
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-zinc-800/80 bg-zinc-900/30 px-2.5 py-1 text-[11px] font-medium text-zinc-400">
+                    <span className="h-1.5 w-1.5 rounded-full bg-zinc-600" />
+                    Campaign Architect (3-part quests) unlocks at Level 3
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-purple-500/20 bg-purple-500/5 px-2.5 py-1 text-[11px] font-semibold text-purple-300 shadow-[0_0_15px_rgba(168,85,247,0.05)] animate-pulse">
+                    <span className="h-1.5 w-1.5 rounded-full bg-purple-400" />
+                    Campaign Architect Active: forging 3-part campaign sequence
+                  </span>
+                )}
+              </div>
+
+              {/* Category Override Selection / Campaign Notice */}
+              <div className="mt-4 flex flex-col sm:flex-row gap-4 sm:items-center justify-between border-t border-zinc-800/40 pt-4">
+                <div className="flex flex-col gap-1.5 flex-1">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-zinc-550 font-mono">
+                    Category Tuning
+                  </span>
+                  {level < 3 ? (
+                    <div className="flex flex-wrap gap-2">
+                      {([
+                        { key: 'auto', label: 'Auto Detect' },
+                        { key: 'wisdom', label: 'Wisdom' },
+                        { key: 'discipline', label: 'Discipline' },
+                        { key: 'creation', label: 'Creation' }
+                      ] as const).map((cat) => (
+                        <button
+                          key={cat.key}
+                          type="button"
+                          onClick={() => setForgeCategory(cat.key)}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all duration-300 ${
+                            forgeCategory === cat.key
+                              ? `${colors.accentBg} ${colors.borderGlow} shadow-[0_0_15px_rgba(168,85,247,0.1)]`
+                              : 'border-zinc-800/60 bg-zinc-950/40 text-zinc-400 hover:border-zinc-700 hover:text-zinc-300'
+                          }`}
+                        >
+                          {cat.label}
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                      <div className="flex items-center rounded-xl border border-zinc-800/80 bg-zinc-900/20 p-1 shadow-inner backdrop-blur-sm">
+                        <span className="rounded-lg px-2 py-1 text-[10px] font-black uppercase bg-purple-500/10 text-purple-300 border border-purple-500/15">
+                          Wisdom <span className="text-purple-400/60 font-semibold text-[9px] lowercase">(Prep)</span>
+                        </span>
+                        <span className="mx-1.5 text-zinc-650 text-[9px] font-bold">➔</span>
+                        <span className="rounded-lg px-2 py-1 text-[10px] font-black uppercase bg-cyan-500/10 text-cyan-300 border border-cyan-500/15">
+                          Creation <span className="text-cyan-400/60 font-semibold text-[9px] lowercase">(Build)</span>
+                        </span>
+                        <span className="mx-1.5 text-zinc-650 text-[9px] font-bold">➔</span>
+                        <span className="rounded-lg px-2 py-1 text-[10px] font-black uppercase bg-orange-500/10 text-orange-350 border border-orange-500/15">
+                          Discipline <span className="text-orange-400/60 font-semibold text-[9px] lowercase">(Test)</span>
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Deadline Duration Selection */}
+                <div className="flex flex-col gap-1.5 min-w-[200px]">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-zinc-550 font-mono">
+                    Quest Timeframe
+                  </span>
+                  <div className="flex gap-2">
+                    {([
+                      { val: 1, label: '1 Day' },
+                      { val: 3, label: '3 Days' },
+                      { val: 7, label: '7 Days' }
+                    ] as const).map((dur) => (
+                      <button
+                        key={dur.val}
+                        type="button"
+                        onClick={() => setForgeDuration(dur.val)}
+                        className={`px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all duration-300 flex-1 text-center ${
+                          forgeDuration === dur.val
+                            ? `${colors.accentBg} ${colors.borderGlow} shadow-[0_0_15px_rgba(168,85,247,0.1)]`
+                            : 'border-zinc-800/60 bg-zinc-950/40 text-zinc-400 hover:border-zinc-700 hover:text-zinc-300'
+                        }`}
+                      >
+                        {dur.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
 
               {/* Sample Ambition suggestion chips */}
               <div className="mt-3.5 flex flex-wrap items-center gap-2 select-none">
@@ -997,6 +1886,115 @@ export default function Dashboard() {
             <div>
               {activeTab === 'quests' && (
                 <div className="space-y-4">
+                  {/* Daily Challenge Section */}
+                  {dailyChallenge && (filter === 'all' || dailyChallenge.category === filter) && (
+                    <div className="relative overflow-hidden rounded-[2rem] border border-amber-500/30 bg-gradient-to-br from-amber-500/10 via-zinc-950/80 to-zinc-950/90 p-8 shadow-[0_0_30px_rgba(245,158,11,0.08)] mb-8 transition hover:border-amber-500/50">
+                      {/* Decorative background pulse glow */}
+                      <div className="absolute -right-16 -top-16 h-36 w-36 rounded-full bg-amber-500/15 blur-3xl pointer-events-none animate-pulse" />
+                      
+                      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2.5">
+                            <span className="flex h-5 items-center justify-center rounded-full bg-amber-500/20 border border-amber-500/30 px-3 text-[10px] font-bold text-amber-300 tracking-wider uppercase font-mono">
+                              ⭐ Daily Focus Trial
+                            </span>
+                            {dailyChallenge.isCompleted ? (
+                              <span className="flex h-5 items-center justify-center rounded-full bg-green-500/20 border border-green-500/30 px-3 text-[10px] font-bold text-green-400 tracking-wider uppercase font-mono">
+                                Chronicled
+                              </span>
+                            ) : (
+                              <span className="flex h-5 items-center justify-center rounded-full bg-zinc-850 border border-zinc-700 px-3 text-[10px] font-bold text-zinc-400 tracking-wider uppercase font-mono">
+                                Active
+                              </span>
+                            )}
+                          </div>
+                          
+                          <h3 className={`text-2xl font-black mt-3.5 tracking-tight font-cinzel ${dailyChallenge.isCompleted ? 'line-through text-zinc-500' : 'text-zinc-100'}`}>
+                            {dailyChallenge.title}
+                          </h3>
+                          <p className="mt-2 text-sm text-zinc-400 leading-relaxed font-serif italic">
+                            {dailyChallenge.description}
+                          </p>
+                          
+                          {/* Task Checkbox */}
+                          {dailyChallenge.tasks && dailyChallenge.tasks.length > 0 && (
+                            <div className="mt-5">
+                              {dailyChallenge.tasks.map((task, i) => {
+                                const parts = task.split('|')
+                                const mainTask = parts[0]?.trim() || task
+                                const loreSubtitle = parts[1]?.trim() || ''
+                                return (
+                                  <button
+                                    key={i}
+                                    onClick={() => handleCompleteDailyChallenge()}
+                                    disabled={dailyChallenge.isCompleted || narratingId !== null || stability === 0}
+                                    className={`flex items-start gap-4 w-full text-left p-4 rounded-2xl border border-amber-500/10 transition-all duration-300 ${
+                                      dailyChallenge.isCompleted 
+                                        ? 'bg-green-500/5 border-green-500/10 shadow-[0_0_12px_rgba(34,197,94,0.04)] cursor-default' 
+                                        : 'bg-zinc-900/10 hover:bg-amber-500/5 hover:border-amber-500/20 group'
+                                    }`}
+                                  >
+                                    <div className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-all duration-300 ${
+                                      dailyChallenge.isCompleted 
+                                        ? 'border-green-500 bg-green-500 text-white shadow-[0_0_8px_rgba(34,197,94,0.4)]' 
+                                        : 'bg-zinc-950 border-zinc-750 group-hover:border-amber-500/50 shadow-inner'
+                                    }`}>
+                                      {dailyChallenge.isCompleted && <Check size={11} strokeWidth={4} />}
+                                    </div>
+                                    <div className="flex-1 flex flex-col">
+                                      <span className={`text-base font-semibold transition-all duration-300 ${
+                                        dailyChallenge.isCompleted ? 'text-zinc-500 line-through' : 'text-zinc-200 group-hover:text-white'
+                                      }`}>
+                                        {mainTask}
+                                      </span>
+                                      {loreSubtitle && (
+                                        <span className={`text-sm italic mt-1.5 font-serif tracking-wide transition-all duration-300 ${
+                                          dailyChallenge.isCompleted ? 'text-zinc-600' : 'text-zinc-500'
+                                        }`}>
+                                          “{loreSubtitle}”
+                                        </span>
+                                      )}
+                                    </div>
+                                  </button>
+                                )
+                              })}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex flex-col items-center md:items-end justify-center gap-3 select-none">
+                          <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 font-mono">Rewards</span>
+                          <div className="flex gap-2.5">
+                            <span className="h-9 flex items-center justify-center rounded-xl border border-amber-500/20 bg-amber-500/10 px-3.5 text-xs font-bold text-amber-300 font-mono">
+                              +100 XP
+                            </span>
+                            <span className="h-9 flex items-center justify-center rounded-xl border border-amber-500/20 bg-amber-500/10 px-3.5 text-xs font-bold text-amber-300 font-mono">
+                              +15% Stability
+                            </span>
+                          </div>
+                          {!dailyChallenge.isCompleted && (
+                            <button
+                              onClick={() => handleCompleteDailyChallenge()}
+                              disabled={narratingId !== null || stability === 0}
+                              className="w-full mt-2 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 border border-amber-500/30 px-5 py-2.5 text-xs font-bold text-white transition hover:brightness-110 active:scale-95 disabled:opacity-50"
+                            >
+                              {narratingId === 9999 ? (
+                                <>
+                                  <Loader2 size={12} className="animate-spin" />
+                                  <span>Recording Trial...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Check size={12} />
+                                  <span>Complete Trial</span>
+                                </>
+                              )}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <h2 className="text-2xl font-bold text-zinc-100 flex items-center gap-2">
                       Active Quests
@@ -1081,6 +2079,8 @@ export default function Dashboard() {
               activeWorld={activeWorld}
               onChangeWorld={handleChangeWorld}
               onForgeCustomWorld={handleForgeCustomWorld}
+              stability={stability}
+              level={level}
             />
             <KingdomStatus quests={quests} activeWorld={activeWorld} />
             <LoreFeed lore={lore} theme={activeWorld.theme} />

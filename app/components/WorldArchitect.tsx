@@ -8,12 +8,16 @@ interface WorldArchitectProps {
   activeWorld: World
   onChangeWorld: (theme: 'fantasy' | 'cyberpunk' | 'steampunk') => void
   onForgeCustomWorld: (prompt: string) => void
+  stability: number
+  level: number
 }
 
 export default function WorldArchitect({
   activeWorld,
   onChangeWorld,
   onForgeCustomWorld,
+  stability,
+  level,
 }: WorldArchitectProps) {
   const themes = [
     {
@@ -38,12 +42,13 @@ export default function WorldArchitect({
       desc: 'Pressure gauges, steam valves, and clockwork cores.',
       icon: Cog,
       color: 'border-orange-500/30 text-orange-400 bg-orange-500/5',
-      activeColor: 'border-orange-500/80 bg-orange-500/10 shadow-[0_0_20px_rgba(249,115,22,0.3)] text-orange-300',
+      activeColor: 'border-orange-500/80 bg-orange-500/10 shadow-[0_0_20px_rgba(249,115,22,0.3)] text-orange-350',
     },
   ]
 
   const handleCustomSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    if (level < 2) return
     const form = e.target as HTMLFormElement
     const input = form.elements.namedItem('worldPrompt') as HTMLInputElement
     if (input && input.value.trim()) {
@@ -80,7 +85,7 @@ export default function WorldArchitect({
           </div>
           <div className="flex items-center gap-2 rounded-xl bg-green-500/10 px-3 py-1.5 border border-green-500/20 text-xs font-semibold text-green-400">
             <Zap size={12} className="animate-pulse" />
-            {activeWorld.stability}% Stability
+            {stability}% Stability
           </div>
         </div>
 
@@ -91,7 +96,7 @@ export default function WorldArchitect({
           </div>
           <div className="h-2 w-full rounded-full bg-zinc-800 overflow-hidden">
             <motion.div
-              animate={{ width: `${activeWorld.stability}%` }}
+              animate={{ width: `${stability}%` }}
               transition={{ duration: 1 }}
               className="h-full rounded-full bg-gradient-to-r from-green-500 to-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.3)]"
             />
@@ -132,12 +137,18 @@ export default function WorldArchitect({
           <input
             name="worldPrompt"
             type="text"
-            placeholder="e.g., A floating clockwork observatory in a nebula..."
-            className="flex-1 rounded-xl border border-zinc-850 bg-black/40 px-4 py-2.5 text-xs placeholder-zinc-550 outline-none transition focus:border-purple-500/50"
+            disabled={level < 2}
+            placeholder={level < 2 ? "🔒 Unlock at Level 2" : "e.g., A floating clockwork observatory in a nebula..."}
+            className={`flex-1 rounded-xl border border-zinc-850 bg-black/40 px-4 py-2.5 text-xs placeholder-zinc-550 outline-none transition focus:border-purple-500/50 ${
+              level < 2 ? "opacity-50 cursor-not-allowed bg-zinc-900/10 border-zinc-900" : ""
+            }`}
           />
           <button
             type="submit"
-            className="flex items-center gap-1 rounded-xl bg-purple-500/20 border border-purple-500/30 px-4 text-xs font-bold text-purple-300 transition hover:bg-purple-500/30 active:scale-95"
+            disabled={level < 2}
+            className={`flex items-center gap-1 rounded-xl bg-purple-500/20 border border-purple-500/30 px-4 text-xs font-bold text-purple-300 transition hover:bg-purple-500/30 active:scale-95 ${
+              level < 2 ? "opacity-50 cursor-not-allowed" : ""
+            }`}
           >
             <Sparkles size={12} />
             <span>Forge</span>

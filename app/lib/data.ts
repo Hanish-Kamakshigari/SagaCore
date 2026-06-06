@@ -16,6 +16,8 @@ export interface Quest {
   failed?: boolean       // True when the user marked the quest as failed
   completedTasks?: boolean[] // Track completion state of each task in the roadmap
   dependsOnQuestId?: number // The ID of the quest that must be completed first
+  deadline?: string
+  createdAtString?: string
 }
 
 export interface World {

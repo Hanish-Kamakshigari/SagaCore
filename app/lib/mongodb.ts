@@ -40,7 +40,9 @@ const QuestSchema = new mongoose.Schema({
   mythEvent: { type: String, default: '' },
   failed: { type: Boolean, default: false },
   completedTasks: { type: [Boolean], default: [] },
-  dependsOnQuestId: { type: Number }
+  dependsOnQuestId: { type: Number },
+  deadline: { type: String },
+  createdAtString: { type: String }
 }, { timestamps: true })
 
 QuestSchema.index({ userId: 1, id: 1 }, { unique: true })
@@ -61,6 +63,10 @@ const PlayerStateSchema = new mongoose.Schema({
   level: { type: Number, required: true },
   worldTheme: { type: String, required: true },
   email: { type: String }, // Optional email field for leaderboard display names
+  stability: { type: Number, default: 100 },
+  streak: { type: Number, default: 0 },
+  lastDailyChallengeDate: { type: String },
+  lastActiveDate: { type: String },
   lastUpdated: { type: String, required: true }
 }, { timestamps: true })
 

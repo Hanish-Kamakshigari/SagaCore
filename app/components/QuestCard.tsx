@@ -7,10 +7,62 @@
 //   - Epic: Purple
 //   - Legendary: Gold (yellow)
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Sword, BookOpen, Sparkles, Check, ChevronDown, ChevronUp, X, Loader2, Lock } from 'lucide-react'
+import { Sword, BookOpen, Sparkles, Check, ChevronDown, ChevronUp, X, Loader2, Lock, Clock } from 'lucide-react'
 import { Quest } from '../lib/data'
+
+function QuestTimer({ deadline, isCompleted }: { deadline?: string; isCompleted: boolean }) {
+  const [timeLeft, setTimeLeft] = useState<string>('')
+  const [isCritical, setIsCritical] = useState<boolean>(false)
+
+  useEffect(() => {
+    if (!deadline || isCompleted) return
+
+    const updateTimer = () => {
+      const diff = new Date(deadline).getTime() - new Date().getTime()
+      if (diff <= 0) {
+        setTimeLeft('Expired')
+        setIsCritical(true)
+        return
+      }
+
+      const hours = Math.floor(diff / (1000 * 60 * 60))
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+      
+      if (hours < 12) {
+        setIsCritical(true)
+      } else {
+        setIsCritical(false)
+      }
+
+      if (hours >= 24) {
+        const days = Math.floor(hours / 24)
+        const remHours = hours % 24
+        setTimeLeft(`${days}d ${remHours}h left`)
+      } else {
+        setTimeLeft(`${hours}h ${minutes}m left`)
+      }
+    }
+
+    updateTimer()
+    const interval = setInterval(updateTimer, 60000)
+    return () => clearInterval(interval)
+  }, [deadline, isCompleted])
+
+  if (!deadline || isCompleted) return null
+
+  return (
+    <div className={`flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider font-mono select-none px-2.5 py-0.5 rounded-full border transition-all duration-300 ${
+      isCritical 
+        ? 'text-red-400 border-red-500/20 bg-red-500/10 animate-pulse' 
+        : 'text-zinc-400 border-zinc-800 bg-zinc-900/40'
+    }`}>
+      <Clock size={10} />
+      <span>{timeLeft}</span>
+    </div>
+  )
+}
 
 interface QuestCardProps {
   quest: Quest
@@ -248,9 +300,12 @@ export default function QuestCard({
             <CategoryIcon size={22} />
           </div>
           <div>
-            <span className={theme.label}>
-              {quest.difficulty} Quest
-            </span>
+            <div className="flex items-center gap-2">
+              <span className={theme.label}>
+                {quest.difficulty} Quest
+              </span>
+              <QuestTimer deadline={quest.deadline} isCompleted={quest.isCompleted} />
+            </div>
             <h3 className="text-2xl font-extrabold text-white mt-1 tracking-tight font-cinzel">{quest.title}</h3>
           </div>
         </div>
