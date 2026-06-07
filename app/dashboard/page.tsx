@@ -182,11 +182,11 @@ export default function Dashboard() {
   const { user, loading: authLoading, logout } = useAuth()
   const router = useRouter()
 
-  const wasGuestRef = useRef(false)
+  const wasLoggedInRef = useRef(false)
 
   useEffect(() => {
-    if (user?.uid?.startsWith('guest_')) {
-      wasGuestRef.current = true
+    if (user) {
+      wasLoggedInRef.current = true
     }
   }, [user])
 
@@ -330,7 +330,7 @@ export default function Dashboard() {
   useEffect(() => {
     if (authLoading) return
     if (!user) {
-      if (wasGuestRef.current) {
+      if (wasLoggedInRef.current) {
         router.push('/')
       } else {
         router.push('/auth')

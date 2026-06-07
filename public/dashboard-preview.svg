@@ -1,0 +1,183 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 600" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradients -->
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#09090b" />
+      <stop offset="100%" stop-color="#030303" />
+    </linearGradient>
+    <linearGradient id="panel-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#18181b" stop-opacity="0.8" />
+      <stop offset="100%" stop-color="#09090b" stop-opacity="0.95" />
+    </linearGradient>
+    <linearGradient id="purple-cyan" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#a855f7" />
+      <stop offset="100%" stop-color="#06b6d4" />
+    </linearGradient>
+    <linearGradient id="amber-orange" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#f59e0b" />
+      <stop offset="100%" stop-color="#f97316" />
+    </linearGradient>
+    
+    <!-- Neon Glow Filters -->
+    <filter id="glow-purple" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+    <filter id="glow-cyan" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="4" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+    <filter id="glow-orange" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="5" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+    
+    <!-- Drop Shadow for Panels -->
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="16" flood-color="#000000" flood-opacity="0.6" />
+    </filter>
+  </defs>
+
+  <!-- Outer Dashboard Container -->
+  <rect x="0" y="0" width="1000" height="600" rx="16" fill="url(#bg-grad)" stroke="#27272a" stroke-width="1.5" filter="url(#shadow)" />
+
+  <!-- Mock Window Controls -->
+  <circle cx="25" cy="25" r="6" fill="#ef4444" />
+  <circle cx="45" cy="25" r="6" fill="#f59e0b" />
+  <circle cx="65" cy="25" r="6" fill="#22c55e" />
+  <text x="95" y="30" font-family="'Outfit', 'Inter', system-ui, sans-serif" font-size="12" fill="#71717a" letter-spacing="1">SAGACORE CONSOLE v1.2</text>
+
+  <!-- ================= HEADER SECTION ================= -->
+  <!-- Brand logo & Realm Status -->
+  <g transform="translate(30, 60)">
+    <!-- Logo -->
+    <text x="0" y="25" font-family="'Cinzel', Georgia, serif" font-weight="900" font-size="22" fill="#ffffff" letter-spacing="3">SAGACORE HUB</text>
+    <text x="2" y="38" font-family="monospace" font-weight="bold" font-size="8" fill="#a855f7" letter-spacing="4">WORLD ENGINE</text>
+
+    <!-- XP Progress Bar -->
+    <g transform="translate(260, 5)">
+      <text x="0" y="12" font-family="'Inter', system-ui, sans-serif" font-weight="bold" font-size="11" fill="#a1a1aa">LEVEL 12</text>
+      <rect x="70" y="2" width="280" height="12" rx="6" fill="#18181b" stroke="#27272a" stroke-width="1" />
+      <rect x="71" y="3" width="190" height="10" rx="5" fill="url(#purple-cyan)" />
+      <!-- Glow effect for progress bar head -->
+      <circle cx="261" cy="8" r="6" fill="#67e8f9" filter="url(#glow-cyan)" />
+      <text x="360" y="12" font-family="'Inter', system-ui, sans-serif" font-weight="bold" font-size="11" fill="#e4e4e7">850 / 1200 XP</text>
+    </g>
+
+    <!-- Streak Badge -->
+    <g transform="translate(760, 3)">
+      <rect x="0" y="0" width="180" height="34" rx="17" fill="#1e1b4b" stroke="#a855f7" stroke-width="1" stroke-opacity="0.4" />
+      <!-- Fire flame SVG path -->
+      <path d="M 22 24 C 22 28 26 30 28 27 C 32 23 29 18 27 15 C 26 18 24 20 22 17 C 20 14 22 9 19 6 C 18 10 13 14 14 18 C 14 20 16 22 18 21 C 17 22 16 23 16 24 C 16 26 19 28 22 24 Z" fill="url(#amber-orange)" filter="url(#glow-orange)" transform="translate(5, -2) scale(0.9)" />
+      <text x="38" y="21" font-family="'Inter', system-ui, sans-serif" font-weight="800" font-size="12" fill="#f97316" letter-spacing="1">7 DAY STREAK</text>
+    </g>
+  </g>
+
+  <!-- Divider Line -->
+  <line x1="30" y1="120" x2="970" y2="120" stroke="#27272a" stroke-width="1" />
+
+  <!-- ================= MAIN CONTENT ================= -->
+
+  <!-- LEFT COLUMN: Quests (60% width) -->
+  <g transform="translate(30, 145)">
+    <!-- Section Header -->
+    <text x="5" y="20" font-family="'Cinzel', Georgia, serif" font-weight="bold" font-size="16" fill="#f4f4f5" letter-spacing="2">ACTIVE QUESTS</text>
+    <rect x="5" y="32" width="45" height="2" fill="#a855f7" />
+
+    <!-- QUEST CARD 1 (Completed Epic Quest) -->
+    <g transform="translate(0, 50)">
+      <rect x="0" y="0" width="560" height="85" rx="14" fill="url(#panel-grad)" stroke="#a855f7" stroke-width="1.2" stroke-opacity="0.7" filter="url(#glow-purple)" style="filter: drop-shadow(0px 0px 8px rgba(168, 85, 247, 0.15))" />
+      
+      <!-- Completed Checkbox -->
+      <circle cx="35" cy="42" r="12" fill="#a855f7" fill-opacity="0.1" stroke="#a855f7" stroke-width="2" />
+      <path d="M 29 42 L 33 46 L 41 38" stroke="#a855f7" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+      
+      <text x="65" y="35" font-family="'Inter', system-ui, sans-serif" font-weight="700" font-size="14" fill="#ffffff">Reconstruct Codex Architecture</text>
+      <text x="65" y="55" font-family="'Inter', system-ui, sans-serif" font-size="12" fill="#a1a1aa">Configure global index routing database parameters</text>
+      
+      <!-- Badge: Epic -->
+      <rect x="65" y="62" width="50" height="16" rx="4" fill="#581c87" />
+      <text x="90" y="74" font-family="'Inter', system-ui, sans-serif" font-weight="800" font-size="9" fill="#d8b4fe" text-anchor="middle">EPIC</text>
+      
+      <!-- Rewards -->
+      <text x="470" y="47" font-family="'Inter', system-ui, sans-serif" font-weight="800" font-size="14" fill="#a855f7">+450 XP</text>
+    </g>
+
+    <!-- QUEST CARD 2 (In-Progress Legendary Quest) -->
+    <g transform="translate(0, 150)">
+      <rect x="0" y="0" width="560" height="85" rx="14" fill="url(#panel-grad)" stroke="#eab308" stroke-width="1.2" stroke-opacity="0.6" />
+      
+      <!-- Active Checkbox -->
+      <circle cx="35" cy="42" r="12" fill="#eab308" fill-opacity="0.05" stroke="#eab308" stroke-width="2" />
+      
+      <text x="65" y="35" font-family="'Inter', system-ui, sans-serif" font-weight="700" font-size="14" fill="#ffffff">Synchronize Multi-Layer Intelligence Engine</text>
+      <text x="65" y="55" font-family="'Inter', system-ui, sans-serif" font-size="12" fill="#a1a1aa">Integrate parallel generative prompt chains with retry fallbacks</text>
+      
+      <!-- Badge: Legendary -->
+      <rect x="65" y="62" width="85" height="16" rx="4" fill="#713f12" />
+      <text x="1075" y="74" font-family="'Inter', system-ui, sans-serif" font-weight="800" font-size="9" fill="#fef08a" text-anchor="middle" transform="translate(-968, 0)">LEGENDARY</text>
+      
+      <!-- Rewards -->
+      <text x="470" y="47" font-family="'Inter', system-ui, sans-serif" font-weight="800" font-size="14" fill="#eab308">+800 XP</text>
+    </g>
+
+    <!-- QUEST CARD 3 (In-Progress Rare Quest) -->
+    <g transform="translate(0, 250)">
+      <rect x="0" y="0" width="560" height="85" rx="14" fill="url(#panel-grad)" stroke="#3b82f6" stroke-width="1" stroke-opacity="0.4" />
+      
+      <!-- Active Checkbox -->
+      <circle cx="35" cy="42" r="12" fill="#3b82f6" fill-opacity="0.05" stroke="#3b82f6" stroke-width="1.5" />
+      
+      <text x="65" y="35" font-family="'Inter', system-ui, sans-serif" font-weight="700" font-size="14" fill="#ffffff">Design Sovereign Mint System</text>
+      <text x="65" y="55" font-family="'Inter', system-ui, sans-serif" font-size="12" fill="#a1a1aa">Draft cryptographic achievement schema and offline proof-of-work</text>
+      
+      <!-- Badge: Rare -->
+      <rect x="65" y="62" width="50" height="16" rx="4" fill="#1e3a8a" />
+      <text x="90" y="74" font-family="'Inter', system-ui, sans-serif" font-weight="800" font-size="9" fill="#bfdbfe" text-anchor="middle">RARE</text>
+      
+      <!-- Rewards -->
+      <text x="470" y="47" font-family="'Inter', system-ui, sans-serif" font-weight="800" font-size="14" fill="#3b82f6">+250 XP</text>
+    </g>
+  </g>
+
+  <!-- RIGHT COLUMN: Realm Status & Lore Feed (40% width) -->
+  <g transform="translate(620, 145)">
+    <!-- Section Header -->
+    <text x="5" y="20" font-family="'Cinzel', Georgia, serif" font-weight="bold" font-size="16" fill="#f4f4f5" letter-spacing="2">REALM STATUS</text>
+    <rect x="5" y="32" width="45" height="2" fill="#06b6d4" />
+
+    <!-- Realm Health / Stability Panel -->
+    <g transform="translate(0, 50)">
+      <rect x="0" y="0" width="350" height="105" rx="14" fill="url(#panel-grad)" stroke="#27272a" stroke-width="1.2" />
+      
+      <!-- Circular Progress Indicator -->
+      <circle cx="55" cy="52" r="32" fill="none" stroke="#18181b" stroke-width="6" />
+      <circle cx="55" cy="52" r="32" fill="none" stroke="url(#purple-cyan)" stroke-width="6" stroke-dasharray="201" stroke-dashoffset="12" transform="rotate(-90 55 52)" filter="url(#glow-cyan)" />
+      <text x="55" y="56" font-family="'Inter', system-ui, sans-serif" font-weight="900" font-size="12" fill="#ffffff" text-anchor="middle">94%</text>
+
+      <text x="110" y="38" font-family="'Cinzel', Georgia, serif" font-weight="bold" font-size="13" fill="#ffffff">Realm: Aetheria</text>
+      <text x="110" y="56" font-family="'Inter', system-ui, sans-serif" font-size="11" fill="#06b6d4" font-weight="bold">STABILITY SECURED</text>
+      <text x="110" y="74" font-family="'Inter', system-ui, sans-serif" font-size="11" fill="#71717a">Multiplier: 1.25x Active</text>
+    </g>
+
+    <!-- Lore Codex Feed Panel -->
+    <g transform="translate(0, 170)">
+      <rect x="0" y="0" width="350" height="165" rx="14" fill="url(#panel-grad)" stroke="#27272a" stroke-width="1.2" />
+      
+      <!-- Book icon outline -->
+      <path d="M 25 25 L 45 25 A 5 5 0 0 1 50 30 L 50 50 A 5 5 0 0 1 45 55 L 25 55 Z M 25 25 A 5 5 0 0 0 20 30 L 20 50 A 5 5 0 0 0 25 55 Z" stroke="#a855f7" stroke-width="1.5" fill="none" transform="translate(5, 0)" />
+      <text x="60" y="38" font-family="'Cinzel', Georgia, serif" font-weight="bold" font-size="13" fill="#ffffff" letter-spacing="1">LORE CODEX</text>
+      <line x1="25" y1="52" x2="325" y2="52" stroke="#27272a" stroke-width="1" />
+      
+      <!-- Story Content Text -->
+      <text x="25" y="72" font-family="'Cinzel', Georgia, serif" font-weight="bold" font-size="10" fill="#a855f7" letter-spacing="0.5">CHAPTER V: THE ETHERNET GATES</text>
+      
+      <text x="25" y="92" font-family="'Inter', system-ui, sans-serif" font-size="11" fill="#d4d4d8" width="300">
+        <tspan x="25" dy="0">"With the code architecture restored, a brilliant</tspan>
+        <tspan x="25" dy="16">purple pulse rippled across the valley. The dark</tspan>
+        <tspan x="25" dy="16">monoliths dissolved into light. Aetheria's stable</tspan>
+        <tspan x="25" dy="16">core began to forge its legendary future..."</tspan>
+      </text>
+    </g>
+  </g>
+</svg>
