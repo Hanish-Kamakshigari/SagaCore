@@ -1,101 +1,133 @@
-# SAGACORE
-### *Forge your ambitions. Shape your realm. Become the legend.*
+# SAGACORE HUB
 
-> An autonomous AI agent that transforms real-world goals into living, evolving quest campaigns — powered primarily by Google Cloud Agent Builder with local Gemini fallback, and persisted through MongoDB.
+> Type a goal. An AI agent reads your game state, plans a 3-quest
+> campaign, and writes it to MongoDB — autonomously.
+> No JSON parsing. No manual saves. The agent does it all.
 
----
-
-## What It Does
-
-SAGACORE is an **AI-powered gamified productivity platform** that transforms real-world goals into immersive fantasy questlines. Instead of traditional to-do lists, users embark on dynamic adventures where goals become quests, accomplishments shape evolving realms, and progress is immortalized within a living codex.
-
-You type a real-world ambition ("master graph traversal algorithms", "complete a 5K run", "build a RAG pipeline") and an autonomous AI agent:
-
-1. **Reads your current player state** from MongoDB to understand your level, active quests, and progress
-2. **Plans a 3-quest sequential campaign** — one Wisdom quest, one Creation quest, one Discipline quest — each building on the last
-3. **Writes all three quests directly to the database** using Gemini Function Calling
-4. **Locks later quests** until earlier ones are complete, enforcing a real progression arc
-5. **Narrates your achievements** as evolving lore chapters in the Codex when quests are completed
-
-This is not a chatbot. The agent uses tools to act on a live database — it reads state, reasons about it, and writes structured results back.
+![SagaCore Dashboard](./public/demo.png)
 
 ---
 
-### Move Beyond Chat
-The agent does not answer questions. It uses **Gemini Function Calling** to invoke database tools directly:
+## Try It Now — No Sign Up Needed
+
+Visit **[saga-core.vercel.app](https://saga-core.vercel.app)** and click **Try Demo** for an instant sandboxed guest session with pre-filled quests, zero credentials required.
+
+---
+
+## What Is SagaCore?
+
+SagaCore is an autonomous AI agent disguised as a productivity app.
+
+Instead of a to-do list, you get a living fantasy world. Every goal becomes a quest campaign. Every completion shapes your realm's lore. Every streak builds your rank — from Neophyte Scribe all the way to Grand Sage Paragon.
+
+But underneath the fantasy skin is a real agentic system: Gemini reads your database state, reasons about your level and active quests, plans a sequential 3-part campaign, and writes all three quests to MongoDB using function calling — without you touching a single line of state management.
+
+---
+
+## Why This Is Agentic
+
+This is the distinction that matters:
+
+| Standard LLM App | SagaCore Agent |
+|---|---|
+| Prompt → JSON text → app saves to DB | Prompt → agent reads DB → reasons → agent writes to DB |
+| Single-turn response | Multi-turn ReAct loop (up to 5 iterations) |
+| App controls all state | Agent autonomously decides what to read and write |
+| One output | Chained tool calls with intermediate results fed back |
+
+The agent does not answer questions. It acts on a live database.
+
+---
+
+## The Agent in Action
+
+You type: *"master graph traversal algorithms"*
+
+```
+User submits ambition
+  → Agent calls getRealmState        (reads player XP, level, active quests)
+  → Agent reasons about current state
+  │  → Agent calls saveQuestToDatabase  (Quest 1: Wisdom — learn the theory)
+  │  → Agent calls saveQuestToDatabase  (Quest 2: Creation — implement it)
+  │  → Agent calls saveQuestToDatabase  (Quest 3: Discipline — solve 5 problems)
+  → Agent returns full campaign summary
+```
+
+Quest 2 is locked until Quest 1 is complete.
+Quest 3 is locked until Quest 2 is complete.
+The agent enforces a real progression arc — not a flat list.
+
+---
+
+## Agent Tools
+
+Gemini decides when and which tools to call:
 
 | Tool | What It Does |
 |---|---|
 | `getRealmState` | Reads player XP, level, and active quests before reasoning |
-| `saveQuestToDatabase` | Writes a fully structured quest to MongoDB |
+| `saveQuestToDatabase` | Writes a fully structured quest directly to MongoDB |
 | `saveChapterToDatabase` | Inscribes a lore chronicle on quest completion |
-| `completeQuest` | Marks a quest complete and updates player state |
-
-Gemini decides **when and which tools to call** — the app does not parse JSON and save manually.
-
-### Multi-Step Mission
-The `forgeQuestlineWithAI` function triggers a **ReAct agentic loop** (max 5 iterations):
-
-```
-User submits ambition
-  → Agent calls getRealmState        (reads DB)
-  → Agent reasons about player level + existing quests
-  → Agent calls saveQuestToDatabase  (Quest 1: Wisdom)
-  → Agent calls saveQuestToDatabase  (Quest 2: Creation, depends on Quest 1)
-  → Agent calls saveQuestToDatabase  (Quest 3: Discipline, depends on Quest 2)
-  → Agent returns campaign summary
-```
-
-### Partner MCP Integration
-SAGACORE integrates **MongoDB Atlas** as its partner MCP tool layer. The Gemini agent uses MongoDB as its persistent memory — reading world state before planning, and writing structured quest data autonomously. All player progress, quest campaigns, and lore chapters are persisted per-user in MongoDB with full multi-user isolation via Firebase UID scoping.
-
-### Powered by Google Cloud Agent Builder
-All agent orchestration and multi-step reasoning runs primarily on **Google Cloud Agent Builder** (Playbook-based Conversational Agent) using secure Service Account JWT credentials, integrating your live application endpoints as custom tools. SAGACORE automatically cascades to a local **Google Gemini 2.5 Flash** fallback if Agent Builder is offline or unconfigured. Three distinct AI engines:
-
-- **DreamForge Engine** — transforms ambitions into quest campaigns via Agent Builder playbooks or Gemini Function Calling
-- **MythOS Narrative Engine** — generates lore chronicles on quest completion
-- **World Architect** — creates custom realm descriptions from user prompts
+| `completeQuest` | Marks a quest complete and updates player XP and state |
 
 ---
 
-## Features
+## Three AI Engines
 
 ### DreamForge Engine
-Transforms user goals into personalized quest campaigns.
-- AI-generated questlines via Gemini Function Calling
-- Dynamic quest difficulty scaling based on player level
-- Goal decomposition into actionable dual-layer tasks (real task | fantasy lore subtitle)
-- Multi-stage sequential campaign progression with dependency locking
+
+The core agentic loop. Transforms any ambition into a 3-quest sequential campaign via Google Cloud Agent Builder playbooks or Gemini 2.5 Flash function calling.
+
+- Dynamic XP scaling based on player level
+- Goal decomposed into real task + fantasy lore subtitle
+- Sequential dependency locking across campaign quests
+- ReAct loop with max 5 iterations and exponential backoff
 
 ### MythOS Narrative Engine
-Creates evolving lore based on player actions.
-- Procedural lore generation on every quest completion
-- Dynamic codex chapters unique to each achievement
-- Quest failure narration with dark world consequences
+
+Generates evolving lore when quests are completed.
+
+- Procedural lore chapter generated on every completion
+- Dark consequence narration on quest failure
 - Persistent world storytelling that accumulates over time
+- Lore archived permanently in the Evolving Codex
 
 ### World Architect
-Choose or forge unique realms.
-- Fantasy — Sanctum of Aetheria
-- Cyberpunk — Neo-Chiba Grid 9
+
+Lets users choose or forge entirely custom realms.
+
+- Aether Fantasy — Sanctum of Aetheria
+- Neon Cyberpunk — Neo-Chiba Grid 9
 - Steampunk — Aeronaut Iron Keep
-- Custom AI-generated worlds from any prompt
+- Custom AI-generated worlds from any free-text prompt
 
-### Progression System
-- XP & leveling with animated bar glow on every gain
-- 20-tier rank system: Neophyte Scribe → Grand Sage Paragon
-- Quest completion tracking with Chronicled state
-- Realm Stability System tied to quest category performance
-- Celestial Ascension modal on level-up
+---
 
-### Onboarding & Memory Engine
-- **Try Demo (Guest Onboarding)** — Bypass standard Firebase credentials and instantly launch a sandboxed guest session seeded with pre-filled quests, caching progress directly to `localStorage`
-- MongoDB-backed persistence with Mongoose ORM for signed-in players
-- Quest history and roadmap task tracking
-- Lore archive storage in Evolving Codex
-- Player state management (XP, level, world theme)
-- Full multi-user isolation via Firebase UID scoping
-- localStorage cache layer for instant UI hydration
+## Google Cloud Agent Builder Integration
+
+All primary agent orchestration runs on Google Cloud Agent Builder using a Playbook-based Conversational Agent deployed on us-central1, authenticated via Service Account JWT credentials.
+
+SagaCore registers live application endpoints as custom OpenAPI tools inside Agent Builder. The playbook reasons over these tools in sequence, reading and writing to the live MongoDB Atlas instance.
+
+If Agent Builder is offline or unconfigured, SagaCore automatically cascades to a local Gemini 2.5 Flash fallback — same tools, same ReAct loop, zero downtime.
+
+---
+
+## MongoDB Atlas — Partner MCP Layer
+
+MongoDB Atlas is not just storage in SagaCore. It is the agent's persistent memory.
+
+Before planning any campaign, the agent reads realm state from MongoDB. After reasoning, it writes structured quest data back — autonomously. All player progression, quest campaigns, XP history, and lore chapters are persisted per-user with full multi-user isolation via Firebase UID scoping.
+
+The MongoDB Atlas MCP server acts as the data orchestration layer between the agent and the database — enabling the agent to treat MongoDB as a first-class reasoning surface, not a passive store.
+
+Key collections:
+
+| Collection | What It Stores |
+|---|---|
+| `quests` | Active and completed quest campaigns per user |
+| `playerstate` | XP, level, rank, streak, realm theme |
+| `lorechapters` | Codex entries generated on quest completion |
 
 ---
 
@@ -142,55 +174,83 @@ Choose or forge unique realms.
 ### Frontend
 - Next.js 15, React, TypeScript
 - Tailwind CSS, Framer Motion
-- Lucide React, Glassmorphism Design
+- Lucide React
 - Cinzel (fantasy display) + Inter (body)
 
 ### Backend
-- Next.js Server Actions (`'use server'`)
+- Next.js Server Actions (`use server`)
 - Mongoose ORM, MongoDB Atlas
+- Firebase Authentication
 
-### AI
-- Google Cloud Agent Builder (primary) — Playbook-based conversational agent
+### AI & Agent Layer
+- Google Cloud Agent Builder — Playbook-based conversational agent (us-central1)
+- Vertex AI + Dialogflow CX API
 - Google Gemini 2.5 Flash / Pro (local fallback)
-- Vertex AI & Dialogflow CX API Integration
+- Service Account JWT authentication
 - Custom OpenAPI tool declarations for Mongoose DB synchronization
 - AUTO tool-calling mode with ReAct loop (max 5 iterations)
 - Exponential backoff retry (1s → 2s → 4s)
 
-### Auth & Deployment
-- Firebase Authentication
-- Vercel
+### Deployment
+- Vercel (frontend + server actions)
+- MongoDB Atlas M0 (database)
+- Firebase (authentication)
 
 ---
 
+## Progression System
 
-## Why This Is Agentic
+20-tier rank system from first quest to mastery:
 
-The distinction between a standard LLM app and an agent:
-
-| Standard App | SAGACORE Agent |
+| Tier | Ranks |
 |---|---|
-| Prompt → JSON text → app saves to DB | Prompt → agent reads DB → reasons → agent writes to DB |
-| Single-turn | Multi-turn ReAct loop (up to 5 iterations) |
-| App controls all state | Agent autonomously decides what to read/write |
-| One output | Chained tool calls with intermediate results fed back |
+| Novice | Neophyte Scribe → Wandering Seeker → Oath-Bound Apprentice |
+| Adept | Ironwill Adept → Runebound Artisan → Veilwalker |
+| Expert | Stormforged Knight → Arcane Sovereign → Legendary Architect |
+| Paragon | Grand Sage Paragon |
+
+XP scales dynamically with player level. Realm Stability tracks quest category balance across Wisdom, Creation, and Discipline.
 
 ---
 
-## Future Roadmap
+## Guest Mode & Memory Engine
 
-- Multiplayer Realms & Guild System
-- AI Companions with persistent memory
-- Achievement Badges & Streak tracking
-- Voice Narration for lore chapters
-- Real Task Verification (GitHub commits, LeetCode solves)
-- GitHub Integration & LeetCode Progress Tracking
-- Calendar Synchronization
-- Mobile Application
+**Try Demo** bypasses Firebase credentials and launches an instant sandboxed session seeded with pre-filled quests. Guest progress is cached to localStorage for the session.
+
+Signed-in players get full MongoDB persistence:
+- Quest history and campaign tracking
+- Lore archive in the Evolving Codex
+- Player state (XP, level, world theme, streak)
+- Full multi-user isolation via Firebase UID scoping
+- localStorage cache layer for instant UI hydration
+
+---
+
+## What's Next
+
+**Real Task Verification**
+Auto-complete quests by detecting real-world proof — GitHub commits, LeetCode solves, Goodreads updates. The quest knows when you actually did the thing.
+
+**AI Companions**
+Persistent memory NPCs that remember your entire quest history and adapt their dialogue to your current rank and realm state.
+
+**Guild System**
+Shared realm campaigns with multiplayer XP, cooperative quest chains, and live leaderboard battles between guilds.
+
+---
+
+## Built By
+
+**Hanish Kamakshigari** — CS student, Mohan Babu University, Batch 2028
+
+Built for the Google Cloud × MongoDB Hackathon (Devpost, June 2026).
+
+> *"The agent reads your game state, reasons about it, and writes structured quests to MongoDB — you never touch the database manually. That's not a feature. That's the point."*
 
 ---
 
 ## License
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
+MIT License — see [LICENSE](./LICENSE) for details.
 
 Copyright (c) 2026 Hanish Kamakshigari
