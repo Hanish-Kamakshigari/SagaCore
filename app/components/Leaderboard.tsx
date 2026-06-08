@@ -53,6 +53,24 @@ export default function Leaderboard({ theme = 'fantasy', activeUserUid }: Leader
     steampunk: 'text-orange-400',
   }[theme]
 
+  const bgGlows = {
+    fantasy: { left: 'bg-purple-500/5', right: 'bg-indigo-500/5' },
+    cyberpunk: { left: 'bg-cyan-500/5', right: 'bg-blue-500/5' },
+    steampunk: { left: 'bg-orange-500/5', right: 'bg-amber-500/5' },
+  }[theme]
+
+  const selfBg = {
+    fantasy: 'bg-purple-950/10',
+    cyberpunk: 'bg-cyan-950/10',
+    steampunk: 'bg-orange-950/10',
+  }[theme]
+
+  const heroBadge = {
+    fantasy: 'bg-purple-500/20 border-purple-500/30 text-purple-300',
+    cyberpunk: 'bg-cyan-500/20 border-cyan-500/30 text-cyan-300',
+    steampunk: 'bg-orange-500/20 border-orange-500/30 text-orange-350',
+  }[theme]
+
   // Cumulative XP = completed levels * 1000 + remainder XP in current level
   const totalXp = (p: LeaderboardPlayer) => (p.level - 1) * 1000 + p.xp
 
@@ -77,7 +95,7 @@ export default function Leaderboard({ theme = 'fantasy', activeUserUid }: Leader
       return (
         <span className="font-bold text-white flex items-center gap-1.5">
           You ({truncatedName})
-          <span className="rounded-full bg-purple-500/20 border border-purple-500/30 px-1.5 py-0.2 text-[8px] text-purple-300 uppercase tracking-widest font-mono">Hero</span>
+          <span className={`rounded-full border px-1.5 py-0.2 text-[8px] uppercase tracking-widest font-mono ${heroBadge}`}>Hero</span>
         </span>
       )
     }
@@ -87,8 +105,8 @@ export default function Leaderboard({ theme = 'fantasy', activeUserUid }: Leader
   return (
     <div className={`relative overflow-hidden rounded-3xl p-6 backdrop-blur-xl transition-all duration-500 border ${styles}`}>
       {/* Background glowing particles simulation */}
-      <div className="absolute left-0 top-0 -z-10 h-32 w-32 bg-purple-500/5 blur-3xl animate-pulse" />
-      <div className="absolute right-0 bottom-0 -z-10 h-32 w-32 bg-indigo-500/5 blur-3xl animate-pulse" />
+      <div className={`absolute left-0 top-0 -z-10 h-32 w-32 ${bgGlows.left} blur-3xl animate-pulse`} />
+      <div className={`absolute right-0 bottom-0 -z-10 h-32 w-32 ${bgGlows.right} blur-3xl animate-pulse`} />
 
       <div className="flex items-center justify-between border-b border-zinc-800/80 pb-4">
         <div className="flex items-center gap-3">
@@ -110,12 +128,12 @@ export default function Leaderboard({ theme = 'fantasy', activeUserUid }: Leader
       <div className="mt-6">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 text-center text-zinc-550">
-            <RefreshCw size={32} className="mb-3 animate-spin text-purple-400" />
+            <RefreshCw size={32} className={`mb-3 animate-spin ${accentColor}`} />
             <h4 className="font-bold text-zinc-400">Consulting the Grand Registry...</h4>
           </div>
         ) : players.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center text-zinc-550">
-            <Shield size={32} className="mb-3 opacity-30 text-purple-400" />
+            <Shield size={32} className={`mb-3 opacity-30 ${accentColor}`} />
             <h4 className="font-bold text-zinc-400">The Hall is Silent</h4>
             <p className="text-xs text-zinc-500 mt-1 max-w-xs leading-relaxed">
               No legends have forged user accounts in this database yet. Sync your progress to claim the first rank!
@@ -140,7 +158,7 @@ export default function Leaderboard({ theme = 'fantasy', activeUserUid }: Leader
                   return (
                     <tr 
                       key={player.id} 
-                      className={`text-sm transition-colors duration-200 ${isSelf ? 'bg-purple-950/10' : 'hover:bg-zinc-900/10'}`}
+                      className={`text-sm transition-colors duration-200 ${isSelf ? selfBg : 'hover:bg-zinc-900/10'}`}
                     >
                       <td className="py-4 pl-2">
                         <div className="flex items-center">

@@ -203,6 +203,7 @@ export default function Dashboard() {
   const [isReviving, setIsReviving]     = useState<boolean>(false)
   const [forgeCategory, setForgeCategory] = useState<'auto' | 'wisdom' | 'discipline' | 'creation'>('auto')
   const [forgeDuration, setForgeDuration] = useState<number>(3)
+  const [isForgingWorld, setIsForgingWorld] = useState<boolean>(false)
 
   const [lore, _setLore]               = useState<string[]>([
     'The Ancient Library expands once more under your focus.',
@@ -220,11 +221,28 @@ export default function Dashboard() {
   const [displayName, _setDisplayName] = useState<string>('')
   const [isEditingName, setIsEditingName] = useState<boolean>(false)
   const [tempName, setTempName] = useState<string>('')
+  // Completed quest goal keys for duplicate detection (persisted in localStorage)
+  const [completedGoalKeys, _setCompletedGoalKeys] = useState<Set<string>>(new Set())
 
   const setDisplayName = (value: string | ((prev: string) => string)) => {
     _setDisplayName((prev) => {
       const next = typeof value === 'function' ? (value as Function)(prev) : value
       if (user) localStorage.setItem(`sagacore_${user.uid}_displayName`, next)
+      return next
+    })
+  }
+
+  // Normalize a goal/title string for duplicate detection (lowercase, strip punctuation, trim)
+  const normalizeGoalKey = (text: string): string =>
+    text.toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ').trim()
+
+  const addCompletedGoalKey = (title: string) => {
+    const key = normalizeGoalKey(title)
+    if (!key) return
+    _setCompletedGoalKeys((prev) => {
+      const next = new Set(prev)
+      next.add(key)
+      if (user) localStorage.setItem(`sagacore_${user.uid}_completedGoalKeys`, JSON.stringify([...next]))
       return next
     })
   }
@@ -305,8 +323,15 @@ export default function Dashboard() {
   const setLore = (value: string[] | ((prev: string[]) => string[])) => {
     _setLore((prev) => {
       const next = typeof value === 'function' ? (value as Function)(prev) : value
-      if (user) localStorage.setItem(`sagacore_${user.uid}_lore`, JSON.stringify(next))
-      return next
+      // Deduplicate consecutive identical entries
+      const deduped: string[] = []
+      for (let i = 0; i < next.length; i++) {
+        if (i === 0 || next[i] !== next[i - 1]) {
+          deduped.push(next[i])
+        }
+      }
+      if (user) localStorage.setItem(`sagacore_${user.uid}_lore`, JSON.stringify(deduped))
+      return deduped
     })
   }
 
@@ -365,7 +390,16 @@ export default function Dashboard() {
         if (localXp) _setXp(JSON.parse(localXp))
         if (localLevel) _setLevel(JSON.parse(localLevel))
         if (localChapters) _setChapters(JSON.parse(localChapters))
-        if (localLore) _setLore(JSON.parse(localLore))
+        if (localLore) {
+          const parsedLore = JSON.parse(localLore)
+          const dedupedLore: string[] = []
+          for (let i = 0; i < parsedLore.length; i++) {
+            if (i === 0 || parsedLore[i] !== parsedLore[i - 1]) {
+              dedupedLore.push(parsedLore[i])
+            }
+          }
+          _setLore(dedupedLore)
+        }
         if (localAudio) _setAudioActive(JSON.parse(localAudio))
         if (localStability) _setStability(JSON.parse(localStability))
         else _setStability(100)
@@ -375,6 +409,24 @@ export default function Dashboard() {
         if (localLastActiveDate) _setLastActiveDate(localLastActiveDate)
         if (localDailyChallenge) _setDailyChallenge(JSON.parse(localDailyChallenge))
         if (localDisplayName) _setDisplayName(localDisplayName)
+
+        // Load completed goal keys for duplicate detection
+        const localCompletedGoalKeys = localStorage.getItem(`sagacore_${uid}_completedGoalKeys`)
+        if (localCompletedGoalKeys) {
+          _setCompletedGoalKeys(new Set(JSON.parse(localCompletedGoalKeys)))
+        } else {
+          // Seed from already-completed quests in localStorage on first load
+          const questData: any[] = localQuests ? JSON.parse(localQuests) : []
+          const seedKeys = questData
+            .filter((q: any) => q.isCompleted)
+            .map((q: any) => q.title?.toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ').trim())
+            .filter(Boolean)
+          if (seedKeys.length > 0) {
+            const seedSet = new Set<string>(seedKeys)
+            _setCompletedGoalKeys(seedSet)
+            localStorage.setItem(`sagacore_${uid}_completedGoalKeys`, JSON.stringify([...seedSet]))
+          }
+        }
 
         // If it's a guest session, save initial/pre-filled quests to local storage if not already there
         if (isGuest) {
@@ -420,10 +472,14 @@ export default function Dashboard() {
           }
 
           const matchedWorld = Object.values(worldTemplates).find(w => w.theme === dbPlayer.worldTheme) || worldTemplates.fantasy
-          _setActiveWorld(matchedWorld)
+          const loadedWorld = {
+            ...matchedWorld,
+            name: dbPlayer.worldName || matchedWorld.name
+          }
+          _setActiveWorld(loadedWorld)
           localStorage.setItem(`sagacore_${uid}_xp`, JSON.stringify(dbPlayer.xp))
           localStorage.setItem(`sagacore_${uid}_level`, JSON.stringify(dbPlayer.level))
-          localStorage.setItem(`sagacore_${uid}_activeWorld`, JSON.stringify(matchedWorld))
+          localStorage.setItem(`sagacore_${uid}_activeWorld`, JSON.stringify(loadedWorld))
           localStorage.setItem(`sagacore_${uid}_stability`, JSON.stringify(dbPlayer.stability !== undefined ? dbPlayer.stability : 100))
           localStorage.setItem(`sagacore_${uid}_streak`, JSON.stringify(dbPlayer.streak !== undefined ? dbPlayer.streak : 0))
           if (dbPlayer.lastDailyChallengeDate) localStorage.setItem(`sagacore_${uid}_lastDailyChallengeDate`, dbPlayer.lastDailyChallengeDate)
@@ -576,20 +632,18 @@ export default function Dashboard() {
         }
 
         // Persist updates to DB
-        if (!isGuest) {
-          await savePlayerStateToMongo(
-            uid,
-            xp,
-            level,
-            activeWorld.theme,
-            user.email,
-            newStability,
-            nextStreak,
-            lastDailyChallengeDate || undefined,
-            todayStr,
-            displayName || undefined
-          ).catch((e) => console.warn('Failed saving daily decay check state:', e))
-        }
+        await savePlayerStateToMongo(
+          uid,
+          xp,
+          level,
+          activeWorld.theme,
+          user.email,
+          newStability,
+          nextStreak,
+          lastDailyChallengeDate || undefined,
+          todayStr,
+          displayName || undefined
+        ).catch((e) => console.warn('Failed saving daily decay check state:', e))
       }
     }
 
@@ -667,20 +721,18 @@ export default function Dashboard() {
         const nextStability = Math.max(0, stability - penalty)
         setStability(nextStability)
         
-        if (!isGuest) {
-          await savePlayerStateToMongo(
-            targetUid,
-            xp,
-            level,
-            activeWorld.theme,
-            user.email,
-            nextStability,
-            streak,
-            lastDailyChallengeDate || undefined,
-            lastActiveDate || undefined,
-            displayName || undefined
-          ).catch((e) => console.warn('Failed saving expired state stability update:', e))
-        }
+        await savePlayerStateToMongo(
+          targetUid,
+          xp,
+          level,
+          activeWorld.theme,
+          user.email,
+          nextStability,
+          streak,
+          lastDailyChallengeDate || undefined,
+          lastActiveDate || undefined,
+          displayName || undefined
+        ).catch((e) => console.warn('Failed saving expired state stability update:', e))
       }
     }
 
@@ -704,7 +756,7 @@ export default function Dashboard() {
       ...prev
     ])
     
-    if (user && !user.uid.startsWith('guest_')) {
+    if (user) {
       await savePlayerStateToMongo(user.uid, xp, level, activeWorld.theme, user.email, 50, streak, lastDailyChallengeDate, lastActiveDate, displayName || undefined)
         .catch((e) => console.warn('Failed to save restoration state:', e))
     }
@@ -810,10 +862,31 @@ export default function Dashboard() {
   const colors = themeColors[activeWorld.theme]
 
   // ── World switching (unchanged logic, but now uses AI for custom worlds) ──
-  const handleChangeWorld = (theme: 'fantasy' | 'cyberpunk' | 'steampunk') => {
+  const handleChangeWorld = async (theme: 'fantasy' | 'cyberpunk' | 'steampunk') => {
     const nextWorld = worldTemplates[theme]
+    if (activeWorld.theme === theme && activeWorld.name === nextWorld.name) return
     setActiveWorld(nextWorld)
     setLore((prev) => [`[SHIFT] REALM SHIFT: Now entering: "${nextWorld.name}"`, ...prev])
+
+    if (user) {
+      try {
+        await savePlayerStateToMongo(
+          user.uid,
+          xp,
+          level,
+          theme,
+          user.email,
+          stability,
+          streak,
+          lastDailyChallengeDate || undefined,
+          lastActiveDate || undefined,
+          displayName || undefined,
+          nextWorld.name
+        )
+      } catch (err) {
+        console.warn('Failed to save realm change to Mongo:', err)
+      }
+    }
   }
 
   const handleSaveDisplayName = async (newName: string) => {
@@ -829,7 +902,7 @@ export default function Dashboard() {
     ])
 
     // Save state to Mongo
-    if (user && !user.uid.startsWith('guest_')) {
+    if (user) {
       try {
         await savePlayerStateToMongo(
           user.uid,
@@ -853,6 +926,7 @@ export default function Dashboard() {
   const handleForgeCustomWorld = async (prompt: string) => {
     // Optimistic UI update with prompt as placeholder name
     setLore((prev) => [`[FORGING] World Architect is shaping: "${prompt}"…`, ...prev])
+    setIsForgingWorld(true)
 
     try {
       const result = await forgeCustomWorldWithAI(prompt)
@@ -867,6 +941,26 @@ export default function Dashboard() {
         `[FORGED] WORLD FORGE: Reality grids aligned for "${result.name}" — ${result.lore}`,
         ...prev.slice(1), // remove the placeholder
       ])
+
+      if (user) {
+        try {
+          await savePlayerStateToMongo(
+            user.uid,
+            xp,
+            level,
+            result.theme,
+            user.email,
+            stability,
+            streak,
+            lastDailyChallengeDate || undefined,
+            lastActiveDate || undefined,
+            displayName || undefined,
+            result.name
+          )
+        } catch (err) {
+          console.warn('Failed to save forged realm to Mongo:', err)
+        }
+      }
     } catch (err) {
       console.warn('World Architect AI failed, triggering local fallback:', err)
       
@@ -890,6 +984,28 @@ export default function Dashboard() {
         `[FORGED] WORLD FORGE: Reality grids aligned for custom world: "${fallbackWorld.name}"!`,
         ...prev.slice(1), // remove the placeholder
       ])
+
+      if (user) {
+        try {
+          await savePlayerStateToMongo(
+            user.uid,
+            xp,
+            level,
+            theme,
+            user.email,
+            stability,
+            streak,
+            lastDailyChallengeDate || undefined,
+            lastActiveDate || undefined,
+            displayName || undefined,
+            fallbackWorld.name
+          )
+        } catch (err) {
+          console.warn('Failed to save fallback custom realm to Mongo:', err)
+        }
+      }
+    } finally {
+      setIsForgingWorld(false)
     }
   }
 
@@ -897,6 +1013,19 @@ export default function Dashboard() {
   const handleForgeQuest = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!newGoal.trim() || isForging) return
+
+    // Duplicate detection: block if this goal already exists as any quest (active OR completed)
+    const inputKey = normalizeGoalKey(newGoal)
+    const isDuplicate = inputKey.length > 2 && (
+      // Check against completed goal keys (stored separately)
+      [...completedGoalKeys].some((key) => key === inputKey || key.includes(inputKey) || inputKey.includes(key)) ||
+      // Check against ALL existing quest titles (active or completed)
+      quests.some((q) => {
+        const qKey = normalizeGoalKey(q.title)
+        return qKey === inputKey || qKey.includes(inputKey) || inputKey.includes(qKey)
+      })
+    )
+    if (isDuplicate) return // UI already shows inline warning; just bail out
 
     setIsForging(true)
     goalInputRef.current?.blur()
@@ -1036,6 +1165,9 @@ export default function Dashboard() {
     setQuests((prev) => prev.map((q) => (q.id === id ? { ...q, isCompleted: true } : q)))
     setNarratingId(null)
 
+    // Track completed quest title to block future duplicate quests
+    addCompletedGoalKey(questToComplete.title)
+
     // Fire the heavy Gemini AI Narrator and MongoDB saving as a non-blocking background worker thread
     const targetUid = user?.uid;
     const targetTheme = activeWorld.theme;
@@ -1069,12 +1201,17 @@ export default function Dashboard() {
         ])
 
         // ── Memory Engine: persist chapter and player state ──────────────────── (Skip for Guest Mode)
-        if (targetUid && !targetUid.startsWith('guest_')) {
-          await Promise.allSettled([
-            saveChapterToMongo(chapter, targetUid),
-            savePlayerStateToMongo(targetUid, remainingXp, nextLevel, targetTheme, user?.email, nextStability, nextStreak, lastDailyChallengeDate || undefined, todayStr),
-            saveQuestToMongo({ ...questToComplete, isCompleted: true }, targetUid),
-          ]).catch((e) => console.warn('Background MongoDB persist failed:', e))
+        if (targetUid) {
+          if (!targetUid.startsWith('guest_')) {
+            await Promise.allSettled([
+              saveChapterToMongo(chapter, targetUid),
+              savePlayerStateToMongo(targetUid, remainingXp, nextLevel, targetTheme, user?.email, nextStability, nextStreak, lastDailyChallengeDate || undefined, todayStr),
+              saveQuestToMongo({ ...questToComplete, isCompleted: true }, targetUid),
+            ]).catch((e) => console.warn('Background MongoDB persist failed:', e))
+          } else {
+            await savePlayerStateToMongo(targetUid, remainingXp, nextLevel, targetTheme, user?.email, nextStability, nextStreak, lastDailyChallengeDate || undefined, todayStr)
+              .catch((e) => console.warn('Background MongoDB guest state persist failed:', e))
+          }
         }
       } catch (err) {
         console.error('Adaptive Engine failed, using fallback:', err)
@@ -1137,12 +1274,17 @@ export default function Dashboard() {
           ...prev,
         ])
 
-        if (targetUid && !targetUid.startsWith('guest_')) {
-          await Promise.allSettled([
-            saveChapterToMongo(chapter, targetUid),
-            savePlayerStateToMongo(targetUid, xp, level, targetTheme, user?.email, nextStability, streak, lastDailyChallengeDate || undefined, lastActiveDate || undefined),
-            saveQuestToMongo({ ...quest, isCompleted: true, failed: true }, targetUid),
-          ]).catch((e) => console.warn('Background MongoDB fail-persist failed:', e))
+        if (targetUid) {
+          if (!targetUid.startsWith('guest_')) {
+            await Promise.allSettled([
+              saveChapterToMongo(chapter, targetUid),
+              savePlayerStateToMongo(targetUid, xp, level, targetTheme, user?.email, nextStability, streak, lastDailyChallengeDate || undefined, lastActiveDate || undefined),
+              saveQuestToMongo({ ...quest, isCompleted: true, failed: true }, targetUid),
+            ]).catch((e) => console.warn('Background MongoDB fail-persist failed:', e))
+          } else {
+            await savePlayerStateToMongo(targetUid, xp, level, targetTheme, user?.email, nextStability, streak, lastDailyChallengeDate || undefined, lastActiveDate || undefined)
+              .catch((e) => console.warn('Background MongoDB guest fail-state persist failed:', e))
+          }
         }
       } catch (err) {
         console.error('Shadow chronicler failed:', err)
@@ -1241,12 +1383,16 @@ export default function Dashboard() {
         ...prev,
       ])
 
-      // Save player state and chapter to DB (Skip for guest)
-      if (targetUid && !targetUid.startsWith('guest_')) {
-        await Promise.allSettled([
-          saveChapterToMongo(chapter, targetUid),
-          savePlayerStateToMongo(targetUid, remainingXp, nextLevel, targetTheme, user?.email, nextStability, nextStreak, todayStr, todayStr)
-        ]).catch((e) => console.warn('Background MongoDB daily challenge persist failed:', e))
+      if (targetUid) {
+        if (!targetUid.startsWith('guest_')) {
+          await Promise.allSettled([
+            saveChapterToMongo(chapter, targetUid),
+            savePlayerStateToMongo(targetUid, remainingXp, nextLevel, targetTheme, user?.email, nextStability, nextStreak, todayStr, todayStr)
+          ]).catch((e) => console.warn('Background MongoDB daily challenge persist failed:', e))
+        } else {
+          await savePlayerStateToMongo(targetUid, remainingXp, nextLevel, targetTheme, user?.email, nextStability, nextStreak, todayStr, todayStr)
+            .catch((e) => console.warn('Background MongoDB guest daily challenge persist failed:', e))
+        }
       }
     } catch (err) {
       console.error('Daily challenge adaptive chapter failed, using fallback:', err)
@@ -1398,9 +1544,9 @@ export default function Dashboard() {
     return (
       <main className="min-h-screen bg-black text-white flex flex-col items-center justify-center relative overflow-hidden">
         <div className="absolute inset-0 -z-20 bg-[linear-gradient(rgba(255,255,255,0.012)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.012)_1px,transparent_1px)] bg-[size:40px_40px] opacity-40 pointer-events-none" />
-        <div className="absolute left-1/2 top-1/2 h-[400px] w-[400px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-purple-500/10 blur-[100px] -z-10 pointer-events-none" />
+        <div className="absolute left-1/2 top-1/2 h-[400px] w-[400px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-red-500/10 blur-[100px] -z-10 pointer-events-none" />
         <div className="flex flex-col items-center text-center">
-          <Loader2 size={40} className="animate-spin text-purple-400 mb-6" />
+          <Loader2 size={40} className="animate-spin text-red-500 mb-6 drop-shadow-[0_0_15px_rgba(239,68,68,0.5)]" />
           <h2 className="text-xl font-bold font-cinzel tracking-[0.2em] text-zinc-200">ALIGNING REALM CORES</h2>
           <p className="text-xs text-zinc-500 mt-2 font-mono uppercase tracking-widest">Synthesizing personalized grid sub-routines...</p>
         </div>
@@ -1418,7 +1564,7 @@ export default function Dashboard() {
   //   2. QuestCard receives onFail, isNarrating, narratedMythEvent props
   // ─────────────────────────────────────────────────────────────────────────────
   return (
-    <main className="relative min-h-screen bg-gradient-to-b from-black via-zinc-950 to-black px-6 py-8 text-white transition-colors duration-500 overflow-hidden">
+    <main className="relative min-h-screen bg-gradient-to-b from-black via-zinc-950 to-black px-6 py-8 text-white transition-colors duration-500 overflow-x-hidden">
       {showDailyConfetti && <LevelUpConfetti />}
       {/* Dynamic backdrop grid */}
       <div className="absolute inset-0 -z-20 bg-[linear-gradient(rgba(255,255,255,0.015)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.015)_1px,transparent_1px)] bg-[size:40px_40px] opacity-60" />
@@ -1696,7 +1842,7 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-3 sm:gap-4">
 
             <div className="hidden text-right sm:block">
               <p className="text-xs text-zinc-500">World Engine</p>
@@ -1847,7 +1993,7 @@ export default function Dashboard() {
                             { id: 'cyberpunk', label: 'Cyber', icon: '💻' },
                             { id: 'steampunk', label: 'Steam', icon: '⚙️' }
                           ] as const).map((t) => {
-                            const isActive = activeWorld.theme === t.id
+                            const isActive = activeWorld.theme === t.id && activeWorld.name === worldTemplates[t.id].name
                             return (
                               <button
                                 key={t.id}
@@ -1911,44 +2057,85 @@ export default function Dashboard() {
                 Type any ambition. The SAGACORE generator will forge a legendary quest with dynamic XP rewards.
               </p>
 
-              <form onSubmit={handleForgeQuest} className="mt-4 flex gap-3">
-                <input
-                  ref={goalInputRef}
-                  type="text"
-                  value={newGoal}
-                  onChange={(e) => setNewGoal(e.target.value)}
-                  disabled={isForging}
-                  placeholder={`e.g., ${forgePlaceholders[currentPlaceholderIdx]}`}
-                  className="flex-1 rounded-2xl border border-zinc-800 bg-black/40 px-5 py-3 text-sm placeholder-zinc-550 outline-none transition focus:border-zinc-700 focus:bg-black/60 focus:ring-1 focus:ring-purple-500/10 disabled:opacity-50"
-                />
-                <button
-                  type="submit"
-                  disabled={isForging || !newGoal.trim()}
-                  className={`flex items-center gap-2 rounded-2xl bg-gradient-to-r ${colors.btnBg} px-6 font-bold text-white transition hover:brightness-110 active:scale-95 shadow-lg disabled:opacity-60 disabled:cursor-not-allowed`}
-                >
-                  {isForging ? (
-                    <Loader2 size={14} className="animate-spin" />
-                  ) : (
-                    <Send size={14} />
-                  )}
-                  <span className="hidden sm:inline">{isForging ? 'Starting…' : 'Start Adventure'}</span>
-                </button>
-              </form>
+              {/* Compute duplicate warning outside the form for reuse */}
+              {(() => {
+                const inputKey = newGoal.trim() ? normalizeGoalKey(newGoal) : ''
+                const isDuplicateGoal = inputKey.length > 2 && (
+                  // Against completed goal keys
+                  [...completedGoalKeys].some((key) => key === inputKey || key.includes(inputKey) || inputKey.includes(key)) ||
+                  // Against ALL existing quest titles (active or completed)
+                  quests.some((q) => {
+                    const qKey = normalizeGoalKey(q.title)
+                    return qKey === inputKey || qKey.includes(inputKey) || inputKey.includes(qKey)
+                  })
+                )
+                return (
+                  <>
+                    <form onSubmit={handleForgeQuest} className="mt-4 flex gap-3">
+                      <input
+                        ref={goalInputRef}
+                        type="text"
+                        value={newGoal}
+                        onChange={(e) => setNewGoal(e.target.value)}
+                        disabled={isForging}
+                        placeholder={`e.g., ${forgePlaceholders[currentPlaceholderIdx]}`}
+                        className={`flex-1 rounded-2xl border bg-black/40 px-5 py-3 text-sm placeholder-zinc-550 outline-none transition focus:bg-black/60 disabled:opacity-50 ${
+                          isDuplicateGoal
+                            ? 'border-red-500/60 focus:border-red-500/80 focus:ring-1 focus:ring-red-500/20 text-red-300'
+                            : 'border-zinc-800 focus:border-zinc-700 focus:ring-1 focus:ring-purple-500/10'
+                        }`}
+                      />
+                      <button
+                        type="submit"
+                        disabled={isForging || !newGoal.trim() || isDuplicateGoal}
+                        className={`flex items-center gap-2 rounded-2xl bg-gradient-to-r ${colors.btnBg} px-6 font-bold text-white transition hover:brightness-110 active:scale-95 shadow-lg disabled:opacity-60 disabled:cursor-not-allowed`}
+                      >
+                        {isForging ? (
+                          <Loader2 size={14} className="animate-spin" />
+                        ) : (
+                          <Send size={14} />
+                        )}
+                        <span className="hidden sm:inline">{isForging ? 'Starting…' : 'Start Adventure'}</span>
+                      </button>
+                    </form>
 
-              {/* Campaign Architect Level Lock/Notice */}
-              <div className="mt-3 flex items-center select-none">
-                {level < 3 ? (
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-zinc-800/80 bg-zinc-900/30 px-2.5 py-1 text-[11px] font-medium text-zinc-400">
-                    <span className="h-1.5 w-1.5 rounded-full bg-zinc-600" />
-                    Campaign Architect (3-part quests) unlocks at Level 3
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-purple-500/20 bg-purple-500/5 px-2.5 py-1 text-[11px] font-semibold text-purple-300 shadow-[0_0_15px_rgba(168,85,247,0.05)] animate-pulse">
-                    <span className="h-1.5 w-1.5 rounded-full bg-purple-400" />
-                    Campaign Architect Active: forging 3-part campaign sequence
-                  </span>
-                )}
-              </div>
+                    {/* Duplicate quest warning */}
+                    {isDuplicateGoal && (
+                      <div className="mt-2 flex items-center gap-2 rounded-xl border border-red-500/25 bg-red-500/8 px-4 py-2.5 text-xs text-red-300">
+                        <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="shrink-0">
+                          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                        </svg>
+                        <span>
+                          <strong className="font-semibold">Quest already exists.</strong> A similar quest is already in your realm — complete it before forging another.
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Campaign Architect Level Lock/Notice */}
+                    <div className="mt-3 flex items-center select-none">
+                      {level < 3 ? (
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-zinc-800/80 bg-zinc-900/30 px-2.5 py-1 text-[11px] font-medium text-zinc-400">
+                          <span className="h-1.5 w-1.5 rounded-full bg-zinc-600" />
+                          Campaign Architect (3-part quests) unlocks at Level 3
+                        </span>
+                      ) : (
+                        <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold animate-pulse ${
+                          activeWorld.theme === 'cyberpunk' ? 'border-cyan-500/20 bg-cyan-500/5 text-cyan-300 shadow-[0_0_15px_rgba(6,182,212,0.25)]' :
+                          activeWorld.theme === 'steampunk' ? 'border-orange-500/20 bg-orange-500/5 text-orange-400 shadow-[0_0_15px_rgba(249,115,22,0.25)]' :
+                          'border-purple-500/20 bg-purple-500/5 text-purple-300 shadow-[0_0_15px_rgba(168,85,247,0.25)]'
+                        }`}>
+                          <span className={`h-1.5 w-1.5 rounded-full ${
+                            activeWorld.theme === 'cyberpunk' ? 'bg-cyan-400 animate-pulse' :
+                            activeWorld.theme === 'steampunk' ? 'bg-orange-400 animate-pulse' :
+                            'bg-purple-400 animate-pulse'
+                          }`} />
+                          Campaign Architect Active: forging 3-part campaign sequence
+                        </span>
+                      )}
+                    </div>
+                  </>
+                )
+              })()}
 
               {/* Category Override Selection / Campaign Notice */}
               <div className="mt-4 flex flex-col sm:flex-row gap-4 sm:items-center justify-between border-t border-zinc-800/40 pt-4">
@@ -2310,6 +2497,7 @@ export default function Dashboard() {
                               animate={{ opacity: 1, scale: 1 }}
                               exit={{ opacity: 0, scale: 0.9 }}
                               transition={{ type: 'spring', stiffness: 100, damping: 15 }}
+                              className="w-full h-full"
                             >
                               <QuestCard
                                 quest={quest}
@@ -2348,6 +2536,7 @@ export default function Dashboard() {
               onForgeCustomWorld={handleForgeCustomWorld}
               stability={stability}
               level={level}
+              isForging={isForgingWorld}
             />
             <KingdomStatus quests={quests} activeWorld={activeWorld} />
             <LoreFeed lore={lore} theme={activeWorld.theme} />

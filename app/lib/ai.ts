@@ -312,6 +312,36 @@ async function callGemini(payload: any): Promise<string> {
     }
   ]
 
+  // noTools mode: skip agentic loop entirely, just do a single clean Gemini call
+  if (payload.noTools) {
+    let model = 'gemini-2.5-flash'
+    const body: any = {
+      contents,
+      generationConfig: { temperature: 0.7 },
+    }
+    if (systemPrompt) {
+      body.systemInstruction = { parts: [{ text: systemPrompt }] }
+    }
+    try {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${process.env.GOOGLE_API_KEY || ''}`,
+        { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
+      )
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}))
+        throw new Error(`Gemini noTools error ${response.status}: ${JSON.stringify(err)}`)
+      }
+      const data = await response.json()
+      return data.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
+    } catch (noToolsError: any) {
+      if (process.env.GROQ_API_KEY) {
+        console.warn(`[AI Engine] Gemini noTools call failed, falling back to Groq: ${noToolsError.message}`)
+        return await callGroq(systemPrompt, payload.messages)
+      }
+      throw noToolsError
+    }
+  }
+
   let currentContents = [...contents]
   let lastWriteToolOutput: string | null = null
   let loopCount = 0
@@ -848,12 +878,14 @@ Myth event: "${mythEvent}"${userId ? `\nPlayer User ID: "${userId}"` : ''}`,
 export async function forgeCustomWorldWithAI(
   prompt: string
 ): Promise<{ name: string; lore: string; theme: 'fantasy' | 'cyberpunk' | 'steampunk' }> {
+  // noTools: true — world forge only needs plain JSON back, no DB tool loop needed
   const raw = await callGemini({
-    model: 'gemini-1.5-flash',
-    max_tokens: 1000,
+    model: 'gemini-2.5-flash',
+    noTools: true,
     system: `You are the World Architect of SAGACORE.
 Given a user's world prompt, name and describe a custom realm.
-Respond ONLY with valid JSON — no prose, no markdown fences:
+Respond ONLY with a valid JSON object — no prose, no markdown fences, no extra text.
+Exact required shape:
 {
   "name": "Evocative realm name (2-5 words)",
   "lore": "1 sentence — the realm's defining characteristic",
@@ -914,30 +946,52 @@ export async function savePlayerStateToMongo(
   streak?: number,
   lastDailyChallengeDate?: string,
   lastActiveDate?: string,
-  displayName?: string
+  displayName?: string,
+  worldName?: string
 ): Promise<void> {
-  if (playerId.startsWith('guest_')) return
+  if (playerId === 'guest_session') return
   try {
     await connectDB()
+    const updateObj: any = {
+      xp,
+      level,
+      worldTheme,
+      email: email || undefined,
+      displayName: displayName || undefined,
+      stability: stability !== undefined ? stability : 100,
+      streak: streak !== undefined ? streak : 0,
+      lastDailyChallengeDate,
+      lastActiveDate,
+      lastUpdated: new Date().toISOString()
+    }
+    if (worldName) {
+      updateObj.worldName = worldName
+    }
     await PlayerStateModel.findOneAndUpdate(
       { id: playerId },
-      {
-        xp,
-        level,
-        worldTheme,
-        email: email || undefined,
-        displayName: displayName || undefined,
-        stability: stability !== undefined ? stability : 100,
-        streak: streak !== undefined ? streak : 0,
-        lastDailyChallengeDate,
-        lastActiveDate,
-        lastUpdated: new Date().toISOString()
-      },
+      updateObj,
       { upsert: true, new: true }
     )
   } catch (error: any) {
     console.warn('Mongo Save Player State Warning (Offline/Memory Mode):', error.message || error)
   }
+}
+
+function getDeterministicGuestName(id: string): string {
+  const prefixes = ['Aether', 'Neon', 'Steam', 'Shadow', 'Clockwork', 'Vector', 'Cyber', 'Runic', 'Cobalt', 'Amber', 'Glitch', 'Chrono', 'Void', 'Solar', 'Quantum'];
+  const suffixes = ['Scribe', 'Mage', 'Netrunner', 'Alchemist', 'Architect', 'Sentinel', 'Operator', 'Rider', 'Forger', 'Weaver', 'Hacker', 'Nomad', 'Mechanic', 'Ranger', 'Knight'];
+  
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) {
+    hash = id.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  hash = Math.abs(hash);
+  
+  const prefix = prefixes[hash % prefixes.length];
+  const suffix = suffixes[(hash >> 2) % suffixes.length];
+  const num = 100 + (hash % 900);
+  
+  return `${prefix} ${suffix} #${num}`;
 }
 
 export async function fetchLeaderboardFromMongo(activeUserUid?: string) {
@@ -948,6 +1002,25 @@ export async function fetchLeaderboardFromMongo(activeUserUid?: string) {
       .lean()
     
     let players = JSON.parse(JSON.stringify(topPlayers)) as any[]
+
+    // 1. Filter out mock and system default players, UNLESS they are the active user/guest
+    // Note: Unique guest_ sessions are kept so they can compete on the leaderboard!
+    players = players.filter(p => {
+      const isMockOrSystem = p.id.startsWith('mock_user_') || 
+                             p.id === 'player_sagacore_default' || 
+                             p.id === 'demo_user';
+      if (isMockOrSystem) {
+        return activeUserUid ? p.id === activeUserUid : false;
+      }
+      return true;
+    });
+
+    // Assign deterministic random names to guest users if they lack a displayName
+    players.forEach(p => {
+      if (p.id.startsWith('guest_') && !p.displayName) {
+        p.displayName = getDeterministicGuestName(p.id);
+      }
+    });
 
     // Helper: cumulative XP = completed levels * 1000 + remainder in current level
     const totalXp = (p: any) => (p.level - 1) * 1000 + p.xp
@@ -1004,7 +1077,8 @@ export async function fetchLeaderboardFromMongo(activeUserUid?: string) {
           xp: mockXp,
           level: mockLvl,
           worldTheme: 'fantasy',
-          email: 'you@sagacore.com',
+          email: `${activeUserUid}@sagacore.demo`,
+          displayName: activeUserUid.startsWith('guest_') ? getDeterministicGuestName(activeUserUid) : undefined,
           lastUpdated: new Date().toISOString()
         }
         
@@ -1015,8 +1089,43 @@ export async function fetchLeaderboardFromMongo(activeUserUid?: string) {
         }
       }
     }
+
+    // 2. Deduplicate final list by id, prefix (first 10 chars), email, and displayName to prevent duplicate accounts
+    const uniquePlayers: any[] = []
+    const seenIds = new Set<string>()
+    const seenPrefixes = new Set<string>()
+    const seenEmails = new Set<string>()
+    const seenNames = new Set<string>()
+
+    for (const player of players) {
+      const pid = player.id
+      const pemail = player.email?.toLowerCase().trim()
+      const pname = player.displayName?.toLowerCase().trim()
+      const prefix = pid.substring(0, 10).toLowerCase()
+
+      // Always keep the active user/guest record if we encounter it
+      if (activeUserUid && pid === activeUserUid) {
+        uniquePlayers.push(player)
+        seenIds.add(pid)
+        seenPrefixes.add(prefix)
+        if (pemail) seenEmails.add(pemail)
+        if (pname) seenNames.add(pname)
+        continue
+      }
+
+      if (seenIds.has(pid)) continue
+      if (seenPrefixes.has(prefix)) continue
+      if (pemail && seenEmails.has(pemail)) continue
+      if (pname && seenNames.has(pname)) continue
+
+      seenIds.add(pid)
+      seenPrefixes.add(prefix)
+      if (pemail) seenEmails.add(pemail)
+      if (pname) seenNames.add(pname)
+      uniquePlayers.push(player)
+    }
     
-    return players.slice(0, 10)
+    return uniquePlayers.slice(0, 10)
   } catch (error: any) {
     console.warn('Mongo Fetch Leaderboard Warning:', error.message || error)
     return []

@@ -29,21 +29,33 @@ export default function LoreCodex({ chapters, theme = 'fantasy', isWriting = fal
     steampunk: 'bg-orange-500',
   }[theme]
 
+  const accentColor = {
+    fantasy: 'text-purple-400',
+    cyberpunk: 'text-cyan-400',
+    steampunk: 'text-orange-400',
+  }[theme]
+
+  const bgGlows = {
+    fantasy: { left: 'bg-purple-500/5', right: 'bg-indigo-500/5' },
+    cyberpunk: { left: 'bg-cyan-500/5', right: 'bg-blue-500/5' },
+    steampunk: { left: 'bg-orange-500/5', right: 'bg-amber-500/5' },
+  }[theme]
+
   return (
     <div className={`relative overflow-hidden rounded-3xl border border-zinc-800/80 bg-zinc-950/50 p-6 backdrop-blur-xl transition-all duration-500 ${styles}`}>
       {/* Background glowing particles simulation */}
-      <div className="absolute left-0 top-0 -z-10 h-32 w-32 bg-purple-500/5 blur-3xl animate-pulse" />
-      <div className="absolute right-0 bottom-0 -z-10 h-32 w-32 bg-indigo-500/5 blur-3xl animate-pulse" />
+      <div className={`absolute left-0 top-0 -z-10 h-32 w-32 ${bgGlows.left} blur-3xl animate-pulse`} />
+      <div className={`absolute right-0 bottom-0 -z-10 h-32 w-32 ${bgGlows.right} blur-3xl animate-pulse`} />
 
       <div className="flex items-center justify-between border-b border-zinc-800/80 pb-4">
         <div className="flex items-center gap-3">
-          <BookOpen className="text-purple-400" />
+          <BookOpen className={accentColor} />
           <h2 className="text-xl font-bold text-zinc-100">
             Evolving Lore Codex
           </h2>
         </div>
         <div className="flex items-center gap-1.5 rounded-full bg-zinc-900 border border-zinc-800 px-3 py-1 text-xs text-zinc-400">
-          <Feather size={12} className="text-purple-400" />
+          <Feather size={12} className={accentColor} />
           <span>{chapters.length} Chapters</span>
         </div>
       </div>
@@ -77,7 +89,7 @@ export default function LoreCodex({ chapters, theme = 'fantasy', isWriting = fal
 
           {chapters.length === 0 && !isWriting ? (
             <div className="flex flex-col items-center justify-center py-20 text-center text-zinc-550">
-              <Compass size={32} className="mb-3 animate-spin-slow opacity-30 text-purple-400" />
+              <Compass size={32} className={`mb-3 animate-spin-slow opacity-30 ${accentColor}`} />
               <h4 className="font-bold text-zinc-400">Your Story Lies Blank</h4>
               <p className="text-xs text-zinc-500 mt-1 max-w-xs leading-relaxed">
                 Complete quests around the realm to watch SAGACORE dynamically scribe legendary chapters of your achievements!
@@ -100,7 +112,7 @@ export default function LoreCodex({ chapters, theme = 'fantasy', isWriting = fal
 
                 <div className="flex flex-col gap-2">
                   <div className="flex items-center justify-between gap-4">
-                    <span className="text-[10px] uppercase tracking-widest text-purple-400 font-mono font-bold">
+                    <span className={`text-[10px] uppercase tracking-widest font-mono font-bold ${accentColor}`}>
                       Legendary Chronicle
                     </span>
                     <div className="flex items-center gap-1 text-[10px] text-zinc-500 font-mono">

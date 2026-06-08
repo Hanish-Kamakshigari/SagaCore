@@ -1,8 +1,9 @@
 'use client'
 
-import { motion } from 'framer-motion'
-import { Compass, Sparkles, AlertCircle, RefreshCw, Zap, Sword, Cog, Cpu } from 'lucide-react'
-import { World } from '../lib/data'
+import { useState, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Compass, Sparkles, Zap, Sword, Cog, Cpu, CheckCircle2 } from 'lucide-react'
+import { World, worldTemplates } from '../lib/data'
 
 interface WorldArchitectProps {
   activeWorld: World
@@ -10,6 +11,7 @@ interface WorldArchitectProps {
   onForgeCustomWorld: (prompt: string) => void
   stability: number
   level: number
+  isForging?: boolean
 }
 
 export default function WorldArchitect({
@@ -18,6 +20,7 @@ export default function WorldArchitect({
   onForgeCustomWorld,
   stability,
   level,
+  isForging = false,
 }: WorldArchitectProps) {
   const themes = [
     {
@@ -46,20 +49,56 @@ export default function WorldArchitect({
     },
   ]
 
+  // Track whether the current active world is a custom forge
+  const isCustomRealm =
+    !Object.values(worldTemplates).some((t) => t.name === activeWorld.name)
+
+  // Toast state: shown for 5s after a successful forge
+  const [forgeToast, setForgeToast] = useState<{ name: string; lore?: string } | null>(null)
+  // Flash animation key — increments each time a new realm is set
+  const [flashKey, setFlashKey] = useState(0)
+  // Track previous world name to detect changes
+  const [prevWorldName, setPrevWorldName] = useState(activeWorld.name)
+
+  useEffect(() => {
+    // If the world name changed while isForging was true (or just became false), show toast
+    if (activeWorld.name !== prevWorldName) {
+      if (isCustomRealm) {
+        setForgeToast({ name: activeWorld.name })
+        setFlashKey((k) => k + 1)
+        const timer = setTimeout(() => setForgeToast(null), 5000)
+        return () => clearTimeout(timer)
+      }
+      setPrevWorldName(activeWorld.name)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeWorld.name])
+
   const handleCustomSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (level < 2) return
     const form = e.target as HTMLFormElement
     const input = form.elements.namedItem('worldPrompt') as HTMLInputElement
-    if (input && input.value.trim()) {
-      onForgeCustomWorld(input.value.trim())
+    if (input) {
+      const value = input.value.trim() || 'A floating clockwork observatory in a nebula'
+      onForgeCustomWorld(value)
       form.reset()
     }
   }
 
+  // Theme-aware accent for the success flash
+  const themeFlash = {
+    fantasy: 'shadow-[0_0_40px_rgba(168,85,247,0.25)] border-purple-500/50',
+    cyberpunk: 'shadow-[0_0_40px_rgba(6,182,212,0.25)] border-cyan-500/50',
+    steampunk: 'shadow-[0_0_40px_rgba(249,115,22,0.25)] border-orange-500/50',
+  }[activeWorld.theme]
+
   return (
     <div className={`relative overflow-hidden rounded-3xl border border-zinc-800/80 bg-zinc-950/50 p-6 backdrop-blur-xl transition-all duration-500 ${
-      activeWorld.theme === 'fantasy' ? 'hover:border-purple-500/40 hover:shadow-[0_0_25px_rgba(168,85,247,0.08)]' : activeWorld.theme === 'cyberpunk' ? 'hover:border-cyan-500/40 hover:shadow-[0_0_25px_rgba(6,182,212,0.08)]' : 'hover:border-orange-500/40 hover:shadow-[0_0_25px_rgba(249,115,22,0.08)]'
+      activeWorld.theme === 'fantasy'
+        ? 'hover:border-purple-500/40 hover:shadow-[0_0_25px_rgba(168,85,247,0.08)]'
+        : activeWorld.theme === 'cyberpunk'
+        ? 'hover:border-cyan-500/40 hover:shadow-[0_0_25px_rgba(6,182,212,0.08)]'
+        : 'hover:border-orange-500/40 hover:shadow-[0_0_25px_rgba(249,115,22,0.08)]'
     }`}>
       {/* Decorative backdrop mesh */}
       <div className="absolute right-0 top-0 -z-10 h-32 w-32 bg-purple-500/5 blur-2xl" />
@@ -76,14 +115,29 @@ export default function WorldArchitect({
         </span>
       </div>
 
-      {/* Selected World Overview */}
-      <div className="mt-6 rounded-2xl border border-zinc-800 bg-zinc-900/30 p-4">
-        <div className="flex items-center justify-between">
-          <div>
+      {/* Selected World Overview — flashes on successful forge */}
+      <motion.div
+        key={flashKey}
+        initial={flashKey > 0 ? { scale: 1.02, boxShadow: '0 0 40px rgba(168,85,247,0.35)' } : false}
+        animate={{ scale: 1, boxShadow: '0 0 0px rgba(0,0,0,0)' }}
+        transition={{ duration: 1.2, ease: 'easeOut' }}
+        className={`mt-6 rounded-2xl border bg-zinc-900/30 p-4 transition-all duration-700 ${
+          forgeToast ? themeFlash : 'border-zinc-800'
+        }`}
+      >
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
             <span className="text-[9px] uppercase tracking-widest text-zinc-500 font-semibold">Active Realm</span>
-            <h4 className="text-lg font-black text-zinc-200">{activeWorld.name}</h4>
+            <h4 className="text-lg font-black text-zinc-200 truncate">{activeWorld.name}</h4>
+            {/* Custom Realm badge */}
+            {isCustomRealm && (
+              <span className="mt-1 inline-flex items-center gap-1 rounded-full border border-purple-500/30 bg-purple-500/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest text-purple-300">
+                <Sparkles size={8} />
+                AI Custom Realm
+              </span>
+            )}
           </div>
-          <div className="flex items-center gap-2 rounded-xl bg-green-500/10 px-3 py-1.5 border border-green-500/20 text-xs font-semibold text-green-400">
+          <div className="shrink-0 flex items-center gap-2 rounded-xl bg-green-500/10 px-3 py-1.5 border border-green-500/20 text-xs font-semibold text-green-400">
             <Zap size={12} className="animate-pulse" />
             {stability}% Stability
           </div>
@@ -102,14 +156,35 @@ export default function WorldArchitect({
             />
           </div>
         </div>
-      </div>
+      </motion.div>
+
+      {/* Success Toast — appears after successful forge */}
+      <AnimatePresence>
+        {forgeToast && (
+          <motion.div
+            initial={{ opacity: 0, y: -8, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -6, scale: 0.97 }}
+            transition={{ duration: 0.35, ease: 'easeOut' }}
+            className="mt-3 flex items-start gap-3 rounded-2xl border border-green-500/25 bg-green-500/8 px-4 py-3"
+          >
+            <CheckCircle2 size={15} className="shrink-0 mt-0.5 text-green-400" />
+            <div className="min-w-0">
+              <p className="text-xs font-bold text-green-300">Realm Forged Successfully!</p>
+              <p className="text-[11px] text-green-400/80 mt-0.5 leading-relaxed">
+                <span className="font-semibold text-green-300">&quot;{forgeToast.name}&quot;</span> is now your active realm. Your quests will be set in this world.
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Theme Selector Portals */}
       <div className="mt-6 space-y-3">
         <span className="text-xs font-bold text-zinc-400 block mb-2">Summon Core Themes</span>
         <div className="grid gap-3 sm:grid-cols-3">
           {themes.map((theme) => {
-            const isActive = activeWorld.theme === theme.id
+            const isActive = activeWorld.theme === theme.id && activeWorld.name === worldTemplates[theme.id as 'fantasy' | 'cyberpunk' | 'steampunk'].name
             const IconComponent = theme.icon
             return (
               <button
@@ -137,21 +212,28 @@ export default function WorldArchitect({
           <input
             name="worldPrompt"
             type="text"
-            disabled={level < 2}
-            placeholder={level < 2 ? "🔒 Unlock at Level 2" : "e.g., A floating clockwork observatory in a nebula..."}
-            className={`flex-1 rounded-xl border border-zinc-850 bg-black/40 px-4 py-2.5 text-xs placeholder-zinc-550 outline-none transition focus:border-purple-500/50 ${
-              level < 2 ? "opacity-50 cursor-not-allowed bg-zinc-900/10 border-zinc-900" : ""
-            }`}
+            disabled={isForging}
+            placeholder={isForging ? 'Shaping your realm…' : 'e.g., A floating clockwork observatory in a nebula...'}
+            className="flex-1 rounded-xl border border-zinc-850 bg-black/40 px-4 py-2.5 text-xs placeholder-zinc-550 outline-none transition focus:border-purple-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
           />
           <button
             type="submit"
-            disabled={level < 2}
-            className={`flex items-center gap-1 rounded-xl bg-purple-500/20 border border-purple-500/30 px-4 text-xs font-bold text-purple-300 transition hover:bg-purple-500/30 active:scale-95 ${
-              level < 2 ? "opacity-50 cursor-not-allowed" : ""
-            }`}
+            disabled={isForging}
+            className="flex items-center gap-1 rounded-xl bg-purple-500/20 border border-purple-500/30 px-4 text-xs font-bold text-purple-300 transition hover:bg-purple-500/30 active:scale-95 hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-purple-500/20"
           >
-            <Sparkles size={12} />
-            <span>Forge</span>
+            {isForging ? (
+              <>
+                <svg className="animate-spin" width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                  <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+                </svg>
+                <span>Forging…</span>
+              </>
+            ) : (
+              <>
+                <Sparkles size={12} />
+                <span>Forge</span>
+              </>
+            )}
           </button>
         </div>
       </form>

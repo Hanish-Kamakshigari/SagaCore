@@ -197,7 +197,7 @@ export default function QuestCard({
           boxShadow: quest.failed ? '0 0 25px rgba(239, 68, 68, 0.08)' : theme.completedShadow
         }}
         transition={{ type: 'spring', stiffness: 100, damping: 15 }}
-        className={`relative overflow-hidden rounded-[2rem] border bg-zinc-950/60 p-8 md:p-9 backdrop-blur-md transition-all duration-500 ${
+        className={`w-full h-full relative overflow-hidden rounded-[2rem] border bg-zinc-950/60 p-8 md:p-9 backdrop-blur-md transition-all duration-500 ${
           quest.failed ? 'border-red-500/20' : theme.border
         }`}
       >
@@ -269,7 +269,7 @@ export default function QuestCard({
   return (
     <motion.div
       whileHover={isLocked ? {} : { y: -4, scale: 1.015 }}
-      className={`relative overflow-hidden rounded-[2rem] border p-8 md:p-9 transition-all duration-305 ${
+      className={`w-full h-full relative overflow-hidden rounded-[2rem] border p-8 md:p-9 transition-all duration-305 ${
         isLocked
           ? 'border-zinc-900 bg-zinc-950/40 opacity-55 grayscale-[20%] select-none shadow-none'
           : `${theme.border} bg-gradient-to-br from-zinc-900/60 ${theme.bgGlow} to-zinc-950/80 ${theme.glow} backdrop-blur-md`

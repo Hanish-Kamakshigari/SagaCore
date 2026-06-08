@@ -18,7 +18,7 @@ export default function LandingSections() {
       {/* ─── FEATURES SECTION ─── */}
       <section id="features" className="relative py-28 px-6 max-w-7xl mx-auto border-t border-zinc-900">
         {/* Decorative background glow */}
-        <div className="absolute right-0 top-1/4 -z-10 h-96 w-96 rounded-full bg-purple-950/10 blur-[150px] pointer-events-none" />
+        <div className="absolute right-0 top-1/4 -z-10 h-96 w-96 rounded-full bg-red-950/15 blur-[150px] pointer-events-none" />
         
         <div className="text-center mb-20">
 
@@ -44,10 +44,10 @@ export default function LandingSections() {
           {/* Card 1 */}
           <motion.div 
             {...fadeInVariant}
-            whileHover={{ y: -6, borderColor: 'rgba(168, 85, 247, 0.3)' }}
+            whileHover={{ y: -6, borderColor: 'rgba(220, 38, 38, 0.3)' }}
             className="group relative overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-950/40 p-8 transition-all duration-300 backdrop-blur-md"
           >
-            <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl border border-purple-500/20 bg-purple-500/5 text-purple-400 group-hover:scale-110 transition-transform duration-300">
+            <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl border border-red-500/20 bg-red-500/5 text-red-400 group-hover:scale-110 transition-transform duration-300">
               <Cpu size={22} />
             </div>
             <h3 className="text-xl font-bold text-zinc-100 group-hover:text-white transition-colors font-cinzel">
@@ -62,10 +62,10 @@ export default function LandingSections() {
           <motion.div 
             {...fadeInVariant}
             transition={{ delay: 0.1, duration: 0.8 }}
-            whileHover={{ y: -6, borderColor: 'rgba(99, 102, 241, 0.3)' }}
+            whileHover={{ y: -6, borderColor: 'rgba(249, 115, 22, 0.3)' }}
             className="group relative overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-950/40 p-8 transition-all duration-300 backdrop-blur-md"
           >
-            <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl border border-indigo-500/20 bg-indigo-500/5 text-indigo-400 group-hover:scale-110 transition-transform duration-300">
+            <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl border border-orange-500/20 bg-orange-500/5 text-orange-400 group-hover:scale-110 transition-transform duration-300">
               <BookOpen size={22} />
             </div>
             <h3 className="text-xl font-bold text-zinc-100 group-hover:text-white transition-colors font-cinzel">
@@ -80,10 +80,10 @@ export default function LandingSections() {
           <motion.div 
             {...fadeInVariant}
             transition={{ delay: 0.2, duration: 0.8 }}
-            whileHover={{ y: -6, borderColor: 'rgba(236, 72, 153, 0.3)' }}
+            whileHover={{ y: -6, borderColor: 'rgba(220, 38, 38, 0.3)' }}
             className="group relative overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-950/40 p-8 transition-all duration-300 backdrop-blur-md"
           >
-            <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl border border-pink-500/20 bg-pink-500/5 text-pink-400 group-hover:scale-110 transition-transform duration-300">
+            <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl border border-red-500/20 bg-red-500/5 text-red-400 group-hover:scale-110 transition-transform duration-300">
               <Shield size={22} />
             </div>
             <h3 className="text-xl font-bold text-zinc-100 group-hover:text-white transition-colors font-cinzel">
@@ -118,7 +118,7 @@ export default function LandingSections() {
       {/* ─── ABOUT SECTION ─── */}
       <section id="about" className="relative py-28 px-6 max-w-7xl mx-auto border-t border-zinc-900 overflow-hidden">
         {/* Background ambient orbs */}
-        <div className="absolute left-0 bottom-0 -z-10 h-[500px] w-[500px] rounded-full bg-indigo-950/10 blur-[180px] pointer-events-none" />
+        <div className="absolute left-0 bottom-0 -z-10 h-[500px] w-[500px] rounded-full bg-red-950/10 blur-[180px] pointer-events-none" />
         
         <div className="grid gap-12 lg:grid-cols-12 items-center">
           
@@ -158,7 +158,7 @@ export default function LandingSections() {
               whileHover={{ scale: 1.02 }}
               className="flex items-start gap-5 rounded-2xl border border-zinc-800 bg-zinc-950/40 p-6 backdrop-blur-md"
             >
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20 font-bold font-mono">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-red-500/10 text-red-400 border border-red-500/20 font-bold font-mono">
                 I
               </div>
               <div>
@@ -176,7 +176,7 @@ export default function LandingSections() {
               whileHover={{ scale: 1.02 }}
               className="flex items-start gap-5 rounded-2xl border border-zinc-800 bg-zinc-950/40 p-6 backdrop-blur-md"
             >
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 font-bold font-mono">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-orange-500/10 text-orange-400 border border-orange-500/20 font-bold font-mono">
                 II
               </div>
               <div>
@@ -194,7 +194,7 @@ export default function LandingSections() {
               whileHover={{ scale: 1.02 }}
               className="flex items-start gap-5 rounded-2xl border border-zinc-800 bg-zinc-950/40 p-6 backdrop-blur-md"
             >
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-pink-500/10 text-pink-400 border border-pink-500/20 font-bold font-mono">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20 font-bold font-mono">
                 III
               </div>
               <div>
@@ -212,7 +212,7 @@ export default function LandingSections() {
       {/* ─── ROADMAP SECTION ─── */}
       <section id="roadmap" className="relative py-28 px-6 max-w-7xl mx-auto border-t border-zinc-900">
         {/* Decorative background glow */}
-        <div className="absolute right-10 bottom-10 -z-10 h-80 w-80 rounded-full bg-pink-950/10 blur-[150px] pointer-events-none" />
+        <div className="absolute right-10 bottom-10 -z-10 h-80 w-80 rounded-full bg-red-950/10 blur-[150px] pointer-events-none" />
 
         <div className="text-center mb-20">
           <motion.h2 
@@ -240,15 +240,15 @@ export default function LandingSections() {
             className="relative"
           >
             {/* Chronology Dot */}
-            <div className="absolute -left-[41px] top-1.5 h-5 w-5 rounded-full border border-purple-500/40 bg-zinc-950 flex items-center justify-center">
-              <div className="h-2 w-2 rounded-full bg-purple-500" />
+            <div className="absolute -left-[41px] top-1.5 h-5 w-5 rounded-full border border-red-500/40 bg-zinc-950 flex items-center justify-center">
+              <div className="h-2 w-2 rounded-full bg-red-500" />
             </div>
 
             <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-6">
-              <span className="text-xs font-mono font-bold tracking-widest text-purple-400 uppercase">
+              <span className="text-xs font-mono font-bold tracking-widest text-red-400 uppercase">
                 Phase 01 · Genesis Core
               </span>
-              <span className="inline-flex items-center rounded-full bg-purple-500/10 border border-purple-500/20 px-2.5 py-0.5 text-[10px] font-semibold text-purple-300 tracking-wider w-fit">
+              <span className="inline-flex items-center rounded-full bg-red-500/10 border border-red-500/20 px-2.5 py-0.5 text-[10px] font-semibold text-red-300 tracking-wider w-fit">
                 COMPLETED
               </span>
             </div>
@@ -266,15 +266,15 @@ export default function LandingSections() {
             className="relative"
           >
             {/* Chronology Dot */}
-            <div className="absolute -left-[41px] top-1.5 h-5 w-5 rounded-full border border-indigo-500/40 bg-zinc-950 flex items-center justify-center">
-              <div className="h-2 w-2 rounded-full bg-indigo-500" />
+            <div className="absolute -left-[41px] top-1.5 h-5 w-5 rounded-full border border-orange-500/40 bg-zinc-950 flex items-center justify-center">
+              <div className="h-2 w-2 rounded-full bg-orange-500" />
             </div>
 
             <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-6">
-              <span className="text-xs font-mono font-bold tracking-widest text-indigo-400 uppercase">
+              <span className="text-xs font-mono font-bold tracking-widest text-orange-400 uppercase">
                 Phase 02 · Chronicle Update
               </span>
-              <span className="inline-flex items-center rounded-full bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-0.5 text-[10px] font-semibold text-indigo-300 tracking-wider w-fit">
+              <span className="inline-flex items-center rounded-full bg-orange-500/10 border border-orange-500/20 px-2.5 py-0.5 text-[10px] font-semibold text-orange-300 tracking-wider w-fit">
                 COMPLETED
               </span>
             </div>
@@ -292,15 +292,15 @@ export default function LandingSections() {
             className="relative"
           >
             {/* Chronology Dot */}
-            <div className="absolute -left-[41px] top-1.5 h-5 w-5 rounded-full border border-pink-500/40 bg-zinc-950 flex items-center justify-center">
-              <div className="h-2 w-2 rounded-full bg-pink-500 animate-pulse" />
+            <div className="absolute -left-[41px] top-1.5 h-5 w-5 rounded-full border border-rose-500/40 bg-zinc-950 flex items-center justify-center">
+              <div className="h-2 w-2 rounded-full bg-rose-500 animate-pulse" />
             </div>
 
             <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-6">
-              <span className="text-xs font-mono font-bold tracking-widest text-pink-400 uppercase">
+              <span className="text-xs font-mono font-bold tracking-widest text-rose-400 uppercase">
                 Phase 03 · Nexus Campaigns
               </span>
-              <span className="inline-flex items-center rounded-full bg-pink-500/10 border border-pink-500/20 px-2.5 py-0.5 text-[10px] font-semibold text-pink-300 tracking-wider w-fit">
+              <span className="inline-flex items-center rounded-full bg-rose-500/10 border border-rose-500/20 px-2.5 py-0.5 text-[10px] font-semibold text-rose-300 tracking-wider w-fit">
                 IN PROGRESS
               </span>
             </div>
@@ -347,7 +347,7 @@ export default function LandingSections() {
             <span className="text-lg font-black tracking-widest text-white font-cinzel">
               SAGACORE HUB
             </span>
-            <span className="text-[8px] uppercase tracking-widest text-purple-400 font-bold font-mono">
+            <span className="text-[8px] uppercase tracking-widest text-red-400 font-bold font-mono">
               World Engine
             </span>
           </div>

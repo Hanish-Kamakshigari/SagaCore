@@ -62,6 +62,7 @@ const PlayerStateSchema = new mongoose.Schema({
   xp: { type: Number, required: true },
   level: { type: Number, required: true },
   worldTheme: { type: String, required: true },
+  worldName: { type: String }, // Custom realm name
   email: { type: String }, // Optional email field for leaderboard display names
   displayName: { type: String }, // Custom scribe handle/display name
   stability: { type: Number, default: 100 },

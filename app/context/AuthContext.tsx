@@ -168,20 +168,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Guest Sign-In (Demo Mode)
   const loginAsGuest = async () => {
     setError(null)
-    const guestUid = 'guest_session'
-    const guestSession = { uid: guestUid, email: 'guest@sagacore.demo' }
+    
+    // Check if we already have a cached guest UID to keep progress stable
+    let guestUid = localStorage.getItem('sagacore_guest_uid')
+    const hadGuestUid = guestUid !== null
+    if (!guestUid) {
+      guestUid = `guest_${Math.random().toString(36).substring(2, 11)}`
+      localStorage.setItem('sagacore_guest_uid', guestUid)
+    }
 
-    // Clear old guest progress to ensure a clean, fresh demo experience
-    try {
-      localStorage.removeItem(`sagacore_${guestUid}_activeWorld`)
-      localStorage.removeItem(`sagacore_${guestUid}_quests`)
-      localStorage.removeItem(`sagacore_${guestUid}_xp`)
-      localStorage.removeItem(`sagacore_${guestUid}_level`)
-      localStorage.removeItem(`sagacore_${guestUid}_chapters`)
-      localStorage.removeItem(`sagacore_${guestUid}_lore`)
-      localStorage.removeItem(`sagacore_${guestUid}_audioActive`)
-    } catch (e) {
-      console.warn('Failed to clear old guest session cache:', e)
+    // Generate a random fantasy/cyberpunk/steampunk name for this guest session
+    let guestName = localStorage.getItem('sagacore_guest_name')
+    if (!guestName) {
+      const prefixes = ['Aether', 'Neon', 'Steam', 'Shadow', 'Clockwork', 'Vector', 'Cyber', 'Runic', 'Cobalt', 'Amber', 'Glitch', 'Chrono', 'Void', 'Solar', 'Quantum'];
+      const suffixes = ['Scribe', 'Mage', 'Netrunner', 'Alchemist', 'Architect', 'Sentinel', 'Operator', 'Rider', 'Forger', 'Weaver', 'Hacker', 'Nomad', 'Mechanic', 'Ranger', 'Knight'];
+      const randomPrefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+      const randomSuffix = suffixes[Math.floor(Math.random() * suffixes.length)];
+      const randomNum = Math.floor(100 + Math.random() * 900);
+      guestName = `${randomPrefix} ${randomSuffix} #${randomNum}`;
+      localStorage.setItem('sagacore_guest_name', guestName);
+    }
+
+    const guestSession = { uid: guestUid, email: `${guestUid}@sagacore.demo` }
+
+    // Pre-cache display name in local storage for page.tsx hydration
+    localStorage.setItem(`sagacore_${guestUid}_displayName`, guestName)
+
+    // Clear old guest progress ONLY if this is the very first time initializing guestUid
+    if (!hadGuestUid) {
+      try {
+        localStorage.removeItem(`sagacore_${guestUid}_activeWorld`)
+        localStorage.removeItem(`sagacore_${guestUid}_quests`)
+        localStorage.removeItem(`sagacore_${guestUid}_xp`)
+        localStorage.removeItem(`sagacore_${guestUid}_level`)
+        localStorage.removeItem(`sagacore_${guestUid}_chapters`)
+        localStorage.removeItem(`sagacore_${guestUid}_lore`)
+        localStorage.removeItem(`sagacore_${guestUid}_audioActive`)
+      } catch (e) {
+        console.warn('Failed to clear old guest session cache:', e)
+      }
     }
 
     setUser(guestSession)

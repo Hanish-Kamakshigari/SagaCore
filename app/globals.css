@@ -30,13 +30,13 @@ body {
 }
 
 .xp-bar-fill.xp-gained {
-  box-shadow: 0 0 12px rgba(200, 100, 255, 0.7);
+  box-shadow: 0 0 12px rgba(220, 38, 38, 0.7);
   animation: xpPulse 0.8s ease forwards;
 }
 
 @keyframes xpPulse {
-  0%   { box-shadow: 0 0 4px rgba(200, 100, 255, 0.4); }
-  50%  { box-shadow: 0 0 18px rgba(200, 100, 255, 0.9); }
+  0%   { box-shadow: 0 0 4px rgba(220, 38, 38, 0.4); }
+  50%  { box-shadow: 0 0 18px rgba(220, 38, 38, 0.9); }
   100% { box-shadow: none; }
 }
 
@@ -81,4 +81,105 @@ body {
     transparent 100%
   );
   animation: shimmer 3s infinite;
+}
+
+/* ─── Hero: text shimmer & aether particle animations ─── */
+@keyframes text-shimmer {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes aether-particle {
+  0%   { transform: translate(0px, 0px) scale(0.5) rotate(0deg); opacity: 0; }
+  25%  { opacity: 0.75; }
+  75%  { opacity: 0.75; }
+  100% { transform: translate(var(--dx, 20px), var(--dy, -50px)) scale(1.1) rotate(180deg); opacity: 0; }
+}
+
+.animate-shimmer {
+  background-size: 200% auto;
+  animation: text-shimmer 6s linear infinite;
+}
+
+.animate-aether-1 { animation: aether-particle 8s ease-in-out infinite; --dx: 45px; --dy: -75px; }
+.animate-aether-2 { animation: aether-particle 10s ease-in-out infinite 2s; --dx: -35px; --dy: -65px; }
+.animate-aether-3 { animation: aether-particle 7s ease-in-out infinite 1s; --dx: 25px; --dy: -85px; }
+.animate-aether-4 { animation: aether-particle 9s ease-in-out infinite 3s; --dx: -50px; --dy: -55px; }
+
+/* ─── Auth page: portal nebula & ember animations ─── */
+@keyframes float-slow-1 {
+  0%, 100% { transform: translate(0px, 0px) scale(1); }
+  33% { transform: translate(50px, -60px) scale(1.2); }
+  66% { transform: translate(-30px, 30px) scale(0.85); }
+}
+@keyframes float-slow-2 {
+  0%, 100% { transform: translate(0px, 0px) scale(1); }
+  50% { transform: translate(-60px, 50px) scale(1.25); }
+}
+@keyframes float-slow-3 {
+  0%, 100% { transform: translate(0px, 0px) scale(1.1); }
+  40% { transform: translate(40px, 40px) scale(0.9); }
+}
+@keyframes flow-grid {
+  0% { background-position: 0 0; }
+  100% { background-position: 40px 40px; }
+}
+@keyframes text-shine {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+@keyframes shine-slide {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+@keyframes float-ember-1 {
+  0%, 100% { transform: translateY(0px) translateX(0px) scale(1); opacity: 0.25; }
+  50% { transform: translateY(-80px) translateX(40px) scale(1.35); opacity: 0.65; }
+}
+@keyframes float-ember-2 {
+  0%, 100% { transform: translateY(0px) translateX(0px) scale(1); opacity: 0.2; }
+  50% { transform: translateY(-130px) translateX(-50px) scale(1.4); opacity: 0.55; }
+}
+@keyframes float-ember-3 {
+  0%, 100% { transform: translateY(0px) translateX(0px) scale(1.2); opacity: 0.35; }
+  50% { transform: translateY(-60px) translateX(30px) scale(0.95); opacity: 0.75; }
+}
+
+.animate-float-1 { animation: float-slow-1 18s ease-in-out infinite; }
+.animate-float-2 { animation: float-slow-2 22s ease-in-out infinite; }
+.animate-float-3 { animation: float-slow-3 15s ease-in-out infinite; }
+.animate-grid-shift { animation: flow-grid 20s linear infinite; }
+.animate-text-shine { background-size: 200% auto; animation: text-shine 5s ease infinite; }
+.animate-ember-1 { animation: float-ember-1 14s ease-in-out infinite; }
+.animate-ember-2 { animation: float-ember-2 18s ease-in-out infinite; }
+.animate-ember-3 { animation: float-ember-3 11s ease-in-out infinite; }
+
+.shine-button { position: relative; overflow: hidden; }
+.shine-button:hover::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    to right,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.25) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  transform: skewX(-25deg);
+  animation: shine-slide 1.2s ease-in-out;
+}
+
+/* ─── Auth: prevent Chrome autofill white background ─── */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #e4e4e7 !important;
+  -webkit-box-shadow: 0 0 0px 1000px #0d0d0f inset !important;
+  box-shadow: 0 0 0px 1000px #0d0d0f inset !important;
+  transition: background-color 5000s ease-in-out 0s;
 }

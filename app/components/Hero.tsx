@@ -21,28 +21,7 @@ export default function Hero() {
 
   return (
     <section id="home" className="relative min-h-screen overflow-hidden text-white bg-black">      
-      {/* ─── Premium Custom CSS Keyframe Animations for Aether Particle Drift ─── */}
-      <style jsx global>{`
-        @keyframes text-shimmer {
-          0% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-          100% { background-position: 0% 50%; }
-        }
-        @keyframes aether-particle {
-          0% { transform: translate(0px, 0px) scale(0.5) rotate(0deg); opacity: 0; }
-          25% { opacity: 0.75; }
-          75% { opacity: 0.75; }
-          100% { transform: translate(var(--dx, 20px), var(--dy, -50px)) scale(1.1) rotate(180deg); opacity: 0; }
-        }
-        .animate-shimmer {
-          background-size: 200% auto;
-          animation: text-shimmer 6s linear infinite;
-        }
-        .animate-aether-1 { animation: aether-particle 8s ease-in-out infinite; --dx: 45px; --dy: -75px; }
-        .animate-aether-2 { animation: aether-particle 10s ease-in-out infinite 2s; --dx: -35px; --dy: -65px; }
-        .animate-aether-3 { animation: aether-particle 7s ease-in-out infinite 1s; --dx: 25px; --dy: -85px; }
-        .animate-aether-4 { animation: aether-particle 9s ease-in-out infinite 3s; --dx: -50px; --dy: -55px; }
-      `}</style>
+
       {/* Background image - fully visible with smooth zoom */}
       <motion.div
         animate={{
@@ -65,17 +44,17 @@ export default function Hero() {
       <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/20 to-black/90 pointer-events-none" />
 
       {/* Soft color glow matching the ambient aesthetic */}
-      <div className="absolute left-1/2 top-1/3 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-purple-500/15 blur-[120px] pointer-events-none" />
+      <div className="absolute left-1/2 top-1/3 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-red-700/15 blur-[120px] pointer-events-none" />
 
       {/* Floating Navbar - integrated smoothly with absolute positioning */}
       <header className="absolute top-6 left-1/2 z-50 w-[92%] max-w-6xl -translate-x-1/2 pointer-events-auto">
-        <nav className="flex items-center justify-between rounded-full border border-white/10 bg-black/35 px-8 py-3.5 backdrop-blur-xl shadow-[0_8px_32px_0_rgba(0,0,0,0.4)] transition-all duration-300 hover:border-purple-500/20">
+        <nav className="flex items-center justify-between rounded-full border border-white/10 bg-black/35 px-8 py-3.5 backdrop-blur-xl shadow-[0_8px_32px_0_rgba(0,0,0,0.4)] transition-all duration-300 hover:border-red-700/25">
           {/* Logo / Brand */}
           <Link href="/" className="flex flex-col items-start select-none group">
-            <span className="text-xl font-black tracking-[0.2em] text-white font-cinzel bg-gradient-to-r from-white via-purple-100 to-indigo-200 bg-clip-text text-transparent group-hover:from-white group-hover:via-purple-200 group-hover:to-purple-300 transition-all duration-300">
+            <span className="text-xl font-black tracking-[0.2em] text-white font-cinzel bg-gradient-to-r from-white via-red-100 to-orange-200 bg-clip-text text-transparent group-hover:from-white group-hover:via-red-200 group-hover:to-orange-300 transition-all duration-300">
               SAGACORE HUB
             </span>
-            <span className="text-[8px] uppercase tracking-[0.3em] text-purple-400 font-bold font-mono -mt-0.5 pl-0.5 group-hover:text-purple-300 transition-colors duration-300">
+            <span className="text-[8px] uppercase tracking-[0.3em] text-red-400 font-bold font-mono -mt-0.5 pl-0.5 group-hover:text-red-300 transition-colors duration-300">
               World Engine
             </span>
           </Link>
@@ -86,7 +65,7 @@ export default function Hero() {
               <a
                 key={link}
                 href={`#${link.toLowerCase()}`}
-                className="relative py-1 transition-colors duration-200 hover:text-white after:absolute after:bottom-0 after:left-0 after:h-[1px] after:w-0 after:bg-purple-400 after:transition-all after:duration-300 hover:after:w-full"
+                className="relative py-1 transition-colors duration-200 hover:text-white after:absolute after:bottom-0 after:left-0 after:h-[1px] after:w-0 after:bg-red-400 after:transition-all after:duration-300 hover:after:w-full"
               >
                 {link}
               </a>
@@ -98,7 +77,7 @@ export default function Hero() {
             {user ? (
               <>
                 <Link href="/dashboard">
-                  <button className="rounded-full border border-purple-500/30 bg-purple-500/10 px-5 py-2.5 text-xs font-semibold text-purple-300 backdrop-blur-md transition-all duration-300 hover:border-purple-500/50 hover:bg-purple-500/20 hover:scale-[1.03] active:scale-[0.98] flex items-center gap-1.5 hover:cursor-pointer">
+                  <button className="rounded-full border border-red-700/30 bg-red-700/10 px-5 py-2.5 text-xs font-semibold text-red-300 backdrop-blur-md transition-all duration-300 hover:border-red-600/50 hover:bg-red-700/20 hover:scale-[1.03] active:scale-[0.98] flex items-center gap-1.5 hover:cursor-pointer">
                     <LayoutDashboard size={12} />
                     <span>Console</span>
                   </button>
@@ -115,13 +94,13 @@ export default function Hero() {
               <>
                 <button
                   onClick={handleTryDemo}
-                  className="rounded-full border border-purple-500/30 bg-purple-500/5 px-5 py-2.5 text-xs font-semibold text-purple-300 backdrop-blur-md transition-all duration-300 hover:border-pink-500/40 hover:bg-purple-500/10 hover:text-pink-300 hover:scale-[1.03] active:scale-[0.98] flex items-center gap-1.5 hover:cursor-pointer"
+                  className="rounded-full border border-amber-500/40 bg-amber-500/10 px-5 py-2.5 text-xs font-semibold text-amber-300 backdrop-blur-md transition-all duration-300 hover:border-amber-400/60 hover:bg-amber-500/20 hover:text-amber-200 hover:scale-[1.03] active:scale-[0.98] flex items-center gap-1.5 hover:cursor-pointer"
                 >
-                  <Compass size={12} className="text-purple-400" />
+                  <Compass size={12} className="text-amber-400" />
                   <span>Try Demo</span>
                 </button>
                 <Link href="/auth">
-                  <button className="rounded-full border border-white/15 bg-white/5 px-5 py-2.5 text-xs font-semibold text-white backdrop-blur-md transition-all duration-300 hover:border-purple-500/30 hover:bg-white/12 hover:scale-[1.03] active:scale-[0.98] flex items-center gap-1.5 hover:cursor-pointer">
+                  <button className="rounded-full border border-white/15 bg-white/5 px-5 py-2.5 text-xs font-semibold text-white backdrop-blur-md transition-all duration-300 hover:border-red-700/30 hover:bg-white/12 hover:scale-[1.03] active:scale-[0.98] flex items-center gap-1.5 hover:cursor-pointer">
                     <KeyRound size={12} />
                     <span>Sign In</span>
                   </button>
@@ -137,9 +116,9 @@ export default function Hero() {
         
         {/* Small Decorative Line */}
         <div className="mb-6 flex items-center gap-4">
-          <div className="h-[1px] w-20 bg-purple-300/40" />
-          <div className="h-3 w-3 rotate-45 border border-purple-300" />
-          <div className="h-[1px] w-20 bg-purple-300/40" />
+          <div className="h-[1px] w-20 bg-red-400/40" />
+          <div className="h-3 w-3 rotate-45 border border-red-400" />
+          <div className="h-[1px] w-20 bg-red-400/40" />
         </div>
 
         {/* Heading */}
@@ -147,26 +126,26 @@ export default function Hero() {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1 }}
-          className="max-w-4xl bg-gradient-to-b from-white via-purple-100 to-zinc-400 bg-clip-text text-6xl font-bold leading-tight text-transparent drop-shadow-[0_0_25px_rgba(255,255,255,0.15)] md:text-8xl font-cinzel select-none relative"
+          className="max-w-4xl bg-gradient-to-b from-white via-red-100 to-zinc-400 bg-clip-text text-6xl font-bold leading-tight text-transparent drop-shadow-[0_0_25px_rgba(255,255,255,0.15)] md:text-8xl font-cinzel select-none relative"
         >
           Turn Your Ambitions
           <br />
           <span className="relative inline-block mt-2">
-            <span className="animate-shimmer bg-gradient-to-r from-[#d8b4fe] via-[#f472b6] via-[#67e8f9] to-[#d8b4fe] bg-clip-text text-transparent drop-shadow-[0_0_35px_rgba(168,85,247,0.3)]">
+            <span className="animate-shimmer bg-gradient-to-r from-[#fca5a5] via-[#f97316] via-[#ef4444] to-[#fca5a5] bg-clip-text text-transparent drop-shadow-[0_0_35px_rgba(220,38,38,0.4)]">
               Into Legends
             </span>
             
             {/* Drifting fantasy aether sparkles */}
-            <span className="absolute -top-3 left-[20%] text-purple-300 pointer-events-none opacity-0 animate-aether-1 z-20">
+            <span className="absolute -top-3 left-[20%] text-red-300 pointer-events-none opacity-0 animate-aether-1 z-20">
               <Sparkles size={18} className="animate-pulse" />
             </span>
-            <span className="absolute -top-1 left-[70%] text-cyan-300 pointer-events-none opacity-0 animate-aether-2 z-20">
+            <span className="absolute -top-1 left-[70%] text-orange-300 pointer-events-none opacity-0 animate-aether-2 z-20">
               <Sparkle size={14} />
             </span>
-            <span className="absolute top-8 left-[5%] text-pink-300 pointer-events-none opacity-0 animate-aether-3 z-20">
+            <span className="absolute top-8 left-[5%] text-rose-300 pointer-events-none opacity-0 animate-aether-3 z-20">
               <Sparkle size={16} className="animate-pulse" />
             </span>
-            <span className="absolute top-10 left-[85%] text-purple-400 pointer-events-none opacity-0 animate-aether-4 z-20">
+            <span className="absolute top-10 left-[85%] text-red-400 pointer-events-none opacity-0 animate-aether-4 z-20">
               <Sparkles size={15} />
             </span>
           </span>
@@ -177,9 +156,10 @@ export default function Hero() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4 }}
-          className="mt-8 max-w-3xl text-xl leading-relaxed text-zinc-300"
+          className="mt-8 max-w-xl text-2xl leading-relaxed text-zinc-200 font-semibold tracking-wide"
         >
-          Forge ambitions into evolving legendary realms powered by adaptive AI intelligence.
+          Type a goal.{' '}
+          <span className="text-orange-400">The agent forges your legend.</span>
         </motion.p>
 
         {/* CTA Button */}
@@ -187,7 +167,7 @@ export default function Hero() {
           <motion.button
             whileHover={{ scale: 1.04 }}
             whileTap={{ scale: 0.96 }}
-            className="group relative mt-12 overflow-hidden rounded-full border border-white/20 bg-gradient-to-r from-indigo-500/80 via-purple-500/80 to-pink-500/80 px-12 py-4.5 text-xl font-semibold text-white shadow-2xl backdrop-blur-xl shadow-[0_0_60px_rgba(217,70,239,0.35)] hover:shadow-[0_0_80px_rgba(217,70,239,0.5)] transition-all duration-300 hover:cursor-pointer"
+            className="group relative mt-12 overflow-hidden rounded-full border border-amber-400/30 bg-gradient-to-r from-amber-600 via-orange-500 to-amber-500 px-14 py-5 text-2xl font-semibold text-white shadow-2xl backdrop-blur-xl shadow-[0_0_60px_rgba(245,158,11,0.35)] hover:shadow-[0_0_80px_rgba(245,158,11,0.55)] transition-all duration-300 hover:cursor-pointer"
           >
             <span className="relative z-10 flex items-center gap-4">
               {user ? 'Enter Console' : 'Begin Journey'}
@@ -209,6 +189,20 @@ export default function Hero() {
         >
           Every dream has a world waiting for you.
         </motion.p>
+        {/* Scroll Hint — inline so it sits above the fade */}
+        <motion.div
+          className="mt-12 flex flex-col items-center gap-0.5 pointer-events-none"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: [0, 0.6, 0], y: [0, 8, 0] }}
+          transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-zinc-400">
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-zinc-600 -mt-3">
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        </motion.div>
       </div>
 
       {/* Bottom Fade */}

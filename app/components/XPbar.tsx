@@ -21,7 +21,7 @@ export default function XPBar({ xp, level, theme = 'fantasy', streak = 0, onStre
   // Mapping dynamic styles based on theme
   const style = {
     fantasy: {
-      barFill: 'bg-gradient-to-r from-violet-600 via-fuchsia-500 to-indigo-500 shadow-[0_0_15px_rgba(168,85,247,0.5)]',
+      barFill: '[background:linear-gradient(90deg,#4338ca,#7c3aed)] shadow-[0_0_15px_rgba(99,102,241,0.55)]',
       glowBg: 'bg-purple-500/5',
       starColor: 'text-purple-400',
       shieldOuter: 'text-purple-500/35',
@@ -29,10 +29,10 @@ export default function XPBar({ xp, level, theme = 'fantasy', streak = 0, onStre
       levelText: 'from-white to-purple-200',
       rankText: 'text-purple-300',
       badgeFilter: 'drop-shadow-[0_0_10px_rgba(168,85,247,0.25)] hover:drop-shadow-[0_0_20px_rgba(168,85,247,0.45)]',
-      borderFlash: ["rgba(63,63,70,0.8)", "rgba(168,85,247,0.8)", "rgba(63,63,70,0.8)"],
+      borderFlash: ["rgba(63,63,70,0.8)", "rgba(99,102,241,0.8)", "rgba(63,63,70,0.8)"],
       boxShadowFlash: [
         "0 10px 30px -10px rgba(0,0,0,0.5)",
-        "0 0 40px rgba(168,85,247,0.35)",
+        "0 0 40px rgba(99,102,241,0.4)",
         "0 10px 30px -10px rgba(0,0,0,0.5)"
       ]
     },

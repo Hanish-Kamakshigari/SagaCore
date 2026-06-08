@@ -20,6 +20,12 @@ export default function KingdomStatus({ quests = [], activeWorld }: KingdomStatu
     return Math.max(15, Math.round((completed.length / categoryQuests.length) * 100))
   }
 
+  const accentColor = {
+    fantasy: 'text-purple-400',
+    cyberpunk: 'text-cyan-400',
+    steampunk: 'text-orange-400',
+  }[activeWorld?.theme || 'fantasy']
+
   const wisdomName = activeWorld?.pillars?.wisdomName || 'Wisdom'
   const disciplineName = activeWorld?.pillars?.disciplineName || 'Discipline'
   const creationName = activeWorld?.pillars?.creationName || 'Creation'
@@ -62,7 +68,7 @@ export default function KingdomStatus({ quests = [], activeWorld }: KingdomStatu
       activeWorld?.theme === 'fantasy' ? 'hover:border-purple-500/40 hover:shadow-[0_0_25px_rgba(168,85,247,0.08)]' : activeWorld?.theme === 'cyberpunk' ? 'hover:border-cyan-500/40 hover:shadow-[0_0_25px_rgba(6,182,212,0.08)]' : 'hover:border-orange-500/40 hover:shadow-[0_0_25px_rgba(249,115,22,0.08)]'
     }`}>
       <div className="flex items-center gap-3">
-        <ShieldCheck className="text-purple-400" />
+        <ShieldCheck className={accentColor} />
         <h2 className="text-xl font-bold text-zinc-100">
           Sanctuary Pillars
         </h2>
