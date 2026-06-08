@@ -45,7 +45,7 @@ export default function WorldArchitect({
       desc: 'Pressure gauges, steam valves, and clockwork cores.',
       icon: Cog,
       color: 'border-orange-500/30 text-orange-400 bg-orange-500/5',
-      activeColor: 'border-orange-500/80 bg-orange-500/10 shadow-[0_0_20px_rgba(249,115,22,0.3)] text-orange-350',
+      activeColor: 'border-orange-500/80 bg-orange-500/10 shadow-[0_0_20px_rgba(249,115,22,0.3)] text-orange-400',
     },
   ]
 

@@ -1222,3 +1222,160 @@ export async function fetchPlayerStateFromMongo(userId: string) {
     return null
   }
 }
+
+export async function generateQuestQuizWithAI(
+  questTitle: string,
+  questDescription: string,
+  tasks: string[],
+  worldTheme: 'fantasy' | 'cyberpunk' | 'steampunk'
+): Promise<{
+  question: string
+  options: string[]
+  answerIndex: number
+  explanation: string
+}[]> {
+  const themeContext = {
+    fantasy:   'a high-fantasy realm of mana, spires, and ancient scrolls',
+    cyberpunk: 'a neon-lit cyberpunk grid of memory overflows and terminal nets',
+    steampunk: 'a steampunk empire of pressure gauges, clockwork cores, and steam valves',
+  }[worldTheme]
+
+  const tasksContext = tasks.map((t, idx) => `Task ${idx + 1}: ${t}`).join('\n')
+
+  try {
+    const raw = await callGemini({
+      model: 'gemini-2.5-flash',
+      max_tokens: 1500,
+      noTools: true,
+      system: `You are the Sage Examiner of SAGACORE set in ${themeContext}.
+Your duty is to generate a challenging diagnostic quiz consisting of EXACTLY 3 multiple-choice questions to verify the player's knowledge concerning their quest tasks.
+The quest is titled: "${questTitle}"
+Description: "${questDescription}"
+Here are the specific tasks the user worked on:
+${tasksContext}
+
+CRITICAL: Since the quest contains real-world tasks (the text before the "|" symbol, e.g. "Install auth package"), the questions MUST test real-world technical/practical knowledge related to those tasks or the quest's subject matter (e.g. testing knowledge about JWT, React state, SQL indexes, REST API, cardiorespiratory heart rates, etc.).
+Ensure each question is unique and covers different aspects of the tasks/subject.
+Wrap each question, options, and explanation in the immersive, epic narrative style of the world theme (${worldTheme}). Each question must have exactly 4 options with exactly one correct option.
+
+Respond ONLY with a valid JSON array matching this exact shape — no prose, no markdown fences:
+[
+  {
+    "question": "Question 1 text, starting with a brief thematic lore intro then posing the technical question clearly.",
+    "options": [
+      "Option 1 (incorrect)",
+      "Option 2 (incorrect)",
+      "Option 3 (correct)",
+      "Option 4 (incorrect)"
+    ],
+    "answerIndex": 2, // 0-based index pointing to the correct option in the array
+    "explanation": "A 1-2 sentence explanation of why the correct option is right, styled with a wise thematic tone."
+  },
+  {
+    "question": "Question 2 text...",
+    "options": ["...", "...", "...", "..."],
+    "answerIndex": 0,
+    "explanation": "..."
+  },
+  {
+    "question": "Question 3 text...",
+    "options": ["...", "...", "...", "..."],
+    "answerIndex": 1,
+    "explanation": "..."
+  }
+]
+Rules:
+- The options must be plausible and distinct.
+- The correct option index MUST match the answerIndex.
+- Generate EXACTLY 3 questions in the array.`,
+      messages: [{ role: 'user', content: 'Forge a 3-question quest diagnostic quiz.' }],
+    })
+
+    return parseJSON<{
+      question: string
+      options: string[]
+      answerIndex: number
+      explanation: string
+    }[]>(raw)
+  } catch (err) {
+    console.warn('AI Quiz generation failed, using local fallback:', err)
+    const fallbackQuizzes = [
+      {
+        question: `The Aether Core hums in a low frequency. To align the logic pathways for "${questTitle}", you must solve this basic riddle: Which of the following describes the primary purpose of an index in a database grid?`,
+        options: [
+          "To securely encrypt the records from rogue spells",
+          "To speed up database search operations at the cost of write space",
+          "To automatically compress historical lore archives",
+          "To establish cooperative party chat lines"
+        ],
+        answerIndex: 1,
+        explanation: "Correct! Database indexes optimize read coordinates, speeding up search spells while requiring a portion of storage registry."
+      },
+      {
+        question: `Stage 2 Calibration: Which of the following best describes the difference between local storage and a persistent database server?`,
+        options: [
+          "Local storage lives only in the user's browser, while a database server persists data centrally in the cloud.",
+          "Local storage is faster because it uses physical gears and steam pipes.",
+          "A database server can only store text, whereas local storage can store binary spells.",
+          "There is no difference; both are cleared when the terminal session ends."
+        ],
+        answerIndex: 0,
+        explanation: "Correct! Local storage is client-side browser cache, whereas a persistent database server is a centralized network datastore."
+      },
+      {
+        question: `Stage 3 Calibration: When updating player state in React, why should you treat state as read-only/immutable?`,
+        options: [
+          "To prevent the compiler from consuming too much mana.",
+          "Because React relies on reference changes to detect updates and trigger re-renders safely.",
+          "Because mutating state directly deletes the database registry.",
+          "To keep the terminal fonts aligned in neon-cyan."
+        ],
+        answerIndex: 1,
+        explanation: "Correct! React compares object references; modifying state directly skips re-rendering cycles."
+      }
+    ]
+    return fallbackQuizzes
+  }
+}
+
+export async function chatWithCompanionWithAI(
+  userMessage: string,
+  history: { role: 'user' | 'model'; content: string }[],
+  activeQuests: Quest[],
+  worldTheme: 'fantasy' | 'cyberpunk' | 'steampunk'
+): Promise<string> {
+  const themeContext = {
+    fantasy:   'a high-fantasy realm of mana, spires, and ancient scrolls',
+    cyberpunk: 'a neon-lit cyberpunk grid of memory overflows and terminal nets',
+    steampunk: 'a steampunk empire of pressure gauges, clockwork cores, and steam valves',
+  }[worldTheme]
+
+  const questsContext = activeQuests.map((q, idx) => `Quest ${idx + 1}: ${q.title} (${q.description}). Category: ${q.category}. Tasks: ${q.tasks?.join(', ')}`).join('\n')
+
+  const systemPrompt = `You are the Aether Core, the companion and guide of SagaCore Hub, set in ${themeContext}.
+Your purpose is to guide the user, explain how SagaCore works, encourage them on their real-world goals, and help them with their technical tasks.
+The player has the following active quests in their ledger:
+${questsContext}
+
+Rules:
+1. Speak in the wise, immersive, and epic narrative style of the world theme (${worldTheme}). Keep the tone helpful, mystical, and encouraging.
+2. If they ask about SagaCore: explain that it is an AI-powered RPG engine that transforms their real-world ambitions (from learning algorithms to working out) into epic quests. Completed quests restore realm stability, and failure causes calibration leaks.
+3. If they ask about their tasks, give them high-level technical tips or helpful explanations, while dressing it up with thematic lore.
+4. Keep your responses concise (1-3 sentences maximum) to fit inside a dialogue bubble. Do not use markdown format tags except standard text.`
+
+  const messages = [...history.map(h => ({ role: h.role === 'model' ? 'model' as const : 'user' as const, parts: [{ text: h.content }] })), { role: 'user' as const, parts: [{ text: userMessage }] }]
+
+  try {
+    const raw = await callGemini({
+      model: 'gemini-2.5-flash',
+      max_tokens: 400,
+      noTools: true,
+      system: systemPrompt,
+      messages: messages
+    })
+    return raw.trim()
+  } catch (err) {
+    console.error('Companion chat AI failure:', err)
+    return "The aetheric links are flickering. Keep compiling your code, and the grid will restore shortly."
+  }
+}

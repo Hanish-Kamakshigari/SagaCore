@@ -2,6 +2,8 @@
 
 import { motion } from 'framer-motion'
 import { Cpu, BookOpen, Shield, Flame } from 'lucide-react'
+import AetherCore from './AetherCore'
+
 
 // --- Animation helper ---
 const fadeInVariant = {
@@ -54,7 +56,7 @@ export default function LandingSections() {
               The Dream Forge
             </h3>
             <p className="mt-3 text-sm text-zinc-400 leading-relaxed">
-              Generates customized 3-part quest campaigns from your raw goals, utilizing Google's advanced Gemini intelligence models.
+              Generates customized 3-part quest campaigns from your raw goals, utilizing Google&apos;s advanced Gemini intelligence models.
             </p>
           </motion.div>
 
@@ -120,10 +122,10 @@ export default function LandingSections() {
         {/* Background ambient orbs */}
         <div className="absolute left-0 bottom-0 -z-10 h-[500px] w-[500px] rounded-full bg-red-950/10 blur-[180px] pointer-events-none" />
         
-        <div className="grid gap-12 lg:grid-cols-12 items-center">
+        <div className="grid gap-16 lg:grid-cols-12 items-center">
           
           {/* Left Block - Text */}
-          <div className="lg:col-span-7">
+          <div className="lg:col-span-6">
             <motion.h2 
               {...fadeInVariant}
               transition={{ delay: 0.1, duration: 0.8 }}
@@ -137,7 +139,7 @@ export default function LandingSections() {
               transition={{ delay: 0.2, duration: 0.8 }}
               className="mt-6 text-zinc-400 text-lg leading-relaxed"
             >
-              At SAGACORE Hub, we believe that tracking tasks and leveling up shouldn't be a tedious chore. We transform your real-world progress into a living epic saga. 
+              At SAGACORE Hub, we believe that tracking tasks and leveling up shouldn&apos;t be a tedious chore. We transform your real-world progress into a living epic saga. 
             </motion.p>
             
             <motion.p 
@@ -145,67 +147,72 @@ export default function LandingSections() {
               transition={{ delay: 0.3, duration: 0.8 }}
               className="mt-4 text-zinc-400 text-base leading-relaxed"
             >
-              Every time you create and complete a productivity or personal goal, our World Engine channels AI models to formulate structured quest lines, assess difficulties, and generate custom narrative chronicles. Level up your skills, stabilize your forged worlds, and let your achievements echo in the halls of history.
+              Every time you create and complete a productivity or personal goal, our World Engine channels AI models to formulate structured quest lines, assess difficulties, and generate custom narrative chronicles. Level up your skills, stabilize your forged realms, and let your achievements echo in the halls of history.
             </motion.p>
           </div>
 
-          {/* Right Block - Interactive Stats */}
-          <div className="lg:col-span-5 space-y-6">
-            
-            {/* Stat Item 1 */}
-            <motion.div 
-              {...fadeInVariant}
-              whileHover={{ scale: 1.02 }}
-              className="flex items-start gap-5 rounded-2xl border border-zinc-800 bg-zinc-950/40 p-6 backdrop-blur-md"
-            >
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-red-500/10 text-red-400 border border-red-500/20 font-bold font-mono">
-                I
-              </div>
-              <div>
-                <h4 className="text-lg font-bold text-zinc-100 font-cinzel">Wisdom Attributes</h4>
-                <p className="mt-1 text-sm text-zinc-400 leading-relaxed">
-                  Refining technical mastery, algorithm studies, deep research, and conceptual code architecture.
-                </p>
-              </div>
-            </motion.div>
-
-            {/* Stat Item 2 */}
-            <motion.div 
-              {...fadeInVariant}
-              transition={{ delay: 0.1, duration: 0.8 }}
-              whileHover={{ scale: 1.02 }}
-              className="flex items-start gap-5 rounded-2xl border border-zinc-800 bg-zinc-950/40 p-6 backdrop-blur-md"
-            >
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-orange-500/10 text-orange-400 border border-orange-500/20 font-bold font-mono">
-                II
-              </div>
-              <div>
-                <h4 className="text-lg font-bold text-zinc-100 font-cinzel">Discipline Columns</h4>
-                <p className="mt-1 text-sm text-zinc-400 leading-relaxed">
-                  Tracking consistency, task management, regression logs, physical stability, and continuous endurance.
-                </p>
-              </div>
-            </motion.div>
-
-            {/* Stat Item 3 */}
-            <motion.div 
-              {...fadeInVariant}
-              transition={{ delay: 0.2, duration: 0.8 }}
-              whileHover={{ scale: 1.02 }}
-              className="flex items-start gap-5 rounded-2xl border border-zinc-800 bg-zinc-950/40 p-6 backdrop-blur-md"
-            >
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20 font-bold font-mono">
-                III
-              </div>
-              <div>
-                <h4 className="text-lg font-bold text-zinc-100 font-cinzel">Creation Forges</h4>
-                <p className="mt-1 text-sm text-zinc-400 leading-relaxed">
-                  Building frontends, designing databases, drafting mockups, deploying modules, and forging visual layouts.
-                </p>
-              </div>
-            </motion.div>
-
+          {/* Right Block - Interactive Aether Core Companion */}
+          <div className="lg:col-span-6 flex items-center justify-center">
+            <AetherCore />
           </div>
+        </div>
+
+        {/* secondary attributes grid row */}
+        <div className="mt-20 grid gap-6 md:grid-cols-3">
+          
+          {/* Stat Item 1 */}
+          <motion.div 
+            {...fadeInVariant}
+            whileHover={{ scale: 1.02 }}
+            className="flex items-start gap-5 rounded-2xl border border-zinc-800 bg-zinc-950/40 p-6 backdrop-blur-md"
+          >
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-red-500/10 text-red-400 border border-red-500/20 font-bold font-mono">
+              I
+            </div>
+            <div>
+              <h4 className="text-lg font-bold text-zinc-100 font-cinzel">Wisdom Attributes</h4>
+              <p className="mt-1 text-sm text-zinc-400 leading-relaxed">
+                Refining technical mastery, algorithm studies, deep research, and conceptual code architecture.
+              </p>
+            </div>
+          </motion.div>
+
+          {/* Stat Item 2 */}
+          <motion.div 
+            {...fadeInVariant}
+            transition={{ delay: 0.1, duration: 0.8 }}
+            whileHover={{ scale: 1.02 }}
+            className="flex items-start gap-5 rounded-2xl border border-zinc-800 bg-zinc-950/40 p-6 backdrop-blur-md"
+          >
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-orange-500/10 text-orange-400 border border-orange-500/20 font-bold font-mono">
+              II
+            </div>
+            <div>
+              <h4 className="text-lg font-bold text-zinc-100 font-cinzel">Discipline Columns</h4>
+              <p className="mt-1 text-sm text-zinc-400 leading-relaxed">
+                Tracking consistency, task management, regression logs, physical stability, and continuous endurance.
+              </p>
+            </div>
+          </motion.div>
+
+          {/* Stat Item 3 */}
+          <motion.div 
+            {...fadeInVariant}
+            transition={{ delay: 0.2, duration: 0.8 }}
+            whileHover={{ scale: 1.02 }}
+            className="flex items-start gap-5 rounded-2xl border border-zinc-800 bg-zinc-950/40 p-6 backdrop-blur-md"
+          >
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20 font-bold font-mono">
+              III
+            </div>
+            <div>
+              <h4 className="text-lg font-bold text-zinc-100 font-cinzel">Creation Forges</h4>
+              <p className="mt-1 text-sm text-zinc-400 leading-relaxed">
+                Building frontends, designing databases, drafting mockups, deploying modules, and forging visual layouts.
+              </p>
+            </div>
+          </motion.div>
+
         </div>
       </section>
 

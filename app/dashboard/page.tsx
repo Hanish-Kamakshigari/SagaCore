@@ -13,6 +13,8 @@ import XPBar from '../components/XPbar'
 import WorldArchitect from '../components/WorldArchitect'
 import LoreCodex from '../components/LoreCodex'
 import Leaderboard from '../components/Leaderboard'
+import DashboardCompanion from '../components/DashboardCompanion'
+
 
 import { useAmbientAudio } from '../hooks/useAmbientAudio'
 import { useAuth } from '../context/AuthContext'
@@ -1538,6 +1540,68 @@ export default function Dashboard() {
     }
   }
 
+  const handleCompanionReward = async (
+    xpBonus: number,
+    stabilityBonus: number,
+    rewardMessage: string
+  ) => {
+    // 1. Calculate XP progression
+    const newXpTotal = xp + xpBonus
+    let nextLevel = level
+    let remainingXp = newXpTotal
+    let levelUpOccurred = false
+
+    while (remainingXp >= 1000) {
+      nextLevel += 1
+      remainingXp -= 1000
+      levelUpOccurred = true
+    }
+
+    setXp(remainingXp)
+    setLevel(nextLevel)
+
+    // 2. Calculate Stability update
+    let nextStability = Math.min(100, Math.max(0, stability + stabilityBonus))
+    if (levelUpOccurred) {
+      nextStability = 100
+    }
+    setStability(nextStability)
+
+    // 3. Add to logs
+    setLore((prev) => [rewardMessage, ...prev])
+
+    if (levelUpOccurred) {
+      setJustLeveledTo(nextLevel)
+      setShowLevelUp(true)
+      playLevelUpFanfare(activeWorld.theme)
+      setTimeout(() => setShowLevelUp(false), 5000)
+      setLore((prev) => [`[LEVEL UP] CELESTIAL ASCENSION: You have reached Level ${nextLevel}!`, ...prev])
+    }
+
+    // 4. Save state to MongoDB
+    if (user) {
+      try {
+        const today = new Date()
+        const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+        await savePlayerStateToMongo(
+          user.uid,
+          remainingXp,
+          nextLevel,
+          activeWorld.theme,
+          user.email,
+          nextStability,
+          streak,
+          lastDailyChallengeDate || undefined,
+          lastActiveDate || todayStr,
+          displayName || undefined
+        ).catch((e) => console.warn('Failed saving companion reward state:', e))
+      } catch (err) {
+        console.warn('Failed saving companion reward state:', err)
+      }
+    }
+  }
+
+
   const filteredQuests = quests.filter((q) => filter === 'all' || q.category === filter)
 
   if (authLoading || (user && !isDataLoaded)) {
@@ -1680,7 +1744,7 @@ export default function Dashboard() {
                 <p className="mt-3 text-xs text-zinc-400 leading-relaxed max-w-md mx-auto">
                   {streak > 0 ? (
                     <>
-                      Your daily check-in is synchronized! Keep your streak burning hot by completing today's focus trial to earn bonus multipliers.
+                      Your daily check-in is synchronized! Keep your streak burning hot by completing today&apos;s focus trial to earn bonus multipliers.
                     </>
                   ) : (
                     <>
@@ -1988,19 +2052,24 @@ export default function Dashboard() {
                           Summon Core Themes
                         </span>
                         <div className="grid grid-cols-3 gap-1.5">
-                          {([
+                           {([
                             { id: 'fantasy', label: 'Fantasy', icon: '⚔️' },
                             { id: 'cyberpunk', label: 'Cyber', icon: '💻' },
                             { id: 'steampunk', label: 'Steam', icon: '⚙️' }
                           ] as const).map((t) => {
                             const isActive = activeWorld.theme === t.id && activeWorld.name === worldTemplates[t.id].name
+                            const activeClass = {
+                              fantasy: 'border-purple-500/80 bg-purple-500/10 text-purple-300 shadow-[0_0_10px_rgba(168,85,247,0.15)]',
+                              cyberpunk: 'border-cyan-500/80 bg-cyan-500/10 text-cyan-300 shadow-[0_0_10px_rgba(6,182,212,0.15)]',
+                              steampunk: 'border-orange-500/80 bg-orange-500/10 text-orange-400 shadow-[0_0_10px_rgba(249,115,22,0.15)]',
+                            }[t.id]
                             return (
                               <button
                                 key={t.id}
                                 onClick={() => handleChangeWorld(t.id)}
                                 className={`py-1.5 px-1 rounded-xl text-[10px] font-bold border transition-all duration-300 flex flex-col items-center justify-center gap-1 cursor-pointer ${
                                   isActive
-                                    ? 'border-purple-500/80 bg-purple-500/10 text-purple-300 shadow-[0_0_10px_rgba(168,85,247,0.15)]'
+                                    ? activeClass
                                     : 'border-zinc-900 bg-zinc-900/40 text-zinc-500 hover:border-zinc-700 hover:text-zinc-300'
                                 }`}
                               >
@@ -2544,6 +2613,14 @@ export default function Dashboard() {
 
         </div>
       </div>
+
+      {/* Interactive Quest Quiz Companion */}
+      <DashboardCompanion 
+        quests={quests} 
+        theme={activeWorld.theme} 
+        stability={stability}
+        onReward={handleCompanionReward} 
+      />
     </main>
   )
 }
