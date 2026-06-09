@@ -91,14 +91,13 @@ export default function AetherCore() {
 
   return (
     <div className="relative w-full max-w-xl mx-auto z-30 select-none">
-      
-      {/* Perspective Wrapper */}
+           {/* Perspective Wrapper */}
       <motion.div
         ref={cardRef}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
         onMouseEnter={() => setIsHovered(true)}
-        style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
+        style={{ transformStyle: "preserve-3d" }}
         className="w-full rounded-3xl border border-zinc-800/80 bg-zinc-950/40 p-8 md:p-10 backdrop-blur-2xl transition-all duration-300 hover:border-red-500/25 hover:shadow-[0_0_50px_rgba(239,68,68,0.08)] flex flex-col items-center gap-8 relative overflow-hidden"
       >
         {/* Animated Background Glow */}
@@ -158,14 +157,6 @@ export default function AetherCore() {
               transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
               className="absolute w-36 h-36 rounded-full bg-red-650/25 blur-3xl filter"
             />
-            {/* Sharp inner core orb */}
-            <motion.div 
-              animate={{
-                scale: [0.95, 1.05, 0.95]
-              }}
-              transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
-              className="w-14 h-14 rounded-full bg-gradient-to-tr from-red-600 via-orange-500 to-amber-400 shadow-[0_0_35px_rgba(239,68,68,0.6)] border border-white/20 filter"
-            />
           </div>
 
           {/* Crystalline Polyhedron Mesh Overlay */}
@@ -192,14 +183,6 @@ export default function AetherCore() {
               <polygon points="50,90 80,40 50,55" className="fill-red-650/30 stroke-red-500/60 stroke-[0.7] backdrop-blur-[2px] transition-colors duration-300 hover:fill-red-500/40" />
               {/* Face 4 */}
               <polygon points="50,90 20,40 50,55" className="fill-orange-600/35 stroke-orange-500/60 stroke-[0.7] backdrop-blur-[2px] transition-colors duration-300 hover:fill-orange-500/45" />
-              {/* Face 5 - Cap Right */}
-              <polygon points="50,10 80,40 90,25" className="fill-red-400/15 stroke-red-300/40 stroke-[0.7]" />
-              {/* Face 6 - Cap Left */}
-              <polygon points="50,10 20,40 10,25" className="fill-orange-400/15 stroke-orange-300/40 stroke-[0.7]" />
-              {/* Face 7 - Bottom Cap Right */}
-              <polygon points="50,90 80,40 90,55" className="fill-red-700/20 stroke-red-500/40 stroke-[0.7]" />
-              {/* Face 8 - Bottom Cap Left */}
-              <polygon points="50,90 20,40 10,55" className="fill-orange-700/20 stroke-orange-500/40 stroke-[0.7]" />
             </svg>
           </motion.div>
 
