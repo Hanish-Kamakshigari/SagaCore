@@ -221,3 +221,11 @@ input:-webkit-autofill:focus {
 .animate-stardust { animation: stardust-drift 15s ease-in-out infinite; }
 .animate-scanline { animation: scanline-anim 6s linear infinite; }
 
+/* Hide scrollbars for chrome/safari/opera/firefox/ie */
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}

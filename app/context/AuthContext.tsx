@@ -104,7 +104,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           msg = 'Invalid email format.'
         }
         setError(msg)
-        throw new Error(msg)
       }
     } else {
       // Mock Login Implementation
@@ -119,7 +118,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else {
         const msg = 'Invalid email or password.'
         setError(msg)
-        throw new Error(msg)
       }
     }
   }
@@ -146,7 +144,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           msg = 'Invalid email format.'
         }
         setError(msg)
-        throw new Error(msg)
       }
     } else {
       // Mock Registration Implementation
@@ -154,7 +151,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (mockUsers[email]) {
         const msg = 'This email address is already in use.'
         setError(msg)
-        throw new Error(msg)
       } else {
         mockUsers[email] = password
         localStorage.setItem('sagacore_mock_users', JSON.stringify(mockUsers))

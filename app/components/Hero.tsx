@@ -47,18 +47,18 @@ export default function Hero() {
       <div className="absolute left-1/2 top-1/3 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-red-700/15 blur-[120px] pointer-events-none" />
 
       {/* Floating Navbar - integrated smoothly with absolute positioning */}
-      <header className="absolute top-6 left-1/2 z-50 w-[92%] max-w-6xl -translate-x-1/2 pointer-events-auto">
-        <nav className="flex items-center justify-between rounded-full border border-white/10 bg-black/35 px-8 py-3.5 backdrop-blur-xl shadow-[0_8px_32px_0_rgba(0,0,0,0.4)] transition-all duration-300 hover:border-red-700/25">
+      <header className="absolute top-3 sm:top-6 left-1/2 z-50 w-[95%] sm:w-[92%] max-w-6xl -translate-x-1/2 pointer-events-auto">
+        <nav className="flex items-center justify-between rounded-full border border-white/10 bg-black/35 px-4 py-2 sm:px-8 sm:py-3.5 backdrop-blur-xl shadow-[0_8px_32px_0_rgba(0,0,0,0.4)] transition-all duration-300 hover:border-red-700/25">
           {/* Logo / Brand */}
-          <Link href="/" className="flex flex-col items-start select-none group">
-            <span className="text-xl font-black tracking-[0.2em] text-white font-cinzel bg-gradient-to-r from-white via-red-100 to-orange-200 bg-clip-text text-transparent group-hover:from-white group-hover:via-red-200 group-hover:to-orange-300 transition-all duration-300">
+          <Link href="/" className="flex flex-col items-start select-none group shrink-0">
+            <span className="text-sm sm:text-xl font-black tracking-[0.15em] sm:tracking-[0.2em] text-white font-cinzel bg-gradient-to-r from-white via-red-100 to-orange-200 bg-clip-text text-transparent group-hover:from-white group-hover:via-red-200 group-hover:to-orange-300 transition-all duration-300 whitespace-nowrap">
               SAGACORE HUB
             </span>
-            <span className="text-[8px] uppercase tracking-[0.3em] text-red-400 font-bold font-mono -mt-0.5 pl-0.5 group-hover:text-red-300 transition-colors duration-300">
+            <span className="text-[7px] sm:text-[8px] uppercase tracking-[0.2em] sm:tracking-[0.3em] text-red-400 font-bold font-mono -mt-0.5 pl-0.5 group-hover:text-red-300 transition-colors duration-300">
               World Engine
             </span>
           </Link>
-
+ 
           {/* Navigation Links */}
           <div className="hidden items-center gap-8 text-sm font-medium text-zinc-300 md:flex">
             {['Home', 'Features', 'About', 'Roadmap'].map((link) => (
@@ -71,22 +71,22 @@ export default function Hero() {
               </a>
             ))}
           </div>
-
+ 
           {/* CTA / Console */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
             {user ? (
               <>
                 <Link href="/dashboard">
-                  <button className="rounded-full border border-red-700/30 bg-red-700/10 px-5 py-2.5 text-xs font-semibold text-red-300 backdrop-blur-md transition-all duration-300 hover:border-red-600/50 hover:bg-red-700/20 hover:scale-[1.03] active:scale-[0.98] flex items-center gap-1.5 hover:cursor-pointer">
-                    <LayoutDashboard size={12} />
+                  <button className="rounded-full border border-red-700/30 bg-red-700/10 px-3 py-1.5 sm:px-5 sm:py-2.5 text-[10px] sm:text-xs font-semibold text-red-300 backdrop-blur-md transition-all duration-300 hover:border-red-600/50 hover:bg-red-700/20 hover:scale-[1.03] active:scale-[0.98] flex items-center gap-1 sm:gap-1.5 hover:cursor-pointer">
+                    <LayoutDashboard size={11} className="sm:w-3 sm:h-3" />
                     <span>Console</span>
                   </button>
                 </Link>
                 <button
                   onClick={() => logout()}
-                  className="rounded-full border border-red-500/20 bg-red-500/5 px-4 py-2.5 text-xs font-semibold text-red-400 backdrop-blur-md transition-all duration-300 hover:bg-red-500/10 hover:scale-[1.03] active:scale-[0.98] flex items-center gap-1.5 hover:cursor-pointer"
+                  className="rounded-full border border-red-500/20 bg-red-500/5 px-3 py-1.5 sm:px-4 sm:py-2.5 text-[10px] sm:text-xs font-semibold text-red-400 backdrop-blur-md transition-all duration-300 hover:bg-red-500/10 hover:scale-[1.03] active:scale-[0.98] flex items-center gap-1 sm:gap-1.5 hover:cursor-pointer"
                 >
-                  <LogOut size={12} />
+                  <LogOut size={11} className="sm:w-3 sm:h-3" />
                   <span className="hidden sm:inline">Sign Out</span>
                 </button>
               </>
@@ -94,14 +94,14 @@ export default function Hero() {
               <>
                 <button
                   onClick={handleTryDemo}
-                  className="rounded-full border border-amber-500/40 bg-amber-500/10 px-5 py-2.5 text-xs font-semibold text-amber-300 backdrop-blur-md transition-all duration-300 hover:border-amber-400/60 hover:bg-amber-500/20 hover:text-amber-200 hover:scale-[1.03] active:scale-[0.98] flex items-center gap-1.5 hover:cursor-pointer"
+                  className="rounded-full border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 sm:px-5 sm:py-2.5 text-[10px] sm:text-xs font-semibold text-amber-300 backdrop-blur-md transition-all duration-300 hover:border-amber-400/60 hover:bg-amber-500/20 hover:text-amber-200 hover:scale-[1.03] active:scale-[0.98] flex items-center gap-1 sm:gap-1.5 hover:cursor-pointer"
                 >
-                  <Compass size={12} className="text-amber-400" />
+                  <Compass size={11} className="text-amber-400 sm:w-3 sm:h-3" />
                   <span>Try Demo</span>
                 </button>
                 <Link href="/auth">
-                  <button className="rounded-full border border-white/15 bg-white/5 px-5 py-2.5 text-xs font-semibold text-white backdrop-blur-md transition-all duration-300 hover:border-red-700/30 hover:bg-white/12 hover:scale-[1.03] active:scale-[0.98] flex items-center gap-1.5 hover:cursor-pointer">
-                    <KeyRound size={12} />
+                  <button className="rounded-full border border-white/15 bg-white/5 px-3 py-1.5 sm:px-5 sm:py-2.5 text-[10px] sm:text-xs font-semibold text-white backdrop-blur-md transition-all duration-300 hover:border-red-700/30 hover:bg-white/12 hover:scale-[1.03] active:scale-[0.98] flex items-center gap-1 sm:gap-1.5 hover:cursor-pointer">
+                    <KeyRound size={11} className="sm:w-3 sm:h-3" />
                     <span>Sign In</span>
                   </button>
                 </Link>

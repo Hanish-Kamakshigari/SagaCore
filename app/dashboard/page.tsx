@@ -1631,7 +1631,7 @@ export default function Dashboard() {
   //   2. QuestCard receives onFail, isNarrating, narratedMythEvent props
   // ─────────────────────────────────────────────────────────────────────────────
   return (
-    <main className="relative min-h-screen bg-gradient-to-b from-black via-zinc-950 to-black px-6 py-8 text-white transition-colors duration-500 overflow-x-hidden">
+    <main className="relative min-h-screen bg-gradient-to-b from-black via-zinc-950 to-black px-4 sm:px-6 py-6 sm:py-8 text-white transition-colors duration-500 overflow-x-hidden">
       {showDailyConfetti && <LevelUpConfetti />}
       {/* Dynamic backdrop grid */}
       <div className="absolute inset-0 -z-20 bg-[linear-gradient(rgba(255,255,255,0.015)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.015)_1px,transparent_1px)] bg-[size:40px_40px] opacity-60" />
@@ -1893,7 +1893,7 @@ export default function Dashboard() {
       <div className="mx-auto max-w-7xl">
 
         {/* Header — unchanged */}
-        <header className="mb-10 flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+        <header className="mb-10 flex flex-col gap-4 sm:gap-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
             <Link href="/" className="group flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-800 bg-zinc-900/50 text-zinc-400 transition hover:border-zinc-700 hover:text-white">
               <ArrowLeft size={18} className="transition group-hover:-translate-x-0.5" />
@@ -2154,7 +2154,7 @@ export default function Dashboard() {
                 )
                 return (
                   <>
-                    <form onSubmit={handleForgeQuest} className="mt-4 flex gap-3">
+                    <form onSubmit={handleForgeQuest} className="mt-4 flex flex-col sm:flex-row gap-3">
                       <input
                         ref={goalInputRef}
                         type="text"
@@ -2162,7 +2162,7 @@ export default function Dashboard() {
                         onChange={(e) => setNewGoal(e.target.value)}
                         disabled={isForging}
                         placeholder={`e.g., ${forgePlaceholders[currentPlaceholderIdx]}`}
-                        className={`flex-1 rounded-2xl border bg-black/60 px-6 py-4 text-base placeholder-zinc-500 outline-none transition-all duration-300 focus:bg-black/80 disabled:opacity-50 ${
+                        className={`flex-1 rounded-2xl border bg-black/60 px-4 py-3 sm:px-6 sm:py-4 text-sm sm:text-base placeholder-zinc-500 outline-none transition-all duration-300 focus:bg-black/80 disabled:opacity-50 ${
                           isDuplicateGoal
                             ? 'border-red-500/60 focus:border-red-500/80 focus:ring-2 focus:ring-red-500/20 text-red-300'
                             : 'border-zinc-850 focus:border-zinc-700 focus:ring-2 focus:ring-purple-500/10'
@@ -2171,7 +2171,7 @@ export default function Dashboard() {
                       <button
                         type="submit"
                         disabled={isForging || !newGoal.trim() || isDuplicateGoal}
-                        className={`flex items-center gap-2 rounded-2xl bg-gradient-to-r ${colors.btnBg} px-7 py-4 font-bold text-white transition-all duration-300 hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 disabled:scale-100 disabled:translate-y-0 disabled:opacity-60 disabled:cursor-not-allowed ${colors.btnGlow}`}
+                        className={`flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r ${colors.btnBg} px-4 sm:px-7 py-3 sm:py-4 font-bold text-white transition-all duration-300 hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 disabled:scale-100 disabled:translate-y-0 disabled:opacity-60 disabled:cursor-not-allowed ${colors.btnGlow}`}
                       >
                         {isForging ? (
                           <Loader2 size={14} className="animate-spin" />
@@ -2390,13 +2390,13 @@ export default function Dashboard() {
             </div>
 
             {/* Tab nav — unchanged */}
-            <div className="flex border-b border-zinc-800/80 pb-0.5 gap-4">
+            <div className="flex border-b border-zinc-800/80 pb-0.5 gap-2 sm:gap-4 overflow-x-auto whitespace-nowrap scrollbar-none">
               <button
                 onClick={() => setActiveTab('quests')}
-                className={`relative pb-3 text-sm font-bold uppercase tracking-wider transition ${activeTab === 'quests' ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
+                className={`relative pb-3 text-xs sm:text-sm font-bold uppercase tracking-wider transition shrink-0 ${activeTab === 'quests' ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
               >
-                <span className="flex items-center gap-2">
-                  <ScrollIcon size={14} />
+                <span className="flex items-center gap-1.5 sm:gap-2">
+                  <ScrollIcon size={14} className="shrink-0" />
                   Active Quests
                 </span>
                 {activeTab === 'quests' && (
@@ -2406,10 +2406,10 @@ export default function Dashboard() {
 
               <button
                 onClick={() => setActiveTab('codex')}
-                className={`relative pb-3 text-sm font-bold uppercase tracking-wider transition ${activeTab === 'codex' ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
+                className={`relative pb-3 text-xs sm:text-sm font-bold uppercase tracking-wider transition shrink-0 ${activeTab === 'codex' ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
               >
-                <span className="flex items-center gap-2">
-                  <BookOpen size={14} />
+                <span className="flex items-center gap-1.5 sm:gap-2">
+                  <BookOpen size={14} className="shrink-0" />
                   Evolving Codex
                   {chapters.length > 0 && (
                     <span className="rounded-full bg-purple-500/20 border border-purple-500/30 px-1.5 py-0.2 text-[9px] text-purple-300">
@@ -2424,10 +2424,10 @@ export default function Dashboard() {
 
               <button
                 onClick={() => setActiveTab('leaderboard')}
-                className={`relative pb-3 text-sm font-bold uppercase tracking-wider transition ${activeTab === 'leaderboard' ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
+                className={`relative pb-3 text-xs sm:text-sm font-bold uppercase tracking-wider transition shrink-0 ${activeTab === 'leaderboard' ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
               >
-                <span className="flex items-center gap-2">
-                  <Trophy size={14} />
+                <span className="flex items-center gap-1.5 sm:gap-2">
+                  <Trophy size={14} className="shrink-0" />
                   Leaderboard
                 </span>
                 {activeTab === 'leaderboard' && (
@@ -2471,7 +2471,7 @@ export default function Dashboard() {
                     }[rarity]
 
                     return (
-                      <div className={`relative overflow-hidden rounded-[2rem] border p-8 mb-8 transition-all duration-500 ${rarityStyles.cardClass}`}>
+                      <div className={`relative overflow-hidden rounded-[2rem] border p-5 sm:p-8 mb-6 sm:mb-8 transition-all duration-500 ${rarityStyles.cardClass}`}>
                         {/* Decorative background pulse glow */}
                         <div className="absolute -right-16 -top-16 h-36 w-36 rounded-full bg-amber-500/10 blur-3xl pointer-events-none animate-pulse" />
                         
@@ -2498,7 +2498,7 @@ export default function Dashboard() {
                               )}
                             </div>
                             
-                            <h3 className={`text-2xl font-black mt-3.5 tracking-tight font-cinzel ${dailyChallenge.isCompleted ? 'line-through text-zinc-500' : 'text-zinc-100'}`}>
+                            <h3 className={`text-xl sm:text-2xl font-black mt-3 sm:mt-3.5 tracking-tight font-cinzel ${dailyChallenge.isCompleted ? 'line-through text-zinc-500' : 'text-zinc-100'}`}>
                               {dailyChallenge.title}
                             </h3>
                             <p className="mt-2 text-sm text-zinc-400 leading-relaxed font-serif italic">
@@ -2517,7 +2517,7 @@ export default function Dashboard() {
                                       key={i}
                                       onClick={() => handleCompleteDailyChallenge()}
                                       disabled={dailyChallenge.isCompleted || narratingId !== null || stability === 0}
-                                      className={`flex items-start gap-4 w-full text-left p-4 rounded-2xl border transition-all duration-300 ${
+                                      className={`flex items-start gap-3 sm:gap-4 w-full text-left p-3 sm:p-4 rounded-xl sm:rounded-2xl border transition-all duration-300 ${
                                         dailyChallenge.isCompleted 
                                           ? 'bg-green-500/5 border-green-500/10 shadow-[0_0_12px_rgba(34,197,94,0.04)] cursor-default' 
                                           : 'bg-zinc-900/20 border-zinc-850/55 hover:bg-amber-500/5 hover:border-amber-500/20 hover:shadow-[0_0_15px_rgba(245,158,11,0.05)] group cursor-pointer'
@@ -2597,7 +2597,7 @@ export default function Dashboard() {
                         <button
                           key={t}
                           onClick={() => setFilter(t)}
-                          className={`rounded-lg px-4 py-1.5 text-xs font-semibold uppercase tracking-wider transition ${filter === t ? 'bg-zinc-800 text-white shadow-inner border border-zinc-700/40' : 'text-zinc-400 hover:text-zinc-200'}`}
+                          className={`rounded-lg px-2.5 sm:px-4 py-1 sm:py-1.5 text-[10px] sm:text-xs font-semibold uppercase tracking-wider transition ${filter === t ? 'bg-zinc-800 text-white shadow-inner border border-zinc-700/40' : 'text-zinc-400 hover:text-zinc-200'}`}
                         >
                           {t}
                         </button>

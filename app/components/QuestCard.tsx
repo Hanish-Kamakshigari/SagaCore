@@ -368,7 +368,7 @@ export default function QuestCard({
           boxShadow: quest.failed ? '0 0 25px rgba(239, 68, 68, 0.08)' : theme.completedShadow
         }}
         transition={{ type: 'spring', stiffness: 100, damping: 15 }}
-        className={`w-full h-full relative overflow-hidden rounded-[2rem] border bg-zinc-950/60 p-8 md:p-9 backdrop-blur-md transition-all duration-500 ${
+        className={`w-full h-full relative overflow-hidden rounded-2xl sm:rounded-[2rem] border bg-zinc-950/60 p-5 sm:p-8 md:p-9 backdrop-blur-md transition-all duration-500 ${
           quest.failed ? 'border-red-500/20' : theme.border
         }`}
       >
@@ -440,7 +440,7 @@ export default function QuestCard({
   return (
     <motion.div
       whileHover={isLocked ? {} : { y: -4, scale: 1.015 }}
-      className={`w-full h-full relative overflow-hidden rounded-[2rem] border p-8 md:p-9 transition-all duration-305 ${
+      className={`w-full h-full relative overflow-hidden rounded-2xl sm:rounded-[2rem] border p-5 sm:p-8 md:p-9 transition-all duration-305 ${
         isLocked
           ? 'border-zinc-900 bg-zinc-950/40 opacity-55 grayscale-[20%] select-none shadow-none'
           : `${theme.border} bg-gradient-to-br from-zinc-900/60 ${theme.bgGlow} to-zinc-950/80 ${theme.glow} backdrop-blur-md`
@@ -465,9 +465,9 @@ export default function QuestCard({
       )}
 
       {/* Header */}
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className={`rounded-2xl p-3 border shrink-0 ${theme.iconBg}`}>
+      <div className="flex items-start justify-between gap-3 sm:gap-4">
+        <div className="flex items-center gap-3 sm:gap-4">
+          <div className={`rounded-2xl p-2.5 sm:p-3 border shrink-0 ${theme.iconBg}`}>
             <CategoryIcon size={22} />
           </div>
           <div>
@@ -477,7 +477,7 @@ export default function QuestCard({
               </span>
               <QuestTimer deadline={quest.deadline} isCompleted={quest.isCompleted} />
             </div>
-            <h3 className="text-2xl font-extrabold text-white mt-1 tracking-tight font-cinzel">{quest.title}</h3>
+            <h3 className="text-lg sm:text-2xl font-extrabold text-white mt-0.5 sm:mt-1 tracking-tight font-cinzel">{quest.title}</h3>
           </div>
         </div>
 
@@ -566,7 +566,7 @@ export default function QuestCard({
             {hasTasks && viewMode === 'list' && (
               <div className="mt-6 space-y-3.5 px-0.5">
                 {quest.tasks!.map((task, i) => {
-                  const isChecked = quest.completedTasks?.[i] ?? false
+                  const isChecked = quest.completedTasks?.[i] || false
                   const parts = task.split('|')
                   const mainTask = parts[0]?.trim() || task
                   const loreSubtitle = parts[1]?.trim() || ''
@@ -575,33 +575,33 @@ export default function QuestCard({
                     <button
                       key={i}
                       onClick={() => onToggleTask && onToggleTask(quest.id, i)}
-                      className={`flex items-start gap-4 w-full text-left p-4 rounded-2xl border border-zinc-850/50 transition-all duration-300 hover:cursor-pointer ${
+                      className={`flex items-start gap-3 sm:gap-4 w-full text-left p-3.5 sm:p-4 rounded-xl sm:rounded-2xl border border-zinc-850/50 transition-all duration-300 hover:cursor-pointer ${
                         isChecked 
                           ? theme.taskCheckedHighlight 
                           : `bg-zinc-900/15 group ${theme.taskHighlight}`
                       }`}
                     >
-                      <div className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-all duration-300 ${
+                      <div className={`mt-0.5 flex h-4.5 w-4.5 sm:h-5 sm:w-5 shrink-0 items-center justify-center rounded-full border transition-all duration-300 ${
                         isChecked 
                           ? theme.checkboxChecked 
                           : `bg-zinc-950 shadow-inner ${theme.checkboxBorder}`
                       }`}>
                         {isChecked && <Check size={11} strokeWidth={4} />}
                       </div>
-
+ 
                       <div className="flex-1 flex flex-col">
                         <div className="flex items-center justify-between w-full">
-                          <span className={`text-base font-semibold transition-all duration-300 pr-4 ${
+                          <span className={`text-sm sm:text-base font-semibold transition-all duration-300 pr-3 sm:pr-4 ${
                             isChecked ? 'text-zinc-550 line-through' : 'text-zinc-200 group-hover:text-white'
                           }`}>
                             {mainTask}
                           </span>
-                          <span className={`text-xs font-bold font-mono px-2.5 py-0.5 rounded-full select-none shrink-0 ml-4 border ${theme.xpText}`}>
+                          <span className={`text-[10px] sm:text-xs font-bold font-mono px-2 sm:px-2.5 py-0.5 rounded-full select-none shrink-0 ml-3 sm:ml-4 border ${theme.xpText}`}>
                             +25 XP
                           </span>
                         </div>
                         {loreSubtitle && (
-                          <span className={`text-sm italic mt-1.5 font-serif tracking-wide transition-all duration-300 ${
+                          <span className={`text-xs sm:text-sm italic mt-1 sm:mt-1.5 font-serif tracking-wide transition-all duration-305 ${
                             isChecked ? 'text-zinc-650' : 'text-zinc-500 font-medium'
                           }`}>
                             “{loreSubtitle}”
@@ -863,8 +863,8 @@ export default function QuestCard({
               </>
             ) : (
               <>
-                <Sparkles size={12} className="text-purple-400" />
-                <span>Generate AI Roadmap</span>
+                <Sparkles size={12} className="animate-pulse" />
+                <span>Forge AI Roadmap</span>
               </>
             )}
           </button>
@@ -872,31 +872,31 @@ export default function QuestCard({
       )}
 
       {/* Footer Divider & Buttons */}
-      <div className="mt-8 flex flex-wrap items-center justify-between gap-4 border-t border-zinc-850 pt-5">
-        <div className="flex items-center gap-2.5">
-          <span className={`h-9 flex items-center justify-center rounded-xl border px-3.5 text-xs font-bold uppercase tracking-wider backdrop-blur-sm whitespace-nowrap shrink-0 ${theme.xpText}`}>
+      <div className="mt-6 sm:mt-8 flex flex-wrap items-center justify-between gap-3 sm:gap-4 border-t border-zinc-850 pt-4 sm:pt-5">
+        <div className="flex items-center gap-2 sm:gap-2.5">
+          <span className={`h-8 sm:h-9 flex items-center justify-center rounded-xl border px-2.5 sm:px-3.5 text-[10px] sm:text-xs font-bold uppercase tracking-wider backdrop-blur-sm whitespace-nowrap shrink-0 ${theme.xpText}`}>
             +{quest.xp} XP
           </span>
           {hasTasks && (
-            <span className="h-9 flex items-center justify-center rounded-xl border border-zinc-800/80 bg-zinc-950/80 px-3 text-xs font-bold text-zinc-400 font-mono whitespace-nowrap shrink-0">
+            <span className="h-8 sm:h-9 flex items-center justify-center rounded-xl border border-zinc-800/80 bg-zinc-950/80 px-2 sm:px-3 text-[10px] sm:text-xs font-bold text-zinc-400 font-mono whitespace-nowrap shrink-0">
               {completedCount}/{totalCount} Tasks
             </span>
           )}
         </div>
-
-        <div className="flex items-center gap-2.5">
+ 
+        <div className="flex items-center gap-2 sm:gap-2.5">
           {/* Fail Button */}
           {onFail && (
             <button
               onClick={() => onFail(quest.id)}
               disabled={isNarrating}
-              className="h-9 flex items-center justify-center gap-2 rounded-xl border border-red-500/20 bg-red-500/5 px-4.5 text-xs font-bold text-red-400 transition hover:border-red-500/40 hover:bg-red-500/10 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap shrink-0"
+              className="h-8 sm:h-9 flex items-center justify-center gap-1.5 sm:gap-2 rounded-xl border border-red-500/20 bg-red-500/5 px-3 sm:px-4.5 text-[10px] sm:text-xs font-bold text-red-400 transition hover:border-red-500/40 hover:bg-red-500/10 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap shrink-0"
             >
               <X size={11} />
               Failed
             </button>
           )}
-
+ 
           {/* Complete Button */}
           <button
             onClick={() => {
@@ -904,7 +904,7 @@ export default function QuestCard({
               onComplete(quest.id)
             }}
             disabled={isCompleteDisabled}
-            className={`relative h-9 overflow-hidden flex items-center justify-center rounded-xl border px-5 text-xs font-bold transition-all duration-300 active:scale-[95] disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap shrink-0 ${
+            className={`relative h-8 sm:h-9 overflow-hidden flex items-center justify-center rounded-xl border px-3 sm:px-5 text-[10px] sm:text-xs font-bold transition-all duration-300 active:scale-[95] disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap shrink-0 ${
               allTasksCompleted
                 ? `hover:cursor-pointer ${theme.completeBtn}`
                 : 'border-zinc-800 bg-zinc-950 text-zinc-550'
