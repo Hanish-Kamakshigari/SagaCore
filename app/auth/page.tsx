@@ -344,10 +344,8 @@ export default function AuthPage() {
               disabled={isSubmitting}
               className="w-full relative overflow-hidden group flex items-center justify-center gap-2.5 rounded-2xl bg-gradient-to-r from-red-800 via-rose-600 to-orange-500 py-4 font-bold text-white transition hover:brightness-110 active:scale-[0.98] shadow-lg shadow-red-700/20 disabled:opacity-75 disabled:cursor-not-allowed hover:cursor-pointer shine-button"
             >
-              {isSubmitting ? (
+              {isSubmitting && (
                 <Loader2 size={16} className="animate-spin text-white" />
-              ) : (
-                <Sparkles size={15} className="group-hover:rotate-12 transition-transform duration-300" />
               )}
               <span className="tracking-wide">
                 {isSubmitting 

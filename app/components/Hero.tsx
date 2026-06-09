@@ -135,19 +135,7 @@ export default function Hero() {
               Into Legends
             </span>
             
-            {/* Drifting fantasy aether sparkles */}
-            <span className="absolute -top-3 left-[20%] text-red-300 pointer-events-none opacity-0 animate-aether-1 z-20">
-              <Sparkles size={18} className="animate-pulse" />
-            </span>
-            <span className="absolute -top-1 left-[70%] text-orange-300 pointer-events-none opacity-0 animate-aether-2 z-20">
-              <Sparkle size={14} />
-            </span>
-            <span className="absolute top-8 left-[5%] text-rose-300 pointer-events-none opacity-0 animate-aether-3 z-20">
-              <Sparkle size={16} className="animate-pulse" />
-            </span>
-            <span className="absolute top-10 left-[85%] text-red-400 pointer-events-none opacity-0 animate-aether-4 z-20">
-              <Sparkles size={15} />
-            </span>
+            
           </span>
         </motion.h1>
 
