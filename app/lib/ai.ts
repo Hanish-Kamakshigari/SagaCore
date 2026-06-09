@@ -9,6 +9,37 @@
 import type { Quest, LoreChapter } from './data'
 import { connectDB, QuestModel, LoreChapterModel, PlayerStateModel } from './mongodb'
 import { getRealmState, saveQuest, completeQuest } from './tools'
+import { cookies } from 'next/headers'
+import { adminAuth } from './firebase-admin'
+
+async function verifySessionToken(userIdParam: string): Promise<string> {
+  if (
+    userIdParam.startsWith('guest_') || 
+    userIdParam.startsWith('mock_user_') || 
+    userIdParam === 'demo_user' || 
+    userIdParam === 'player_sagacore_default'
+  ) {
+    return userIdParam
+  }
+
+  try {
+    const cookieStore = await cookies()
+    const sessionToken = cookieStore.get('sagacore_session_token')?.value
+    if (!sessionToken) {
+      throw new Error('No session token cookie present.')
+    }
+
+    const decodedToken = await adminAuth.verifyIdToken(sessionToken)
+    if (decodedToken.uid !== userIdParam) {
+      throw new Error(`Authentication identity mismatch: ${decodedToken.uid} vs ${userIdParam}`)
+    }
+
+    return decodedToken.uid
+  } catch (error: any) {
+    console.error('[Security Error] Session verification failed:', error.message || error)
+    throw new Error('Unauthorized database access.')
+  }
+}
 
 // ─── Google Cloud Agent Builder Integration ──────────────────────────────────
 
@@ -907,6 +938,7 @@ Pick the theme that best matches the prompt's aesthetic.`,
 
 export async function saveChapterToMongo(chapter: LoreChapter, userId: string): Promise<void> {
   if (userId.startsWith('guest_')) return
+  await verifySessionToken(userId)
   try {
     await connectDB()
     await LoreChapterModel.findOneAndUpdate(
@@ -955,6 +987,7 @@ export async function savePlayerStateToMongo(
   worldName?: string
 ): Promise<void> {
   if (playerId === 'guest_session') return
+  await verifySessionToken(playerId)
   try {
     await connectDB()
     const updateObj: any = {
@@ -1176,6 +1209,7 @@ Difficulty: ${difficulty}`,
 
 export async function saveQuestToMongo(quest: Quest, userId: string) {
   if (userId.startsWith('guest_')) return quest
+  await verifySessionToken(userId)
   try {
     await connectDB()
 

@@ -29,6 +29,15 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
+const setSessionCookie = (token: string | null) => {
+  if (typeof window === 'undefined') return
+  if (token) {
+    document.cookie = `sagacore_session_token=${token}; path=/; max-age=3600; SameSite=Strict; Secure`
+  } else {
+    document.cookie = 'sagacore_session_token=; path=/; max-age=0'
+  }
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserSession | null>(null)
   const [loading, setLoading] = useState<boolean>(true)
@@ -39,14 +48,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (isFirebaseConfigured && auth) {
       // 1. Real Firebase Auth Observer
-      const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
         if (firebaseUser) {
           setUser({
             uid: firebaseUser.uid,
             email: firebaseUser.email,
           })
+          try {
+            const token = await firebaseUser.getIdToken()
+            setSessionCookie(token)
+          } catch (e) {
+            console.error('Failed to get Firebase token:', e)
+          }
         } else {
           setUser(null)
+          setSessionCookie(null)
         }
         setLoading(false)
       })
@@ -56,7 +72,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const cachedSession = localStorage.getItem('sagacore_mock_session')
         if (cachedSession) {
-          setUser(JSON.parse(cachedSession))
+          const parsed = JSON.parse(cachedSession)
+          setUser(parsed)
+          setSessionCookie(parsed.uid)
         }
       } catch (e) {
         console.error('Failed to parse mock session:', e)
@@ -97,6 +115,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const mockSession = { uid: mockUid, email }
         setUser(mockSession)
         localStorage.setItem('sagacore_mock_session', JSON.stringify(mockSession))
+        setSessionCookie(mockUid)
       } else {
         const msg = 'Invalid email or password.'
         setError(msg)
@@ -144,6 +163,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const mockSession = { uid: mockUid, email }
         setUser(mockSession)
         localStorage.setItem('sagacore_mock_session', JSON.stringify(mockSession))
+        setSessionCookie(mockUid)
       }
     }
   }
@@ -155,6 +175,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         await signOut(auth)
         setUser(null)
+        setSessionCookie(null)
       } catch (err: any) {
         console.error('Sign out error:', err)
       }
@@ -162,6 +183,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Mock Sign-Out
       setUser(null)
       localStorage.removeItem('sagacore_mock_session')
+      setSessionCookie(null)
     }
   }
 
@@ -211,6 +233,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     setUser(guestSession)
     localStorage.setItem('sagacore_mock_session', JSON.stringify(guestSession))
+    setSessionCookie(guestUid)
   }
 
   return (
