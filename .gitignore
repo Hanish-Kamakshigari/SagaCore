@@ -42,3 +42,7 @@ AGENT_BUILDER.md
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# scratch files
+scratch/
+
