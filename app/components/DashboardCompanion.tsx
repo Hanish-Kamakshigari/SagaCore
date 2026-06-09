@@ -1,11 +1,44 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence, useMotionValue, useTransform, useSpring } from 'framer-motion'
 import { Compass, X, Sparkles, AlertCircle, RefreshCw, Check, Send, MessageSquare, HelpCircle } from 'lucide-react'
 
 import { Quest } from '../lib/data'
 import { generateQuestQuizWithAI, chatWithCompanionWithAI } from '../lib/ai'
+
+const getRankName = (lvl: number, currentTheme: 'fantasy' | 'cyberpunk' | 'steampunk' = 'fantasy') => {
+  if (currentTheme === 'cyberpunk') {
+    if (lvl <= 2) return 'Ghost Node'
+    if (lvl === 3) return 'Glitch Runner'
+    if (lvl <= 5) return 'Circuit Breaker'
+    if (lvl <= 7) return 'Neon Phantom'
+    return 'Grid Sovereign'
+  }
+  
+  if (currentTheme === 'steampunk') {
+    if (lvl <= 2) return 'Copper Tinkerer'
+    if (lvl === 3) return 'Gear Warden'
+    if (lvl <= 5) return 'Vault Engineer'
+    if (lvl <= 7) return 'Iron Chancellor'
+    return 'Steam Sovereign'
+  }
+  
+  // Aether Fantasy (Default)
+  const fantasyRanks: Record<number, string> = {
+    1: 'Neophyte Scribe',
+    2: 'Wandering Seeker',
+    3: 'Oath-Bound Apprentice',
+    4: 'Ironwill Adept',
+    5: 'Runebound Artisan',
+    6: 'Veilwalker',
+    7: 'Stormforged Knight',
+    8: 'Arcane Sovereign',
+    9: 'Legendary Architect'
+  }
+  return fantasyRanks[lvl] || fantasyRanks[9] || `Ascended Creator Lvl ${lvl}`
+}
+
 
 
 interface DashboardCompanionProps {
@@ -13,6 +46,7 @@ interface DashboardCompanionProps {
   theme: 'fantasy' | 'cyberpunk' | 'steampunk'
   stability: number
   onReward: (xpBonus: number, stabilityBonus: number, message: string) => void
+  level: number
 }
 
 interface QuizData {
@@ -27,6 +61,7 @@ export default function DashboardCompanion({
   theme,
   stability,
   onReward,
+  level,
 }: DashboardCompanionProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [showTooltip, setShowTooltip] = useState(true)
@@ -44,13 +79,26 @@ export default function DashboardCompanion({
     content: string
   }
 
+  const levelName = getRankName(level, theme)
+  const defaultGreeting = `Greetings, ${levelName}. I am the Aether Core, your companion and guide. Speak to me, and I shall outline the scrolls of this world, or help you debug the layout structures of your active quests.`
+
   const [activeMode, setActiveMode] = useState<'chat' | 'quiz'>('chat')
   const [chatInput, setChatInput] = useState('')
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([
-    { role: 'model', content: "Greetings, Scribe. I am the Aether Core, your companion and guide. Speak to me, and I shall outline the scrolls of this world, or help you debug the layout structures of your active quests." }
+    { role: 'model', content: defaultGreeting }
   ])
   const [chatLoading, setChatLoading] = useState(false)
-  const [message, setMessage] = useState<string>("Greetings, Scribe. I am the Aether Core, your companion and guide. Speak to me, and I shall outline the scrolls of this world, or help you debug the layout structures of your active quests.")
+  const [message, setMessage] = useState<string>(defaultGreeting)
+
+  useEffect(() => {
+    // Only update if the user hasn't sent any messages in the chat yet
+    if (chatHistory.length === 1 && chatHistory[0].role === 'model') {
+      setChatHistory([{ role: 'model', content: defaultGreeting }])
+      if (activeMode === 'chat') {
+        setMessage(defaultGreeting)
+      }
+    }
+  }, [level, theme, defaultGreeting])
 
 
   // Tilt physics for card hover
@@ -225,7 +273,7 @@ export default function DashboardCompanion({
   const handleTabChange = (mode: 'chat' | 'quiz') => {
     setActiveMode(mode)
     if (mode === 'chat') {
-      const latestModelMsg = [...chatHistory].reverse().find(m => m.role === 'model')?.content || "Greetings, Scribe. I am the Aether Core."
+      const latestModelMsg = [...chatHistory].reverse().find(m => m.role === 'model')?.content || defaultGreeting
       setMessage(latestModelMsg)
     } else {
       if (quizQuestions) {
@@ -499,9 +547,9 @@ export default function DashboardCompanion({
                           type="button"
                           onClick={() => {
                             setChatHistory([
-                              { role: 'model', content: "Greetings, Scribe. I am the Aether Core, your companion and guide. Speak to me, and I shall outline the scrolls of this world, or help you debug the layout structures of your active quests." }
+                              { role: 'model', content: defaultGreeting }
                             ])
-                            setMessage("Greetings, Scribe. I am the Aether Core, your companion and guide. Speak to me, and I shall outline the scrolls of this world, or help you debug the layout structures of your active quests.")
+                            setMessage(defaultGreeting)
                           }}
                           className="text-[9px] font-mono font-bold text-zinc-555 hover:text-zinc-300 flex items-center gap-1 cursor-pointer hover:underline"
                         >

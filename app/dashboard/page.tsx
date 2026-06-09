@@ -2692,6 +2692,7 @@ export default function Dashboard() {
         theme={activeWorld.theme} 
         stability={stability}
         onReward={handleCompanionReward} 
+        level={level}
       />
     </main>
   )

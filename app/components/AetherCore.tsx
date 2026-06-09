@@ -1,10 +1,43 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence, useMotionValue, useTransform, useSpring } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '../context/AuthContext'
 import { Sparkles, Cpu, BookOpen, Shield, ChevronRight, ChevronLeft, Compass, KeyRound, HelpCircle } from 'lucide-react'
+
+const getRankName = (lvl: number, currentTheme: 'fantasy' | 'cyberpunk' | 'steampunk' = 'fantasy') => {
+  if (currentTheme === 'cyberpunk') {
+    if (lvl <= 2) return 'Ghost Node'
+    if (lvl === 3) return 'Glitch Runner'
+    if (lvl <= 5) return 'Circuit Breaker'
+    if (lvl <= 7) return 'Neon Phantom'
+    return 'Grid Sovereign'
+  }
+  
+  if (currentTheme === 'steampunk') {
+    if (lvl <= 2) return 'Copper Tinkerer'
+    if (lvl === 3) return 'Gear Warden'
+    if (lvl <= 5) return 'Vault Engineer'
+    if (lvl <= 7) return 'Iron Chancellor'
+    return 'Steam Sovereign'
+  }
+  
+  // Aether Fantasy (Default)
+  const fantasyRanks: Record<number, string> = {
+    1: 'Neophyte Scribe',
+    2: 'Wandering Seeker',
+    3: 'Oath-Bound Apprentice',
+    4: 'Ironwill Adept',
+    5: 'Runebound Artisan',
+    6: 'Veilwalker',
+    7: 'Stormforged Knight',
+    8: 'Arcane Sovereign',
+    9: 'Legendary Architect'
+  }
+  return fantasyRanks[lvl] || fantasyRanks[9] || `Ascended Creator Lvl ${lvl}`
+}
+
 
 export default function AetherCore() {
   const { user, loginAsGuest } = useAuth()
@@ -12,6 +45,16 @@ export default function AetherCore() {
   const [step, setStep] = useState(0)
   const [isHovered, setIsHovered] = useState(false)
   const [isLoggingIn, setIsLoggingIn] = useState(false)
+  const [userLevel, setUserLevel] = useState<number | null>(null)
+
+  useEffect(() => {
+    if (user) {
+      const localLevel = localStorage.getItem(`sagacore_${user.uid}_level`)
+      if (localLevel) {
+        setUserLevel(JSON.parse(localLevel))
+      }
+    }
+  }, [user])
 
   // Mouse tilt physics for premium card feel
   const cardRef = useRef<HTMLDivElement>(null)
@@ -50,11 +93,16 @@ export default function AetherCore() {
     }
   }
 
+  const levelName = userLevel ? getRankName(userLevel, 'fantasy') : null
+  const firstStepDesc = levelName
+    ? `Welcome back, ${levelName}. I am the Aether Core. I monitor your progress, forge quests, and scribe history. Let us resume your journey.`
+    : "An interface to the SagaCore World Engine. I monitor your progress, forge quests, and scribe history. Let me show you how this realm functions."
+
   // Steps data
   const steps = [
     {
       title: "I am the Aether Core",
-      desc: "An interface to the SagaCore World Engine. I monitor your progress, forge quests, and scribe history. Let me show you how this realm functions.",
+      desc: firstStepDesc,
       icon: HelpCircle,
       accent: "from-red-500/20 to-orange-500/20",
       iconColor: "text-amber-400"
