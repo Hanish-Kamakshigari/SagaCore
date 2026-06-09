@@ -204,13 +204,18 @@ async function callGemini(payload: any): Promise<string> {
       console.log('[Agent Provider] Delegating query to Google Cloud Agent Builder...')
       const result = await callAgentBuilder(payload)
       
+      const systemPrompt = payload.system || ''
+      const expectsJSON = payload.expectsJSON !== undefined
+        ? payload.expectsJSON
+        : (systemPrompt.toLowerCase().includes('json') || systemPrompt.toLowerCase().includes('object') || systemPrompt.toLowerCase().includes('array'))
+
       // Since SAGACORE's core engines expect structured JSON payloads to save into MongoDB,
-      // verify if the response is valid JSON. If the Agent Builder returned conversational prose,
-      // trigger the fallback to direct Gemini API generation for app stability.
-      if (isValidJSON(result)) {
+      // verify if the response is valid JSON. If the call does not expect JSON (e.g. conversational chat),
+      // we bypass the validation and return the Agent Builder response directly.
+      if (!expectsJSON || isValidJSON(result)) {
         return result
       } else {
-        throw new Error(`Agent Builder returned natural language dialog instead of structured JSON. Response: "${result.substring(0, 150)}${result.length > 150 ? '...' : ''}"`)
+        throw new Error(`Agent Builder returned conversational dialog instead of structured JSON. Response: "${result.substring(0, 150)}${result.length > 150 ? '...' : ''}"`)
       }
     } catch (err: any) {
       console.warn('[Agent Provider Warning] GCP Agent Builder failed or returned non-JSON, cascading to local Gemini fallback:', err.message || err)
