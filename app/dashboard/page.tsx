@@ -2133,11 +2133,7 @@ export default function Dashboard() {
 
             {/* Dream Forge — only change: button shows spinner when isForging */}
             <div className={`relative overflow-hidden rounded-3xl border ${colors.borderGlow} ${colors.hoverGlow} bg-gradient-to-r from-zinc-900/40 via-zinc-900/20 to-zinc-950/40 p-6 shadow-xl backdrop-blur-xl transition-all duration-500`}>
-              <div className="absolute right-4 top-4 text-purple-500/10">
-                <Sparkle size={48} className="animate-spin-slow" />
-              </div>
               <h3 className="text-lg font-bold text-zinc-100 flex items-center gap-2">
-                <Sparkles size={16} className={`${colors.activeText} animate-pulse`} />
                 The Dream Forge
               </h3>
               <p className="mt-1 text-sm text-zinc-400">
