@@ -9,7 +9,7 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Sword, BookOpen, Sparkles, Check, ChevronDown, ChevronUp, X, Loader2, Lock, Clock } from 'lucide-react'
+import { Sword, BookOpen, Sparkles, Check, ChevronDown, ChevronUp, X, Loader2, Lock, Clock, Trophy, Award, Play } from 'lucide-react'
 import { Quest } from '../lib/data'
 
 function QuestTimer({ deadline, isCompleted }: { deadline?: string; isCompleted: boolean }) {
@@ -64,6 +64,146 @@ function QuestTimer({ deadline, isCompleted }: { deadline?: string; isCompleted:
   )
 }
 
+const playNodeChime = (theme: 'fantasy' | 'cyberpunk' | 'steampunk' = 'fantasy', type: 'complete' | 'uncomplete' | 'ascend') => {
+  try {
+    const AudioContext = window.AudioContext || (window as any).webkitAudioContext
+    if (!AudioContext) return
+    const ctx = new AudioContext()
+    const now = ctx.currentTime
+
+    if (type === 'uncomplete') {
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+      osc.type = 'triangle'
+      osc.frequency.setValueAtTime(180, now)
+      osc.frequency.exponentialRampToValueAtTime(100, now + 0.15)
+      gain.gain.setValueAtTime(0.08, now)
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15)
+      osc.connect(gain)
+      gain.connect(ctx.destination)
+      osc.start(now)
+      osc.stop(now + 0.15)
+      return
+    }
+
+    if (type === 'ascend') {
+      const notes = [523.25, 659.25, 783.99, 1046.50]
+      notes.forEach((freq, idx) => {
+        const osc = ctx.createOscillator()
+        const gain = ctx.createGain()
+        osc.type = theme === 'cyberpunk' ? 'sawtooth' : theme === 'steampunk' ? 'triangle' : 'sine'
+        osc.frequency.setValueAtTime(freq, now + idx * 0.08)
+        gain.gain.setValueAtTime(0, now + idx * 0.08)
+        gain.gain.linearRampToValueAtTime(0.08, now + idx * 0.08 + 0.02)
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.08 + 0.4)
+        osc.connect(gain)
+        gain.connect(ctx.destination)
+        osc.start(now + idx * 0.08)
+        osc.stop(now + idx * 0.08 + 0.4)
+      })
+      return
+    }
+
+    if (theme === 'cyberpunk') {
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+      osc.type = 'sawtooth'
+      osc.frequency.setValueAtTime(900, now)
+      osc.frequency.exponentialRampToValueAtTime(1600, now + 0.12)
+      
+      const filter = ctx.createBiquadFilter()
+      filter.type = 'highpass'
+      filter.frequency.setValueAtTime(800, now)
+
+      gain.gain.setValueAtTime(0.05, now)
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.12)
+      
+      osc.connect(filter)
+      filter.connect(gain)
+      gain.connect(ctx.destination)
+      
+      osc.start(now)
+      osc.stop(now + 0.12)
+    } else if (theme === 'steampunk') {
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+      osc.type = 'triangle'
+      osc.frequency.setValueAtTime(120, now)
+      osc.frequency.exponentialRampToValueAtTime(80, now + 0.08)
+
+      gain.gain.setValueAtTime(0.1, now)
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08)
+
+      osc.connect(gain)
+      gain.connect(ctx.destination)
+      osc.start(now)
+      osc.stop(now + 0.08)
+
+      const clickOsc = ctx.createOscillator()
+      const clickGain = ctx.createGain()
+      clickOsc.type = 'sine'
+      clickOsc.frequency.setValueAtTime(2000, now)
+      clickGain.gain.setValueAtTime(0.05, now)
+      clickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.02)
+      clickOsc.connect(clickGain)
+      clickGain.connect(ctx.destination)
+      clickOsc.start(now)
+      clickOsc.stop(now + 0.02)
+    } else {
+      const notes = [880.00, 1109.73]
+      notes.forEach((freq, idx) => {
+        const osc = ctx.createOscillator()
+        const gain = ctx.createGain()
+        osc.type = 'sine'
+        osc.frequency.setValueAtTime(freq, now + idx * 0.05)
+        gain.gain.setValueAtTime(0, now + idx * 0.05)
+        gain.gain.linearRampToValueAtTime(0.06, now + idx * 0.05 + 0.01)
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.05 + 0.25)
+        osc.connect(gain)
+        gain.connect(ctx.destination)
+        osc.start(now + idx * 0.05)
+        osc.stop(now + idx * 0.05 + 0.25)
+      })
+    }
+  } catch (err) {
+    console.warn('Audio chime synthesis failed:', err)
+  }
+}
+
+const ParticleExplosion = ({ color }: { color: string }) => {
+  const particles = Array.from({ length: 10 })
+  return (
+    <div className="absolute inset-0 pointer-events-none z-30 flex items-center justify-center">
+      {particles.map((_, idx) => {
+        const angle = (idx / 10) * 360
+        const distance = 20 + Math.random() * 25
+        const x = Math.cos((angle * Math.PI) / 180) * distance
+        const y = Math.sin((angle * Math.PI) / 180) * distance
+        const size = 3 + Math.random() * 4
+
+        return (
+          <motion.div
+            key={idx}
+            initial={{ x: 0, y: 0, scale: 0.6, opacity: 1 }}
+            animate={{ 
+              x: x, 
+              y: y, 
+              scale: [0.6, 1.2, 0], 
+              opacity: [1, 1, 0] 
+            }}
+            transition={{ duration: 0.8, ease: 'easeOut' }}
+            className={`absolute rounded-full ${color}`}
+            style={{
+              width: `${size}px`,
+              height: `${size}px`,
+            }}
+          />
+        )
+      })}
+    </div>
+  )
+}
+
 interface QuestCardProps {
   quest: Quest
   onComplete: (id: number) => void
@@ -75,6 +215,7 @@ interface QuestCardProps {
   onToggleTask?: (questId: number, taskIndex: number) => void
   isLocked?: boolean
   parentQuestTitle?: string
+  worldTheme?: 'fantasy' | 'cyberpunk' | 'steampunk'
 }
 
 export default function QuestCard({
@@ -88,8 +229,38 @@ export default function QuestCard({
   onToggleTask,
   isLocked = false,
   parentQuestTitle,
+  worldTheme = 'fantasy',
 }: QuestCardProps) {
   const [expanded, setExpanded] = useState(!!(quest.tasks && quest.tasks.length > 0))
+  const [viewMode, setViewMode] = useState<'list' | 'flowchart'>('list')
+  const [completedState, setCompletedState] = useState<boolean[]>(quest.completedTasks || [])
+  const [activeBursts, setActiveBursts] = useState<Record<number, boolean>>({})
+
+  useEffect(() => {
+    const currentCompleted = quest.completedTasks || []
+    let changed = false
+    currentCompleted.forEach((val, idx) => {
+      const prevVal = completedState[idx] ?? false
+      if (val && !prevVal) {
+        setActiveBursts((prev) => ({ ...prev, [idx]: true }))
+        playNodeChime(worldTheme, 'complete')
+        setTimeout(() => {
+          setActiveBursts((prev) => {
+            const next = { ...prev }
+            delete next[idx]
+            return next
+          })
+        }, 1000)
+        changed = true
+      } else if (!val && prevVal) {
+        playNodeChime(worldTheme, 'uncomplete')
+        changed = true
+      }
+    })
+    if (changed || currentCompleted.length !== completedState.length) {
+      setCompletedState(currentCompleted)
+    }
+  }, [quest.completedTasks, worldTheme, completedState])
 
   // ── Difficulty Colour Configurations (Silver, Cyan, Purple, Gold) ─────────
   const difficultyColors = {
@@ -358,12 +529,42 @@ export default function QuestCard({
             {/* Task Checklist Spacer */}
             {hasTasks && <div className="mt-5 border-t border-zinc-800/40 pt-4" />}
 
-            {/* Task Checklist */}
+            {/* View Mode Toggle */}
             {hasTasks && (
-              <div className="mt-6 space-y-3.5 px-0.5">
-                <span className="text-xs font-bold uppercase tracking-widest text-zinc-400 block mb-2 font-mono">
-                  Sacred Tasks Checklist
+              <div className="mt-4 flex items-center justify-between px-0.5 select-none">
+                <span className="text-xs font-bold uppercase tracking-widest text-zinc-400 font-mono">
+                  Sacred Quest progression
                 </span>
+                <div className="flex rounded-xl bg-zinc-950 p-1 border border-zinc-850">
+                  <button
+                    type="button"
+                    onClick={() => setViewMode('list')}
+                    className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wide transition-all duration-200 hover:cursor-pointer ${
+                      viewMode === 'list'
+                        ? 'bg-zinc-900 text-zinc-100 shadow-sm border border-zinc-800'
+                        : 'text-zinc-500 hover:text-zinc-300'
+                    }`}
+                  >
+                    Checklist
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setViewMode('flowchart')}
+                    className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wide transition-all duration-200 hover:cursor-pointer ${
+                      viewMode === 'flowchart'
+                        ? 'bg-zinc-900 text-zinc-100 shadow-sm border border-zinc-800'
+                        : 'text-zinc-500 hover:text-zinc-300'
+                    }`}
+                  >
+                    Flowchart
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Task Checklist (List View) */}
+            {hasTasks && viewMode === 'list' && (
+              <div className="mt-6 space-y-3.5 px-0.5">
                 {quest.tasks!.map((task, i) => {
                   const isChecked = quest.completedTasks?.[i] ?? false
                   const parts = task.split('|')
@@ -374,7 +575,7 @@ export default function QuestCard({
                     <button
                       key={i}
                       onClick={() => onToggleTask && onToggleTask(quest.id, i)}
-                      className={`flex items-start gap-4 w-full text-left p-4 rounded-2xl border border-zinc-850/50 transition-all duration-300 ${
+                      className={`flex items-start gap-4 w-full text-left p-4 rounded-2xl border border-zinc-850/50 transition-all duration-300 hover:cursor-pointer ${
                         isChecked 
                           ? theme.taskCheckedHighlight 
                           : `bg-zinc-900/15 group ${theme.taskHighlight}`
@@ -410,6 +611,211 @@ export default function QuestCard({
                     </button>
                   )
                 })}
+              </div>
+            )}
+
+            {/* Task Checklist (Flowchart View) */}
+            {hasTasks && viewMode === 'flowchart' && (
+              <div className="mt-8 px-0.5 relative select-none">
+                <div className="flex flex-col items-center">
+                  
+                  {/* Start Node */}
+                  <div className="flex flex-col items-center w-full max-w-md">
+                    <div className="flex items-center gap-3 rounded-2xl border bg-zinc-950/80 p-3.5 w-full shadow-md border-zinc-850">
+                      <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-zinc-900 border border-zinc-850 ${theme.xpText.split(' ')[0]}`}>
+                        <Play size={15} className="fill-current" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[9px] uppercase tracking-widest text-zinc-500 font-mono font-bold">Quest Inception</p>
+                        <p className="text-sm font-bold text-zinc-200 truncate">{quest.title}</p>
+                      </div>
+                    </div>
+                    {/* Connector */}
+                    <div className="relative h-8 w-[2px] flex items-center justify-center">
+                      <div className={`absolute inset-0 w-full h-full ${
+                        quest.completedTasks?.[0] 
+                          ? 'hidden' 
+                          : 'bg-zinc-850'
+                      }`} />
+                      {quest.completedTasks?.[0] && (
+                        <motion.div
+                          initial={{ height: 0 }}
+                          animate={{ height: '100%' }}
+                          transition={{ duration: 0.35, ease: 'easeOut' }}
+                          className={`absolute top-0 w-full ${theme.glowColor} shadow-[0_0_8px_rgba(255,255,255,0.25)]`}
+                        />
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Task Nodes */}
+                  {quest.tasks!.map((task, i) => {
+                    const isCompleted = quest.completedTasks?.[i] ?? false
+                    const isPrevCompleted = i === 0 || (quest.completedTasks?.[i - 1] ?? false)
+                    const isActive = !isCompleted && isPrevCompleted
+                    const isUpcoming = !isCompleted && !isPrevCompleted
+
+                    const parts = task.split('|')
+                    const mainTask = parts[0]?.trim() || task
+                    const loreSubtitle = parts[1]?.trim() || ''
+
+                    let nodeStyle = 'border-zinc-850 bg-zinc-950/20 text-zinc-600 opacity-60'
+                    let circleStyle = 'border-zinc-850 bg-zinc-900/50 text-zinc-550'
+                    
+                    if (isCompleted) {
+                      nodeStyle = `${theme.taskCheckedHighlight} border-l-4 ${theme.completedBorder} text-zinc-300`
+                      circleStyle = `${theme.checkboxChecked} text-white`
+                    } else if (isActive) {
+                      nodeStyle = `bg-zinc-900/30 border border-zinc-700/80 text-zinc-200 shadow-[0_0_15px_rgba(255,255,255,0.03)] animate-pulse-soft`
+                      circleStyle = `border-white/40 bg-zinc-950 text-white ring-2 ring-white/10`
+                    }
+
+                    const showNextConnector = i < quest.tasks!.length - 1
+
+                    return (
+                      <div key={i} className="flex flex-col items-center w-full max-w-md">
+                        <button
+                          type="button"
+                          disabled={isUpcoming}
+                          onClick={() => onToggleTask && onToggleTask(quest.id, i)}
+                          className={`flex items-start gap-4 p-4 rounded-2xl border text-left w-full transition-all duration-300 hover:scale-[1.01] active:scale-[0.99] group ${
+                            isUpcoming ? 'cursor-not-allowed' : 'hover:cursor-pointer'
+                          } ${nodeStyle}`}
+                        >
+                          <div className="relative shrink-0">
+                            <div className={`flex h-8 w-8 items-center justify-center rounded-xl border font-mono text-xs font-bold transition-all duration-300 ${circleStyle}`}>
+                              {isCompleted ? <Check size={12} strokeWidth={3} /> : isUpcoming ? <Lock size={10} className="text-zinc-650" /> : i + 1}
+                            </div>
+                            {activeBursts[i] && <ParticleExplosion color={theme.glowColor} />}
+                          </div>
+
+                          <div className="flex-1 min-w-0 flex flex-col justify-between">
+                            <div className={`transition-all duration-300 ${isUpcoming ? 'blur-[1.5px] opacity-40 select-none' : ''}`}>
+                              <div className="flex items-center justify-between gap-2">
+                                <span className={`text-sm font-semibold transition-all duration-300 ${
+                                  isCompleted ? 'line-through text-zinc-550' : 'text-zinc-200'
+                                }`}>
+                                  {mainTask}
+                                </span>
+                                {!isUpcoming && (
+                                  <span className={`text-[9px] font-mono font-bold px-2 py-0.5 rounded-full ${theme.xpText}`}>
+                                    +25 XP
+                                  </span>
+                                )}
+                              </div>
+                              {loreSubtitle && (
+                                <p className={`text-xs italic mt-1 font-serif tracking-wide ${
+                                  isCompleted ? 'text-zinc-650' : 'text-zinc-400 font-medium'
+                                }`}>
+                                  “{loreSubtitle}”
+                                </p>
+                              )}
+                            </div>
+                            
+                            <div className="mt-2 flex items-center gap-1.5 select-none">
+                              {isCompleted && (
+                                <span className="inline-flex items-center gap-1 text-[9px] font-extrabold uppercase text-green-400 bg-green-500/10 px-2 py-0.5 rounded-md border border-green-500/15">
+                                  Completed
+                                </span>
+                              )}
+                              {isActive && (
+                                <span className={`inline-flex items-center gap-1 text-[9px] font-extrabold uppercase bg-white/5 px-2 py-0.5 rounded-md border border-white/10 text-white animate-pulse`}>
+                                  Active Step
+                                </span>
+                              )}
+                              {isUpcoming && (
+                                <span className="inline-flex items-center gap-1 text-[9px] font-extrabold uppercase text-zinc-650 bg-zinc-900/40 px-2.5 py-0.5 rounded-md border border-zinc-850/60">
+                                  <Lock size={8} /> Locked
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </button>
+                        
+                        {showNextConnector && (
+                          <div className="relative h-8 w-[2px] flex items-center justify-center">
+                            <div className={`absolute inset-0 w-full h-full ${
+                              isCompleted 
+                                ? 'hidden' 
+                                : 'border-dashed border-l-2 border-zinc-850'
+                            }`} />
+                            {isCompleted && (
+                              <motion.div
+                                initial={{ height: 0 }}
+                                animate={{ height: '100%' }}
+                                transition={{ duration: 0.4, ease: 'easeOut' }}
+                                className={`absolute top-0 w-full ${theme.glowColor} shadow-[0_0_8px_rgba(255,255,255,0.25)]`}
+                              />
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+
+                  {/* Connector to end node */}
+                  {(() => {
+                    const allTasksCompleted = quest.completedTasks?.every((t) => t) ?? false
+                    return (
+                      <div className="relative h-8 w-[2px] flex items-center justify-center">
+                        <div className={`absolute inset-0 w-full h-full ${
+                          allTasksCompleted 
+                            ? 'hidden' 
+                            : 'border-dashed border-l-2 border-zinc-850'
+                        }`} />
+                        {allTasksCompleted && (
+                          <motion.div
+                            initial={{ height: 0 }}
+                            animate={{ height: '100%' }}
+                            transition={{ duration: 0.45, ease: 'easeOut' }}
+                            className={`absolute top-0 w-full ${theme.glowColor} shadow-[0_0_8px_rgba(255,255,255,0.25)]`}
+                          />
+                        )}
+                      </div>
+                    )
+                  })()}
+
+                  {/* End Node */}
+                  {(() => {
+                    const allTasksCompleted = quest.completedTasks?.every((t) => t) ?? false
+                    const endNodeStyle = allTasksCompleted
+                      ? `${theme.completeBtn} border animate-pulse`
+                      : 'border-zinc-850 bg-zinc-950/20 text-zinc-600 opacity-50 cursor-not-allowed'
+                    return (
+                      <div className="flex flex-col items-center w-full max-w-md">
+                        <button
+                          type="button"
+                          disabled={!allTasksCompleted}
+                          onClick={() => {
+                            playNodeChime(worldTheme, 'ascend')
+                            onComplete(quest.id)
+                          }}
+                          className={`flex items-center gap-3.5 rounded-2xl p-4 w-full text-left transition-all duration-300 ${
+                            allTasksCompleted ? 'hover:scale-[1.02] active:scale-[0.98] hover:cursor-pointer' : ''
+                          } ${endNodeStyle}`}
+                        >
+                          <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border ${
+                            allTasksCompleted 
+                              ? 'bg-yellow-500/10 border-yellow-500/35 text-yellow-450 animate-bounce' 
+                              : 'bg-zinc-900/50 border-zinc-850 text-zinc-550'
+                          }`}>
+                            {allTasksCompleted ? <Trophy size={18} /> : <Lock size={16} />}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[9px] uppercase tracking-widest text-zinc-500 font-mono font-bold">Quest Finalization</p>
+                            <p className={`text-sm font-black uppercase tracking-wider ${allTasksCompleted ? 'text-yellow-450' : 'text-zinc-500'}`}>
+                              {allTasksCompleted ? 'Claim Glory & Finish' : 'Ascension Locked'}
+                            </p>
+                            <p className="text-xs text-zinc-500 mt-0.5 leading-tight">
+                              {allTasksCompleted ? 'Scribe this quest into the archives and earn bonuses!' : 'Resolve all steps in sequence to unlock.'}
+                            </p>
+                          </div>
+                        </button>
+                      </div>
+                    )
+                  })()}
+
+                </div>
               </div>
             )}
 
@@ -493,12 +899,15 @@ export default function QuestCard({
 
           {/* Complete Button */}
           <button
-            onClick={() => onComplete(quest.id)}
+            onClick={() => {
+              playNodeChime(worldTheme, 'ascend')
+              onComplete(quest.id)
+            }}
             disabled={isCompleteDisabled}
-            className={`relative h-9 overflow-hidden flex items-center justify-center rounded-xl border px-5 text-xs font-bold transition-all duration-300 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap shrink-0 ${
+            className={`relative h-9 overflow-hidden flex items-center justify-center rounded-xl border px-5 text-xs font-bold transition-all duration-300 active:scale-[95] disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap shrink-0 ${
               allTasksCompleted
                 ? `hover:cursor-pointer ${theme.completeBtn}`
-                : 'border-zinc-800 bg-zinc-950 text-zinc-500'
+                : 'border-zinc-800 bg-zinc-950 text-zinc-550'
             }`}
           >
             {!hasTasks ? 'Unlock Roadmap First' : allTasksCompleted ? 'Complete Quest' : 'Finish all tasks'}

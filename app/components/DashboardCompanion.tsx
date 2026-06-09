@@ -250,10 +250,10 @@ export default function DashboardCompanion({
   // Theme-aware styles
   const themeColors = {
     fantasy: {
-      accent: "text-purple-400 border-purple-500/20 bg-purple-500/5",
-      btn: "bg-gradient-to-r from-purple-600 to-indigo-500 hover:shadow-purple-500/10",
-      glow: "bg-purple-500/10",
-      badge: "border-purple-500/30 text-purple-300 bg-purple-500/10",
+      accent: "text-[#a78bfa] border-[#7B4FCC]/20 bg-[#7B4FCC]/5",
+      btn: "bg-gradient-to-r from-[#7B4FCC] to-[#633BB3] hover:shadow-[0_0_15px_rgba(123,79,204,0.25)]",
+      glow: "bg-[#7B4FCC]/10",
+      badge: "border-[#7B4FCC]/30 text-[#c4b5fd] bg-[#7B4FCC]/10",
     },
     cyberpunk: {
       accent: "text-cyan-400 border-cyan-500/20 bg-cyan-500/5",
@@ -271,20 +271,20 @@ export default function DashboardCompanion({
 
   const coreVisuals = {
     fantasy: {
-      glow: "bg-purple-500/15",
-      borderHover: "hover:border-purple-500/40",
-      text: "text-purple-400",
-      shadow: "drop-shadow-[0_0_10px_rgba(168,85,247,0.5)]",
-      shadowLarge: "drop-shadow-[0_0_12px_rgba(168,85,247,0.55)]",
-      fill1: "fill-purple-500/25 stroke-purple-400/60",
+      glow: "bg-[#7B4FCC]/15",
+      borderHover: "hover:border-[#7B4FCC]/40",
+      text: "text-[#a78bfa]",
+      shadow: "drop-shadow-[0_0_10px_rgba(123,79,204,0.5)]",
+      shadowLarge: "drop-shadow-[0_0_12px_rgba(123,79,204,0.55)]",
+      fill1: "fill-[#7B4FCC]/25 stroke-[#a78bfa]/60",
       fill2: "fill-indigo-500/30 stroke-indigo-400/60",
-      fill3: "fill-purple-600/35 stroke-purple-500/70",
+      fill3: "fill-[#633BB3]/35 stroke-[#7B4FCC]/70",
       fill4: "fill-indigo-600/40 stroke-indigo-500/70",
-      progressBar: "bg-purple-500",
-      selectedOptionBorder: "border-purple-500/60 bg-purple-500/10 text-purple-200 shadow-[0_0_15px_rgba(168,85,247,0.08)]",
-      selectedOptionCircle: "border-purple-500 bg-purple-500 text-black",
-      focusBorder: "focus:border-purple-500/50",
-      spinner: "border-purple-500/20 border-t-purple-500",
+      progressBar: "bg-[#7B4FCC]",
+      selectedOptionBorder: "border-[#7B4FCC]/60 bg-[#7B4FCC]/10 text-purple-200 shadow-[0_0_15px_rgba(123,79,204,0.08)]",
+      selectedOptionCircle: "border-[#7B4FCC] bg-[#7B4FCC] text-white",
+      focusBorder: "focus:border-[#7B4FCC]/50",
+      spinner: "border-[#7B4FCC]/20 border-t-[#7B4FCC]",
     },
     cyberpunk: {
       glow: "bg-cyan-500/15",

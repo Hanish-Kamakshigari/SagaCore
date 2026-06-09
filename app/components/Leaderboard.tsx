@@ -42,31 +42,31 @@ export default function Leaderboard({ theme = 'fantasy', activeUserUid }: Leader
   }, [])
 
   const styles = {
-    fantasy: 'hover:border-purple-500/40 hover:shadow-[0_0_25px_rgba(168,85,247,0.08)] border-zinc-800/80 bg-zinc-950/50',
+    fantasy: 'hover:border-[#7B4FCC]/40 hover:shadow-[0_0_25px_rgba(123,79,204,0.08)] border-zinc-800/80 bg-zinc-950/50',
     cyberpunk: 'hover:border-cyan-500/40 hover:shadow-[0_0_25px_rgba(6,182,212,0.08)] border-zinc-800/80 bg-zinc-950/50',
     steampunk: 'hover:border-orange-500/40 hover:shadow-[0_0_25px_rgba(249,115,22,0.08)] border-zinc-800/80 bg-zinc-950/50',
   }[theme]
 
   const accentColor = {
-    fantasy: 'text-purple-400',
+    fantasy: 'text-[#a78bfa]',
     cyberpunk: 'text-cyan-400',
     steampunk: 'text-orange-400',
   }[theme]
 
   const bgGlows = {
-    fantasy: { left: 'bg-purple-500/5', right: 'bg-indigo-500/5' },
+    fantasy: { left: 'bg-[#7B4FCC]/5', right: 'bg-purple-900/5' },
     cyberpunk: { left: 'bg-cyan-500/5', right: 'bg-blue-500/5' },
     steampunk: { left: 'bg-orange-500/5', right: 'bg-amber-500/5' },
   }[theme]
 
   const selfBg = {
-    fantasy: 'bg-purple-950/10',
+    fantasy: 'bg-[#7B4FCC]/10',
     cyberpunk: 'bg-cyan-950/10',
     steampunk: 'bg-orange-950/10',
   }[theme]
 
   const heroBadge = {
-    fantasy: 'bg-purple-500/20 border-purple-500/30 text-purple-300',
+    fantasy: 'bg-[#7B4FCC]/20 border-[#7B4FCC]/30 text-[#c4b5fd]',
     cyberpunk: 'bg-cyan-500/20 border-cyan-500/30 text-cyan-300',
     steampunk: 'bg-orange-500/20 border-orange-500/30 text-orange-350',
   }[theme]
@@ -170,7 +170,7 @@ export default function Leaderboard({ theme = 'fantasy', activeUserUid }: Leader
                       </td>
                       <td className="py-4">
                         <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider border ${
-                          player.worldTheme === 'fantasy' ? 'bg-purple-500/10 border-purple-500/20 text-purple-300' :
+                          player.worldTheme === 'fantasy' ? 'bg-[#7B4FCC]/10 border-[#7B4FCC]/20 text-[#c4b5fd]' :
                           player.worldTheme === 'cyberpunk' ? 'bg-cyan-500/10 border-cyan-500/20 text-cyan-300' :
                           'bg-orange-500/10 border-orange-500/20 text-orange-300'
                         }`}>

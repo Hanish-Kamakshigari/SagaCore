@@ -12,31 +12,31 @@ interface LoreCodexProps {
 
 export default function LoreCodex({ chapters, theme = 'fantasy', isWriting = false }: LoreCodexProps) {
   const styles = {
-    fantasy: 'hover:border-purple-500/40 hover:shadow-[0_0_25px_rgba(168,85,247,0.08)]',
+    fantasy: 'hover:border-[#7B4FCC]/40 hover:shadow-[0_0_25px_rgba(123,79,204,0.08)]',
     cyberpunk: 'hover:border-cyan-500/40 hover:shadow-[0_0_25px_rgba(6,182,212,0.08)]',
     steampunk: 'hover:border-orange-500/40 hover:shadow-[0_0_25px_rgba(249,115,22,0.08)]',
   }[theme]
 
   const loaderStyles = {
-    fantasy: 'border-purple-500/30 bg-purple-500/5 text-purple-400',
+    fantasy: 'border-[#7B4FCC]/30 bg-[#7B4FCC]/5 text-[#a78bfa]',
     cyberpunk: 'border-cyan-500/30 bg-cyan-500/5 text-cyan-400',
     steampunk: 'border-orange-500/30 bg-orange-500/5 text-orange-400',
   }[theme]
 
   const dotStyles = {
-    fantasy: 'bg-purple-500',
+    fantasy: 'bg-[#7B4FCC]',
     cyberpunk: 'bg-cyan-500',
     steampunk: 'bg-orange-500',
   }[theme]
 
   const accentColor = {
-    fantasy: 'text-purple-400',
+    fantasy: 'text-[#a78bfa]',
     cyberpunk: 'text-cyan-400',
     steampunk: 'text-orange-400',
   }[theme]
 
   const bgGlows = {
-    fantasy: { left: 'bg-purple-500/5', right: 'bg-indigo-500/5' },
+    fantasy: { left: 'bg-[#7B4FCC]/5', right: 'bg-purple-900/5' },
     cyberpunk: { left: 'bg-cyan-500/5', right: 'bg-blue-500/5' },
     steampunk: { left: 'bg-orange-500/5', right: 'bg-amber-500/5' },
   }[theme]

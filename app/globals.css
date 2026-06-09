@@ -183,3 +183,41 @@ input:-webkit-autofill:focus {
   box-shadow: 0 0 0px 1000px #0d0d0f inset !important;
   transition: background-color 5000s ease-in-out 0s;
 }
+
+/* ─── Premium Dynamic Themes backgrounds ─── */
+@keyframes spin-cw {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+@keyframes spin-ccw {
+  0% { transform: rotate(360deg); }
+  100% { transform: rotate(0deg); }
+}
+@keyframes pulse-soft {
+  0%, 100% { opacity: 0.25; transform: scale(1); }
+  50% { opacity: 0.45; transform: scale(1.08); }
+}
+@keyframes matrix-fade {
+  0% { transform: translateY(-20%); opacity: 0; }
+  15% { opacity: 0.8; }
+  85% { opacity: 0.8; }
+  100% { transform: translateY(120%); opacity: 0; }
+}
+@keyframes stardust-drift {
+  0% { transform: translateY(0px) translateX(0px) rotate(0deg); opacity: 0; }
+  15% { opacity: 0.6; }
+  85% { opacity: 0.6; }
+  100% { transform: translateY(-120px) translateX(60px) rotate(90deg); opacity: 0; }
+}
+@keyframes scanline-anim {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
+}
+
+.animate-spin-slow { animation: spin-cw 45s linear infinite; }
+.animate-spin-slow-reverse { animation: spin-ccw 55s linear infinite; }
+.animate-pulse-soft { animation: pulse-soft 8s ease-in-out infinite; }
+.animate-matrix-stream { animation: matrix-fade 12s linear infinite; }
+.animate-stardust { animation: stardust-drift 15s ease-in-out infinite; }
+.animate-scanline { animation: scanline-anim 6s linear infinite; }
+

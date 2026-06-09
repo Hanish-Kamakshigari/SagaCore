@@ -28,8 +28,8 @@ export default function WorldArchitect({
       label: 'Aether Fantasy',
       desc: 'Glowing scrolls, mana spires, and bug serpents.',
       icon: Sword,
-      color: 'border-purple-500/30 text-purple-400 bg-purple-500/5',
-      activeColor: 'border-purple-500/80 bg-purple-500/10 shadow-[0_0_20px_rgba(168,85,247,0.3)] text-purple-300',
+      color: 'border-[#7B4FCC]/30 text-[#a78bfa] bg-[#7B4FCC]/5',
+      activeColor: 'border-[#7B4FCC]/80 bg-[#7B4FCC]/10 shadow-[0_0_20px_rgba(123,79,204,0.3)] text-[#c4b5fd]',
     },
     {
       id: 'cyberpunk',
@@ -83,11 +83,9 @@ export default function WorldArchitect({
       onForgeCustomWorld(value)
       form.reset()
     }
-  }
-
-  // Theme-aware accent for the success flash
+  }  // Theme-aware accent for the success flash
   const themeFlash = {
-    fantasy: 'shadow-[0_0_40px_rgba(168,85,247,0.25)] border-purple-500/50',
+    fantasy: 'shadow-[0_0_40px_rgba(123,79,204,0.25)] border-[#7B4FCC]/50',
     cyberpunk: 'shadow-[0_0_40px_rgba(6,182,212,0.25)] border-cyan-500/50',
     steampunk: 'shadow-[0_0_40px_rgba(249,115,22,0.25)] border-orange-500/50',
   }[activeWorld.theme]
@@ -95,17 +93,25 @@ export default function WorldArchitect({
   return (
     <div className={`relative overflow-hidden rounded-3xl border border-zinc-800/80 bg-zinc-950/50 p-6 backdrop-blur-xl transition-all duration-500 ${
       activeWorld.theme === 'fantasy'
-        ? 'hover:border-purple-500/40 hover:shadow-[0_0_25px_rgba(168,85,247,0.08)]'
+        ? 'hover:border-[#7B4FCC]/40 hover:shadow-[0_0_25px_rgba(123,79,204,0.08)]'
         : activeWorld.theme === 'cyberpunk'
         ? 'hover:border-cyan-500/40 hover:shadow-[0_0_25px_rgba(6,182,212,0.08)]'
         : 'hover:border-orange-500/40 hover:shadow-[0_0_25px_rgba(249,115,22,0.08)]'
     }`}>
       {/* Decorative backdrop mesh */}
-      <div className="absolute right-0 top-0 -z-10 h-32 w-32 bg-purple-500/5 blur-2xl" />
+      <div className={`absolute right-0 top-0 -z-10 h-32 w-32 blur-2xl ${
+        activeWorld.theme === 'cyberpunk' ? 'bg-cyan-500/5' :
+        activeWorld.theme === 'steampunk' ? 'bg-orange-500/5' :
+        'bg-[#7B4FCC]/5'
+      }`} />
 
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Compass className="text-purple-400" />
+          <Compass className={
+            activeWorld.theme === 'cyberpunk' ? 'text-cyan-400' :
+            activeWorld.theme === 'steampunk' ? 'text-orange-400' :
+            'text-[#a78bfa]'
+          } />
           <h2 className="text-xl font-bold text-zinc-100">
             World Architect
           </h2>
@@ -118,7 +124,7 @@ export default function WorldArchitect({
       {/* Selected World Overview — flashes on successful forge */}
       <motion.div
         key={flashKey}
-        initial={flashKey > 0 ? { scale: 1.02, boxShadow: '0 0 40px rgba(168,85,247,0.35)' } : false}
+        initial={flashKey > 0 ? { scale: 1.02, boxShadow: activeWorld.theme === 'cyberpunk' ? '0 0 40px rgba(6,182,212,0.35)' : activeWorld.theme === 'steampunk' ? '0 0 40px rgba(249,115,22,0.35)' : '0 0 40px rgba(123,79,204,0.35)' } : false}
         animate={{ scale: 1, boxShadow: '0 0 0px rgba(0,0,0,0)' }}
         transition={{ duration: 1.2, ease: 'easeOut' }}
         className={`mt-6 rounded-2xl border bg-zinc-900/30 p-4 transition-all duration-700 ${
@@ -127,11 +133,15 @@ export default function WorldArchitect({
       >
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <span className="text-[9px] uppercase tracking-widest text-zinc-500 font-semibold">Active Realm</span>
+            <span className="text-[9px] uppercase tracking-widest text-zinc-550 font-semibold">Active Realm</span>
             <h4 className="text-lg font-black text-zinc-200 truncate">{activeWorld.name}</h4>
             {/* Custom Realm badge */}
             {isCustomRealm && (
-              <span className="mt-1 inline-flex items-center gap-1 rounded-full border border-purple-500/30 bg-purple-500/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest text-purple-300">
+              <span className={`mt-1 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest ${
+                activeWorld.theme === 'cyberpunk' ? 'border-cyan-500/30 bg-cyan-500/10 text-cyan-300' :
+                activeWorld.theme === 'steampunk' ? 'border-orange-500/30 bg-orange-500/10 text-orange-300' :
+                'border-[#7B4FCC]/30 bg-[#7B4FCC]/10 text-[#c4b5fd]'
+              }`}>
                 <Sparkles size={8} />
                 AI Custom Realm
               </span>
@@ -214,12 +224,20 @@ export default function WorldArchitect({
             type="text"
             disabled={isForging}
             placeholder={isForging ? 'Shaping your realm…' : 'e.g., A floating clockwork observatory in a nebula...'}
-            className="flex-1 rounded-xl border border-zinc-850 bg-black/40 px-4 py-2.5 text-xs placeholder-zinc-550 outline-none transition focus:border-purple-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
+            className={`flex-1 rounded-xl border border-zinc-850 bg-black/40 px-4 py-2.5 text-xs placeholder-zinc-550 outline-none transition disabled:opacity-50 disabled:cursor-not-allowed ${
+              activeWorld.theme === 'cyberpunk' ? 'focus:border-cyan-500/50' :
+              activeWorld.theme === 'steampunk' ? 'focus:border-orange-500/50' :
+              'focus:border-[#7B4FCC]/50'
+            }`}
           />
           <button
             type="submit"
             disabled={isForging}
-            className="flex items-center gap-1 rounded-xl bg-purple-500/20 border border-purple-500/30 px-4 text-xs font-bold text-purple-300 transition hover:bg-purple-500/30 active:scale-95 hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-purple-500/20"
+            className={`flex items-center gap-1 rounded-xl px-4 text-xs font-bold transition active:scale-95 hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
+              activeWorld.theme === 'cyberpunk' ? 'bg-cyan-500/20 border border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/30 disabled:hover:bg-cyan-500/20' :
+              activeWorld.theme === 'steampunk' ? 'bg-orange-500/20 border border-orange-500/30 text-orange-350 hover:bg-orange-500/30 disabled:hover:bg-orange-500/20' :
+              'bg-[#7B4FCC]/20 border border-[#7B4FCC]/30 text-[#c4b5fd] hover:bg-[#7B4FCC]/30 disabled:hover:bg-[#7B4FCC]/20'
+            }`}
           >
             {isForging ? (
               <>

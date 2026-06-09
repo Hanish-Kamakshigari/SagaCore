@@ -837,12 +837,13 @@ export default function Dashboard() {
   // ── Theme colours (updated with responsive hoverGlow effects) ──────────────
   const themeColors = {
     fantasy: {
-      radialGlow: 'bg-[radial-gradient(ellipse_at_top,rgba(168,85,247,0.06),transparent_60%)]',
-      borderGlow: 'border-purple-500/20',
-      hoverGlow: 'hover:border-purple-500/40 hover:shadow-[0_0_25px_rgba(168,85,247,0.08)]',
-      activeText: 'text-purple-300',
-      accentBg: 'bg-purple-500/10 border-purple-500/20 text-purple-200',
-      btnBg: 'from-purple-500 to-indigo-500'
+      radialGlow: 'bg-[radial-gradient(ellipse_at_top,rgba(123,79,204,0.06),transparent_60%)]',
+      borderGlow: 'border-[#7B4FCC]/20',
+      hoverGlow: 'hover:border-[#7B4FCC]/40 hover:shadow-[0_0_25px_rgba(123,79,204,0.08)]',
+      activeText: 'text-[#a78bfa]',
+      accentBg: 'bg-[#7B4FCC]/10 border-[#7B4FCC]/20 text-purple-200',
+      btnBg: 'from-[#7B4FCC] to-[#633BB3]',
+      btnGlow: 'shadow-[0_0_20px_rgba(123,79,204,0.35)] hover:shadow-[0_0_30px_rgba(123,79,204,0.55)]'
     },
     cyberpunk: {
       radialGlow: 'bg-[radial-gradient(ellipse_at_top,rgba(6,182,212,0.06),transparent_60%)]',
@@ -850,7 +851,8 @@ export default function Dashboard() {
       hoverGlow: 'hover:border-cyan-500/40 hover:shadow-[0_0_25px_rgba(6,182,212,0.08)]',
       activeText: 'text-cyan-400',
       accentBg: 'bg-cyan-500/10 border-cyan-500/20 text-cyan-300',
-      btnBg: 'from-cyan-500 to-blue-500'
+      btnBg: 'from-cyan-500 to-blue-500',
+      btnGlow: 'shadow-[0_0_20px_rgba(6,182,212,0.35)] hover:shadow-[0_0_30px_rgba(6,182,212,0.55)]'
     },
     steampunk: {
       radialGlow: 'bg-[radial-gradient(ellipse_at_top,rgba(249,115,22,0.06),transparent_60%)]',
@@ -858,7 +860,8 @@ export default function Dashboard() {
       hoverGlow: 'hover:border-orange-500/40 hover:shadow-[0_0_25px_rgba(249,115,22,0.08)]',
       activeText: 'text-orange-400',
       accentBg: 'bg-orange-500/10 border-orange-500/20 text-orange-350',
-      btnBg: 'from-orange-500 to-amber-500'
+      btnBg: 'from-orange-500 to-amber-500',
+      btnGlow: 'shadow-[0_0_20px_rgba(249,115,22,0.35)] hover:shadow-[0_0_30px_rgba(249,115,22,0.55)]'
     },
   }
   const colors = themeColors[activeWorld.theme]
@@ -1896,9 +1899,24 @@ export default function Dashboard() {
               <ArrowLeft size={18} className="transition group-hover:-translate-x-0.5" />
             </Link>
             <div>
-              <div className="flex items-center gap-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-purple-500 animate-ping" />
-                <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 font-cinzel">SAGACORE Hub</span>
+              <div className="flex items-center gap-2 select-none">
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
+                    activeWorld.theme === 'cyberpunk' ? 'bg-cyan-400' :
+                    activeWorld.theme === 'steampunk' ? 'bg-orange-400' :
+                    'bg-[#7B4FCC]'
+                  }`}></span>
+                  <span className={`relative inline-flex rounded-full h-1.5 w-1.5 ${
+                    activeWorld.theme === 'cyberpunk' ? 'bg-cyan-500' :
+                    activeWorld.theme === 'steampunk' ? 'bg-orange-500' :
+                    'bg-[#7B4FCC]'
+                  }`}></span>
+                </span>
+                <span className={`text-[10px] font-bold uppercase tracking-widest font-cinzel transition-colors duration-500 ${
+                  activeWorld.theme === 'cyberpunk' ? 'text-cyan-400/85' :
+                  activeWorld.theme === 'steampunk' ? 'text-orange-400/85' :
+                  'text-[#a78bfa]/85'
+                }`}>SAGACORE Hub</span>
               </div>
               <h1 className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl mt-0.5 font-cinzel">
                 {activeWorld.name}
@@ -2148,16 +2166,16 @@ export default function Dashboard() {
                         onChange={(e) => setNewGoal(e.target.value)}
                         disabled={isForging}
                         placeholder={`e.g., ${forgePlaceholders[currentPlaceholderIdx]}`}
-                        className={`flex-1 rounded-2xl border bg-black/40 px-5 py-3 text-sm placeholder-zinc-550 outline-none transition focus:bg-black/60 disabled:opacity-50 ${
+                        className={`flex-1 rounded-2xl border bg-black/60 px-6 py-4 text-base placeholder-zinc-500 outline-none transition-all duration-300 focus:bg-black/80 disabled:opacity-50 ${
                           isDuplicateGoal
-                            ? 'border-red-500/60 focus:border-red-500/80 focus:ring-1 focus:ring-red-500/20 text-red-300'
-                            : 'border-zinc-800 focus:border-zinc-700 focus:ring-1 focus:ring-purple-500/10'
+                            ? 'border-red-500/60 focus:border-red-500/80 focus:ring-2 focus:ring-red-500/20 text-red-300'
+                            : 'border-zinc-850 focus:border-zinc-700 focus:ring-2 focus:ring-purple-500/10'
                         }`}
                       />
                       <button
                         type="submit"
                         disabled={isForging || !newGoal.trim() || isDuplicateGoal}
-                        className={`flex items-center gap-2 rounded-2xl bg-gradient-to-r ${colors.btnBg} px-6 font-bold text-white transition hover:brightness-110 active:scale-95 shadow-lg disabled:opacity-60 disabled:cursor-not-allowed`}
+                        className={`flex items-center gap-2 rounded-2xl bg-gradient-to-r ${colors.btnBg} px-7 py-4 font-bold text-white transition-all duration-300 hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 disabled:scale-100 disabled:translate-y-0 disabled:opacity-60 disabled:cursor-not-allowed ${colors.btnGlow}`}
                       >
                         {isForging ? (
                           <Loader2 size={14} className="animate-spin" />
@@ -2181,25 +2199,57 @@ export default function Dashboard() {
                     )}
 
                     {/* Campaign Architect Level Lock/Notice */}
-                    <div className="mt-3 flex items-center select-none">
+                    <div className="mt-3 flex items-center select-none w-full">
                       {level < 3 ? (
-                        <span className="inline-flex items-center gap-1.5 rounded-full border border-zinc-800/80 bg-zinc-900/30 px-2.5 py-1 text-[11px] font-medium text-zinc-400">
-                          <span className="h-1.5 w-1.5 rounded-full bg-zinc-600" />
-                          Campaign Architect (3-part quests) unlocks at Level 3
-                        </span>
+                        <div className="flex items-center gap-3 rounded-2xl border border-zinc-800/80 bg-zinc-950/40 p-3 text-xs text-zinc-400 w-full shadow-inner">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-zinc-900/60 border border-zinc-800 text-zinc-500">
+                            <Clock size={16} />
+                          </div>
+                          <div>
+                            <p className="font-bold text-zinc-300 text-xs">Campaign Architect Locked</p>
+                            <p className="text-[11px] text-zinc-500 mt-0.5">Forging 3-part epic campaigns unlocks at Level 3. Keep completing quests!</p>
+                          </div>
+                        </div>
                       ) : (
-                        <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold animate-pulse ${
-                          activeWorld.theme === 'cyberpunk' ? 'border-cyan-500/20 bg-cyan-500/5 text-cyan-300 shadow-[0_0_15px_rgba(6,182,212,0.25)]' :
-                          activeWorld.theme === 'steampunk' ? 'border-orange-500/20 bg-orange-500/5 text-orange-400 shadow-[0_0_15px_rgba(249,115,22,0.25)]' :
-                          'border-purple-500/20 bg-purple-500/5 text-purple-300 shadow-[0_0_15px_rgba(168,85,247,0.25)]'
+                        <div className={`flex items-start md:items-center gap-3.5 rounded-2xl border p-4 w-full transition-all duration-500 shadow-md ${
+                          activeWorld.theme === 'cyberpunk' ? 'border-cyan-500/25 bg-cyan-950/10 text-cyan-300 shadow-[0_0_20px_rgba(6,182,212,0.08)]' :
+                          activeWorld.theme === 'steampunk' ? 'border-orange-500/25 bg-orange-950/10 text-orange-350 shadow-[0_0_20px_rgba(249,115,22,0.08)]' :
+                          'border-[#7B4FCC]/25 bg-[#7B4FCC]/5 text-purple-300 shadow-[0_0_20px_rgba(123,79,204,0.08)]'
                         }`}>
-                          <span className={`h-1.5 w-1.5 rounded-full ${
-                            activeWorld.theme === 'cyberpunk' ? 'bg-cyan-400 animate-pulse' :
-                            activeWorld.theme === 'steampunk' ? 'bg-orange-400 animate-pulse' :
-                            'bg-purple-400 animate-pulse'
-                          }`} />
-                          Campaign Architect Active: forging 3-part campaign sequence
-                        </span>
+                          <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border ${
+                            activeWorld.theme === 'cyberpunk' ? 'bg-cyan-500/10 border-cyan-500/30 text-cyan-400' :
+                            activeWorld.theme === 'steampunk' ? 'bg-orange-500/10 border-orange-500/30 text-orange-400' :
+                            'bg-[#7B4FCC]/10 border-[#7B4FCC]/30 text-[#a78bfa]'
+                          }`}>
+                            <Zap size={18} className="animate-pulse" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <p className={`font-mono text-xs font-black uppercase tracking-wider ${
+                                activeWorld.theme === 'cyberpunk' ? 'text-cyan-400' :
+                                activeWorld.theme === 'steampunk' ? 'text-orange-400' :
+                                'text-[#a78bfa]'
+                              }`}>
+                                Campaign Architect Active
+                              </p>
+                              <span className="relative flex h-2 w-2">
+                                <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
+                                  activeWorld.theme === 'cyberpunk' ? 'bg-cyan-400' :
+                                  activeWorld.theme === 'steampunk' ? 'bg-orange-400' :
+                                  'bg-[#7B4FCC]'
+                                }`}></span>
+                                <span className={`relative inline-flex rounded-full h-2 w-2 ${
+                                  activeWorld.theme === 'cyberpunk' ? 'bg-cyan-500' :
+                                  activeWorld.theme === 'steampunk' ? 'bg-orange-500' :
+                                  'bg-[#7B4FCC]'
+                                }`}></span>
+                              </span>
+                            </div>
+                            <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
+                              Your ambition will forge a masterfully aligned 3-part campaign chain with advanced rewards.
+                            </p>
+                          </div>
+                        </div>
                       )}
                     </div>
                   </>
@@ -2226,8 +2276,12 @@ export default function Dashboard() {
                           onClick={() => setForgeCategory(cat.key)}
                           className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all duration-300 ${
                             forgeCategory === cat.key
-                              ? `${colors.accentBg} ${colors.borderGlow} shadow-[0_0_15px_rgba(168,85,247,0.1)]`
-                              : 'border-zinc-800/60 bg-zinc-950/40 text-zinc-400 hover:border-zinc-700 hover:text-zinc-300'
+                              ? `${colors.accentBg} ${colors.borderGlow} ${
+                                  activeWorld.theme === 'cyberpunk' ? 'shadow-[0_0_15px_rgba(6,182,212,0.25)]' :
+                                  activeWorld.theme === 'steampunk' ? 'shadow-[0_0_15px_rgba(249,115,22,0.25)]' :
+                                  'shadow-[0_0_15px_rgba(123,79,204,0.25)]'
+                                }`
+                              : 'border-zinc-800 bg-zinc-900/50 text-zinc-300 hover:border-zinc-700 hover:bg-zinc-900/80 hover:text-zinc-100'
                           }`}
                         >
                           {cat.label}
@@ -2270,8 +2324,12 @@ export default function Dashboard() {
                         onClick={() => setForgeDuration(dur.val)}
                         className={`px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all duration-300 flex-1 text-center ${
                           forgeDuration === dur.val
-                            ? `${colors.accentBg} ${colors.borderGlow} shadow-[0_0_15px_rgba(168,85,247,0.1)]`
-                            : 'border-zinc-800/60 bg-zinc-950/40 text-zinc-400 hover:border-zinc-700 hover:text-zinc-300'
+                            ? `${colors.accentBg} ${colors.borderGlow} ${
+                                activeWorld.theme === 'cyberpunk' ? 'shadow-[0_0_15px_rgba(6,182,212,0.25)]' :
+                                activeWorld.theme === 'steampunk' ? 'shadow-[0_0_15px_rgba(249,115,22,0.25)]' :
+                                'shadow-[0_0_15px_rgba(123,79,204,0.25)]'
+                              }`
+                            : 'border-zinc-800 bg-zinc-900/50 text-zinc-300 hover:border-zinc-700 hover:bg-zinc-900/80 hover:text-zinc-100'
                         }`}
                       >
                         {dur.label}
@@ -2281,23 +2339,36 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              {/* Sample Ambition suggestion chips */}
-              <div className="mt-3.5 flex flex-wrap items-center gap-2 select-none">
-                <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mr-1 font-mono">Quick Ambitions:</span>
-                {[
-                  { text: 'Master Graph Traversal Algorithms', theme: 'wisdom' },
-                  { text: 'Complete a 5K Sunrise Run', theme: 'discipline' },
-                  { text: 'Build generative layout boards with Gemini', theme: 'creation' },
-                ].map((chip, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => setNewGoal(chip.text)}
-                    className="text-[11px] font-semibold border border-zinc-850 bg-zinc-900/30 hover:border-purple-500/35 hover:bg-purple-500/10 hover:text-purple-300 rounded-full px-3.5 py-1.5 transition-all duration-300 hover:scale-[1.03] hover:cursor-pointer active:scale-[0.97]"
-                  >
-                    {chip.text}
-                  </button>
-                ))}
+              {/* Sample Ambition suggestion chips - Grouped Visually */}
+              <div className="mt-5 rounded-2xl border border-zinc-800/40 bg-zinc-950/40 p-4">
+                <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 font-mono flex items-center gap-1.5 mb-3">
+                  <Compass size={12} className="text-zinc-500 animate-pulse" />
+                  Quick Ambitions Inspiration
+                </span>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { text: 'Master Graph Traversal Algorithms', theme: 'wisdom' },
+                    { text: 'Complete a 5K Sunrise Run', theme: 'discipline' },
+                    { text: 'Build generative layout boards with Gemini', theme: 'creation' },
+                  ].map((chip, idx) => {
+                    const categoryStyles = {
+                      wisdom: 'border-purple-500/20 bg-purple-500/5 text-purple-300 hover:border-purple-400 hover:bg-purple-500/15',
+                      discipline: 'border-rose-500/20 bg-rose-500/5 text-rose-350 hover:border-rose-400 hover:bg-rose-500/15',
+                      creation: 'border-cyan-500/20 bg-cyan-500/5 text-cyan-300 hover:border-cyan-400 hover:bg-cyan-500/15',
+                    }
+                    const style = categoryStyles[chip.theme as keyof typeof categoryStyles] || 'border-zinc-800 bg-zinc-900/30 text-zinc-300 hover:border-zinc-700'
+                    return (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => setNewGoal(chip.text)}
+                        className={`text-[11px] font-semibold border rounded-xl px-3 py-1.5 transition-all duration-300 hover:scale-[1.02] hover:cursor-pointer active:scale-[0.98] ${style}`}
+                      >
+                        {chip.text}
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
 
               {/* Engine status badge — only visible while forging */}
@@ -2579,6 +2650,7 @@ export default function Dashboard() {
                                 onToggleTask={handleToggleTask}
                                 isLocked={isLocked}
                                 parentQuestTitle={parentQuestTitle}
+                                worldTheme={activeWorld.theme}
                               />
                             </motion.div>
                           )

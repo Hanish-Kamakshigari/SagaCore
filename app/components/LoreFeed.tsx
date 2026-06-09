@@ -11,10 +11,10 @@ interface LoreFeedProps {
 export default function LoreFeed({ lore, theme = 'fantasy' }: LoreFeedProps) {
   const styles = {
     fantasy: {
-      iconColor: 'text-purple-400',
-      indicatorBg: 'bg-purple-500/50',
-      tagColor: 'text-purple-400/80',
-      hoverGlow: 'hover:border-purple-500/40 hover:shadow-[0_0_25px_rgba(168,85,247,0.08)]',
+      iconColor: 'text-[#a78bfa]',
+      indicatorBg: 'bg-[#7B4FCC]/50',
+      tagColor: 'text-[#a78bfa]/80',
+      hoverGlow: 'hover:border-[#7B4FCC]/40 hover:shadow-[0_0_25px_rgba(123,79,204,0.08)]',
     },
     cyberpunk: {
       iconColor: 'text-cyan-400',
