@@ -10,7 +10,9 @@ import type { Quest, LoreChapter } from './data'
 import { connectDB, QuestModel, LoreChapterModel, PlayerStateModel } from './mongodb'
 import { getRealmState, saveQuest, completeQuest } from './tools'
 import { cookies } from 'next/headers'
-import { adminAuth } from './firebase-admin'
+import { getApps } from 'firebase-admin/app'
+import { getAuth } from 'firebase-admin/auth'
+import './firebase-admin' // Trigger initialization side-effect
 
 async function verifySessionToken(userIdParam: string): Promise<string> {
   if (
@@ -29,7 +31,12 @@ async function verifySessionToken(userIdParam: string): Promise<string> {
       throw new Error('No session token cookie present.')
     }
 
-    const decodedToken = await adminAuth.verifyIdToken(sessionToken)
+    if (getApps().length === 0) {
+      throw new Error('Firebase Admin SDK is not initialized (missing environment keys).')
+    }
+
+    const auth = getAuth()
+    const decodedToken = await auth.verifyIdToken(sessionToken)
     if (decodedToken.uid !== userIdParam) {
       throw new Error(`Authentication identity mismatch: ${decodedToken.uid} vs ${userIdParam}`)
     }
@@ -44,8 +51,12 @@ async function verifySessionToken(userIdParam: string): Promise<string> {
 // ─── Google Cloud Agent Builder Integration ──────────────────────────────────
 
 async function getGCPAuthToken(): Promise<string> {
-  const email = process.env.GCP_CLIENT_EMAIL || ''
-  const privateKey = (process.env.GCP_PRIVATE_KEY || '').replace(/\\n/g, '\n')
+  const email = (process.env.GCP_CLIENT_EMAIL || '').trim()
+  let privateKey = (process.env.GCP_PRIVATE_KEY || '').trim()
+  if (privateKey.startsWith('"') && privateKey.endsWith('"')) {
+    privateKey = privateKey.substring(1, privateKey.length - 1)
+  }
+  privateKey = privateKey.replace(/\\n/g, '\n')
   
   if (!email || !privateKey) {
     throw new Error('GCP Service Account credentials (GCP_CLIENT_EMAIL / GCP_PRIVATE_KEY) are missing in environment.')
