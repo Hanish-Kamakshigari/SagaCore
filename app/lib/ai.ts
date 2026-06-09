@@ -838,7 +838,7 @@ export async function generateAdaptiveChapter(
   const raw = await callGemini({
     model: 'gemini-1.5-flash',
     max_tokens: 1000,
-    system: `You are the MythOS Narrative Engine — the scribe of SAGACORE.
+    system: `You are the MythicGrid Narrative Engine — the scribe of SAGACORE.
 When a hero completes or fails a quest, you write a legendary codex chapter
 describing the world-altering consequences.
 Respond ONLY with valid JSON — no prose, no markdown fences:

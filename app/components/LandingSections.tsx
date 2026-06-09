@@ -234,7 +234,7 @@ export default function LandingSections() {
             transition={{ delay: 0.2, duration: 0.8 }}
             className="mt-4 text-zinc-400 max-w-2xl mx-auto text-base leading-relaxed"
           >
-            The chronicle of MythOS development milestones, charting our evolution from a standalone console into a globally synchronized world network.
+            The chronicle of MythicGrid development milestones, charting our evolution from a standalone console into a globally synchronized world network.
           </motion.p>
         </div>
 

@@ -83,7 +83,7 @@ The core agentic loop. Transforms any ambition into a 3-quest sequential campaig
 - Sequential dependency locking across campaign quests
 - ReAct loop with max 5 iterations and exponential backoff
 
-### MythOS Narrative Engine
+### MythicGrid Narrative Engine
 
 Generates evolving lore when quests are completed.
 

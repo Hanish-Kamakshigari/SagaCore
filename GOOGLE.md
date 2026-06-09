@@ -1,6 +1,6 @@
-# SAGACORE MythOS Developer Guide
+# SAGACORE MythicGrid Developer Guide
 
-This file outlines the commands and guidelines for building and testing the SAGACORE MythOS platform.
+This file outlines the commands and guidelines for building and testing the SAGACORE MythicGrid platform.
 
 ## Development & Build Commands
 
