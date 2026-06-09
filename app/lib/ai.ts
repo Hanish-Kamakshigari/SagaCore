@@ -1139,38 +1139,25 @@ export async function fetchLeaderboardFromMongo(activeUserUid?: string) {
       }
     }
 
-    // 2. Deduplicate final list by id, prefix (first 10 chars), email, and displayName to prevent duplicate accounts
+    // 2. Deduplicate final list by exact user ID to prevent duplicate listings
     const uniquePlayers: any[] = []
     const seenIds = new Set<string>()
-    const seenPrefixes = new Set<string>()
-    const seenEmails = new Set<string>()
-    const seenNames = new Set<string>()
 
     for (const player of players) {
       const pid = player.id
-      const pemail = player.email?.toLowerCase().trim()
-      const pname = player.displayName?.toLowerCase().trim()
-      const prefix = pid.substring(0, 10).toLowerCase()
 
       // Always keep the active user/guest record if we encounter it
       if (activeUserUid && pid === activeUserUid) {
-        uniquePlayers.push(player)
-        seenIds.add(pid)
-        seenPrefixes.add(prefix)
-        if (pemail) seenEmails.add(pemail)
-        if (pname) seenNames.add(pname)
+        if (!seenIds.has(pid)) {
+          uniquePlayers.push(player)
+          seenIds.add(pid)
+        }
         continue
       }
 
       if (seenIds.has(pid)) continue
-      if (seenPrefixes.has(prefix)) continue
-      if (pemail && seenEmails.has(pemail)) continue
-      if (pname && seenNames.has(pname)) continue
 
       seenIds.add(pid)
-      seenPrefixes.add(prefix)
-      if (pemail) seenEmails.add(pemail)
-      if (pname) seenNames.add(pname)
       uniquePlayers.push(player)
     }
     
