@@ -15,7 +15,7 @@
   "dependencies": {
     "dotenv": "^17.4.2",
     "firebase": "^12.14.0",
-    "firebase-admin": "^14.0.0",
+    "firebase-admin": "^12.7.0",
     "framer-motion": "^12.40.0",
     "lucide-react": "^1.16.0",
     "mogodb": "^0.0.1-security",
