@@ -181,6 +181,7 @@ Key collections:
 - Next.js Server Actions (`use server`)
 - Mongoose ORM, MongoDB Atlas
 - Firebase Authentication
+- Server-side JWT verification via Firebase Admin SDK for secure MongoDB writes
 
 ### AI & Agent Layer
 - Google Cloud Agent Builder — Playbook-based conversational agent (us-central1)
@@ -222,6 +223,7 @@ Signed-in players get full MongoDB persistence:
 - Lore archive in the Evolving Codex
 - Player state (XP, level, world theme, streak)
 - Full multi-user isolation via Firebase UID scoping
+- Implemented server-side JWT verification via Firebase Admin SDK to prevent database spoofing — all MongoDB writes are identity-verified against cryptographically signed Google tokens, never trusting client-supplied parameters.
 - localStorage cache layer for instant UI hydration
 
 ---
