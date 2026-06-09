@@ -50,7 +50,17 @@ async function verifySessionToken(userIdParam: string): Promise<string> {
 
 // ─── Google Cloud Agent Builder Integration ──────────────────────────────────
 
+// In-memory cache for GCP OAuth tokens to eliminate signing/exchange latency
+let cachedGCPToken: string | null = null
+let gcpTokenExpiry: number = 0 // Expiry timestamp in seconds
+
 async function getGCPAuthToken(): Promise<string> {
+  const now = Math.floor(Date.now() / 1000)
+  // Reuse the token if it is valid and has at least 30 seconds left before expiration
+  if (cachedGCPToken && gcpTokenExpiry > now + 30) {
+    return cachedGCPToken
+  }
+
   const email = (process.env.GCP_CLIENT_EMAIL || '').trim()
   let privateKey = (process.env.GCP_PRIVATE_KEY || '').trim()
   if (privateKey.startsWith('"') && privateKey.endsWith('"')) {
@@ -66,7 +76,6 @@ async function getGCPAuthToken(): Promise<string> {
   const crypto = await import('crypto')
   const header = JSON.stringify({ alg: 'RS256', typ: 'JWT' })
   
-  const now = Math.floor(Date.now() / 1000)
   const claimSet = JSON.stringify({
     iss: email,
     scope: 'https://www.googleapis.com/auth/cloud-platform',
@@ -98,6 +107,8 @@ async function getGCPAuthToken(): Promise<string> {
   }
   
   const data = await tokenResponse.json()
+  cachedGCPToken = data.access_token
+  gcpTokenExpiry = now + (data.expires_in || 3600)
   return data.access_token
 }
 
@@ -111,7 +122,16 @@ async function callAgentBuilder(payload: any): Promise<string> {
   const messages = payload.messages || []
   const lastMessage = messages[messages.length - 1]?.content || ''
   
-  const sessionId = 'sagacore-session-' + (payload.userId || 'default-user')
+  // Scramble the session ID for stateless operations to bypass historical state loads in Dialogflow
+  const systemPrompt = payload.system || ''
+  const expectsJSON = payload.expectsJSON !== undefined
+    ? payload.expectsJSON
+    : (systemPrompt.toLowerCase().includes('json') || systemPrompt.toLowerCase().includes('object') || systemPrompt.toLowerCase().includes('array'))
+  
+  const isChat = payload.isChat || !expectsJSON
+  const sessionSuffix = isChat ? '' : '-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7)
+  const sessionId = 'sagacore-session-' + (payload.userId || 'default-user') + sessionSuffix
+  
   const url = `https://${gcpLocation}-dialogflow.googleapis.com/v3/projects/${gcpProject}/locations/${gcpLocation}/agents/${gcpAgent}/sessions/${sessionId}:detectIntent`
   
   const body = {
@@ -591,8 +611,10 @@ export async function forgeQuestWithAI(
   }[worldTheme]
 
   const raw = await callGemini({
-    model: 'gemini-1.5-flash',
+    model: 'gemini-2.5-flash',
     max_tokens: 1000,
+    userId,
+    noTools: true,
     system: `You are the Dream Engine of SAGACORE — a system set in ${themeContext}.
 You transform real-life goals into mythic quests.
 Respond ONLY with valid JSON matching this exact shape — no prose, no markdown fences:
@@ -648,8 +670,10 @@ export async function forgeQuestlineWithAI(
   }[worldTheme]
 
   const raw = await callGemini({
-    model: 'gemini-1.5-flash',
+    model: 'gemini-2.5-flash',
     max_tokens: 1500,
+    userId,
+    noTools: true,
     system: `You are the Campaign Architect of SAGACORE set in ${themeContext}.
 Given a user's master goal or ambition, decompose it into a legendary campaign consisting of EXACTLY 3 sequential, highly relevant quests.
 Quest 1 should focus on learning/prep (wisdom category).
@@ -737,8 +761,10 @@ export async function forgeDailyChallengeWithAI(
 
   try {
     const raw = await callGemini({
-      model: 'gemini-1.5-flash',
+      model: 'gemini-2.5-flash',
       max_tokens: 800,
+      userId,
+      noTools: true,
       system: `You are the Daily Trial Arbiter of SAGACORE set in ${themeContext}.
 Generate a single daily focus challenge (a quest) for the player.
 The challenge must be a realistic, short daily habit or simple task (e.g., "Clear inbox", "Drink 2L water", "Review code changes", "Do 15 mins stretching") wrapped in the lore of the theme.
@@ -883,8 +909,10 @@ export async function generateAdaptiveChapter(
   userId?: string
 ): Promise<LoreChapter> {
   const raw = await callGemini({
-    model: 'gemini-1.5-flash',
+    model: 'gemini-2.5-flash',
     max_tokens: 1000,
+    userId,
+    noTools: true,
     system: `You are the MythicGrid Narrative Engine — the scribe of SAGACORE.
 When a hero completes or fails a quest, you write a legendary codex chapter
 describing the world-altering consequences.
@@ -1174,7 +1202,8 @@ export async function generateRoadmapForQuest(
   title: string,
   category: string,
   difficulty: string,
-  worldTheme: 'fantasy' | 'cyberpunk' | 'steampunk'
+  worldTheme: 'fantasy' | 'cyberpunk' | 'steampunk',
+  userId?: string
 ): Promise<{ tasks: string[]; mythEvent: string }> {
   const themeContext = {
     fantasy:   'a high-fantasy realm of mana, spires, and ancient scrolls',
@@ -1183,8 +1212,10 @@ export async function generateRoadmapForQuest(
   }[worldTheme]
 
   const raw = await callGemini({
-    model: 'gemini-1.5-flash',
+    model: 'gemini-2.5-flash',
     max_tokens: 1000,
+    userId,
+    noTools: true,
     system: `You are the Quest Planner of SAGACORE set in ${themeContext}.
 Create a highly practical, step-by-step roadmap (3-4 specific, doable tasks) and a world-altering mythEvent for this quest.
 Respond ONLY with valid JSON — no prose, no markdown fences:
@@ -1379,7 +1410,8 @@ export async function chatWithCompanionWithAI(
   userMessage: string,
   history: { role: 'user' | 'model'; content: string }[],
   activeQuests: Quest[],
-  worldTheme: 'fantasy' | 'cyberpunk' | 'steampunk'
+  worldTheme: 'fantasy' | 'cyberpunk' | 'steampunk',
+  userId?: string
 ): Promise<string> {
   const themeContext = {
     fantasy:   'a high-fantasy realm of mana, spires, and ancient scrolls',
@@ -1407,6 +1439,8 @@ Rules:
       model: 'gemini-2.5-flash',
       max_tokens: 400,
       noTools: true,
+      userId,
+      isChat: true,
       system: systemPrompt,
       messages: messages
     })

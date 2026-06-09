@@ -47,6 +47,7 @@ interface DashboardCompanionProps {
   stability: number
   onReward: (xpBonus: number, stabilityBonus: number, message: string) => void
   level: number
+  userId?: string
 }
 
 interface QuizData {
@@ -62,6 +63,7 @@ export default function DashboardCompanion({
   stability,
   onReward,
   level,
+  userId,
 }: DashboardCompanionProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [showTooltip, setShowTooltip] = useState(true)
@@ -72,6 +74,16 @@ export default function DashboardCompanion({
   const [selectedOption, setSelectedOption] = useState<number | null>(null)
   const [hasSubmitted, setHasSubmitted] = useState(false)
   const [isHoveringClose, setIsHoveringClose] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   // Chat/Guide Conversation States
   interface ChatMessage {
@@ -111,6 +123,7 @@ export default function DashboardCompanion({
   const rotateY = useSpring(useTransform(mouseX, [-200, 200], [-2.5, 2.5], { clamp: true }), springConfig)
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (isMobile) return
     if (!cardRef.current || isHoveringClose) return
     const rect = cardRef.current.getBoundingClientRect()
     const x = e.clientX - rect.left - rect.width / 2
@@ -120,6 +133,7 @@ export default function DashboardCompanion({
   }
 
   const handleMouseLeave = () => {
+    if (isMobile) return
     mouseX.set(0)
     mouseY.set(0)
   }
@@ -247,7 +261,8 @@ export default function DashboardCompanion({
         userText,
         chatHistory,
         activeQuests,
-        theme
+        theme,
+        userId
       )
       setMessage(aiReply)
       setChatHistory([
@@ -443,7 +458,11 @@ export default function DashboardCompanion({
               ref={cardRef}
               onMouseMove={handleMouseMove}
               onMouseLeave={handleMouseLeave}
-              style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
+              style={{ 
+                rotateX: isMobile ? 0 : rotateX, 
+                rotateY: isMobile ? 0 : rotateY, 
+                transformStyle: "preserve-3d" 
+              }}
               initial={{ scale: 0.94, y: 30, opacity: 0 }}
               animate={{ scale: 1, y: 0, opacity: 1 }}
               exit={{ scale: 0.92, y: 40, opacity: 0 }}

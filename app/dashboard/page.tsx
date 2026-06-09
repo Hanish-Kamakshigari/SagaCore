@@ -1434,7 +1434,8 @@ export default function Dashboard() {
         quest.title,
         quest.category,
         quest.difficulty,
-        activeWorld.theme
+        activeWorld.theme,
+        user?.uid
       )
 
       const updatedQuest: Quest = {
@@ -1930,19 +1931,19 @@ export default function Dashboard() {
               <p className="text-xs text-zinc-500">World Engine</p>
               <p className="text-sm font-mono font-semibold text-zinc-300">Architect 0x7c9</p>
             </div>
-            <div className="h-10 w-[1px] bg-zinc-800 hidden sm:block" />
+            <div className="h-9 w-[1px] bg-zinc-800 hidden sm:block" />
             {user.uid.startsWith('guest_') && (
               <>
-                <span className="rounded-full px-4 py-1.5 text-xs font-semibold uppercase tracking-wider backdrop-blur-md border border-amber-500/35 bg-amber-500/10 text-amber-300 animate-pulse select-none">
+                <span className="rounded-full px-4 h-9 flex items-center text-xs font-semibold uppercase tracking-wider backdrop-blur-md border border-amber-500/35 bg-amber-500/10 text-amber-300 animate-pulse select-none">
                   Demo Mode
                 </span>
-                <div className="h-10 w-[1px] bg-zinc-800 hidden sm:block" />
+                <div className="h-9 w-[1px] bg-zinc-800 hidden sm:block" />
               </>
             )}
-            <span className={`rounded-full px-4 py-1.5 text-xs font-semibold uppercase tracking-wider backdrop-blur-md border transition-colors duration-500 ${colors.accentBg}`}>
+            <span className={`rounded-full px-4 h-9 flex items-center text-xs font-semibold uppercase tracking-wider backdrop-blur-md border transition-colors duration-500 ${colors.accentBg}`}>
               {activeWorld.theme} grid active
             </span>
-            <div className="h-10 w-[1px] bg-zinc-800 hidden sm:block" />
+            <div className="h-9 w-[1px] bg-zinc-800 hidden sm:block" />
             <div 
               className="relative py-2"
               onMouseEnter={() => setShowAccountDetails(true)}
@@ -1951,12 +1952,12 @@ export default function Dashboard() {
               }}
             >
               <button
-                className="flex items-center gap-1.5 rounded-full border border-zinc-800 bg-zinc-900/40 p-1.5 text-xs font-medium backdrop-blur-md hover:border-zinc-700 hover:bg-zinc-900/60 transition-all duration-300 select-none cursor-default"
+                className="flex items-center gap-1.5 rounded-full border border-zinc-800 bg-zinc-900/40 p-1.5 h-9 text-xs font-medium backdrop-blur-md hover:border-zinc-700 hover:bg-zinc-900/60 transition-all duration-300 select-none cursor-default"
               >
                 <div className="flex h-6 w-6 items-center justify-center rounded-full bg-zinc-850 border border-zinc-750 text-xs font-black uppercase text-zinc-300 font-mono">
                   {user.uid.startsWith('guest_') ? 'G' : (user.email?.[0] || 'U')}
                 </div>
-                <ChevronDown size={14} className="text-zinc-500 mr-0.5" />
+                <ChevronDown size={16} className="text-zinc-500 mr-0.5" />
               </button>
 
               {/* Popover Card */}
@@ -2104,7 +2105,7 @@ export default function Dashboard() {
               </AnimatePresence>
             </div>
 
-            <div className="h-10 w-[1px] bg-zinc-800 hidden sm:block" />
+            <div className="h-9 w-[1px] bg-zinc-800 hidden sm:block" />
 
             {/* Sign Out Button */}
             <button
@@ -2112,9 +2113,9 @@ export default function Dashboard() {
                 await logout()
               }}
               title={user.uid.startsWith('guest_') ? "Exit Demo Session" : "Sign Out of Portal"}
-              className="flex items-center gap-2 rounded-full border border-red-500/25 bg-red-500/5 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-red-400 backdrop-blur-md transition-all duration-300 hover:bg-red-500/12 hover:scale-[1.03] active:scale-[0.97] hover:cursor-pointer"
+              className="flex items-center justify-center gap-2 rounded-full border border-red-500/25 bg-red-500/5 w-9 h-9 sm:w-auto sm:px-4 text-xs font-semibold uppercase tracking-wider text-red-400 backdrop-blur-md transition-all duration-300 hover:bg-red-500/12 hover:scale-[1.03] active:scale-[0.97] hover:cursor-pointer"
             >
-              <LogOut size={13} />
+              <LogOut size={16} />
               <span className="hidden sm:inline">
                 {user.uid.startsWith('guest_') ? 'Exit Demo' : 'Sign Out'}
               </span>
@@ -2689,6 +2690,7 @@ export default function Dashboard() {
         stability={stability}
         onReward={handleCompanionReward} 
         level={level}
+        userId={user?.uid || 'guest_session'}
       />
     </main>
   )
