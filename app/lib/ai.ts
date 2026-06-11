@@ -635,20 +635,24 @@ Rules:
     messages: [{ role: 'user', content: `Goal: "${goal}"${userId ? `, Player User ID: "${userId}"` : ''}` }],
   })
 
-  const parsed = parseJSON<any>(raw)
+  let parsed = parseJSON<any>(raw)
+  if (parsed && Array.isArray(parsed.quests) && parsed.quests.length > 0) {
+    parsed = parsed.quests[0]
+  }
+
   const now = new Date()
   const deadline = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000)
 
   return {
     id: newId,
-    title: parsed.title,
-    description: parsed.description,
-    category: categoryOverride || parsed.category || 'discipline',
-    difficulty: parsed.difficulty,
-    xp: parsed.xp,
-    tasks: parsed.tasks ?? [],
-    completedTasks: new Array(parsed.tasks?.length ?? 0).fill(false),
-    mythEvent: parsed.mythEvent ?? '',
+    title: parsed?.title || goal || 'Embark on a Secret Trial',
+    description: parsed?.description || `Channel your inner resolve to achieve: "${goal}".`,
+    category: categoryOverride || parsed?.category || 'discipline',
+    difficulty: parsed?.difficulty || 'Common',
+    xp: parsed?.xp || 100,
+    tasks: parsed?.tasks ?? [],
+    completedTasks: new Array(parsed?.tasks?.length ?? 0).fill(false),
+    mythEvent: parsed?.mythEvent ?? '',
     isCompleted: false,
     createdAtString: now.toISOString(),
     deadline: deadline.toISOString(),
@@ -725,19 +729,22 @@ Rules:
     messages: [{ role: 'user', content: `Master Ambition: "${goal}"${userId ? `, Player User ID: "${userId}"` : ''}` }],
   })
 
-  const parsed = parseJSON<{ quests: any[] }>(raw)
+  const parsed = parseJSON<any>(raw)
+  if (!parsed || !Array.isArray(parsed.quests) || parsed.quests.length === 0) {
+    throw new Error('AI response is missing campaign quests list')
+  }
   const now = new Date()
 
-  return parsed.quests.map((q, idx) => {
+  return parsed.quests.map((q: any, idx: number) => {
     // Stage-based deadlines: first quest gets durationDays, second gets 2*durationDays, etc.
     const deadline = new Date(now.getTime() + durationDays * (idx + 1) * 24 * 60 * 60 * 1000)
     return {
       id: startId + idx,
-      title: q.title,
-      description: q.description,
-      category: q.category,
-      difficulty: q.difficulty,
-      xp: q.xp,
+      title: q.title || `Quest Stage ${idx + 1}`,
+      description: q.description || `Accomplish stage ${idx + 1} of: "${goal}".`,
+      category: q.category || (idx === 0 ? 'wisdom' : idx === 1 ? 'creation' : 'discipline'),
+      difficulty: q.difficulty || 'Common',
+      xp: q.xp || 100,
       tasks: q.tasks ?? [],
       completedTasks: new Array(q.tasks?.length ?? 0).fill(false),
       mythEvent: q.mythEvent ?? '',
