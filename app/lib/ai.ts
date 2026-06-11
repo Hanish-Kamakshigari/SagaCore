@@ -785,6 +785,9 @@ Rules:
     })
 
     const parsed = parseJSON<any>(raw)
+    if (!parsed || !parsed.title || !parsed.description) {
+      throw new Error('AI daily challenge response is missing required fields (title or description)')
+    }
     return {
       id: 9999, // Special ID for Daily Challenge
       title: parsed.title,
@@ -901,13 +904,14 @@ Rules:
 // ─── Adaptive AI Engine ────────────────────────────────────────────────────────
 
 export async function generateAdaptiveChapter(
-  questTitle: string,
+  questTitle: string | undefined | null,
   questCategory: string,
   worldTheme: string,
   chapterId: number,
   mythEvent: string,
   userId?: string
 ): Promise<LoreChapter> {
+  const safeQuestTitle = questTitle || 'Secret Trial'
   const raw = await callGemini({
     model: 'gemini-2.5-flash',
     max_tokens: 1000,
@@ -927,7 +931,7 @@ Rules:
 - Avoid cliches like 'a new chapter begins' or 'the hero stood tall'`,
     messages: [{
       role: 'user',
-      content: `Quest: "${questTitle}"
+      content: `Quest: "${safeQuestTitle}"
 Category: ${questCategory}
 World theme: ${worldTheme}
 Myth event: "${mythEvent}"${userId ? `\nPlayer User ID: "${userId}"` : ''}`,
