@@ -2,9 +2,38 @@ import { NextResponse } from 'next/server'
 import { getRealmState, completeQuest } from '@/app/lib/tools'
 import { saveQuestToMongo, saveChapterToMongo } from '@/app/lib/ai'
 import type { Quest, LoreChapter } from '@/app/lib/data'
+import { checkRateLimit, getClientIp } from '@/app/lib/rate-limit'
 
 export async function POST(request: Request) {
   try {
+    // 1. Rate Limiting Check
+    const ip = getClientIp(request)
+    const rateLimitResult = await checkRateLimit(ip)
+
+    const headers = new Headers()
+    headers.set('X-RateLimit-Limit', rateLimitResult.limit.toString())
+    headers.set('X-RateLimit-Remaining', rateLimitResult.remaining.toString())
+    headers.set('X-RateLimit-Reset', rateLimitResult.reset.toString())
+
+    if (!rateLimitResult.success) {
+      console.warn(`[Agent Hook Webhook Warning] Rate limit exceeded for IP: ${ip}`)
+      headers.set('Retry-After', Math.ceil((rateLimitResult.reset - Date.now()) / 1000).toString())
+      return NextResponse.json({ error: 'Too Many Requests' }, { status: 429, headers })
+    }
+
+    // 2. Check authorization header
+    const authHeader = request.headers.get('Authorization')
+    const secret = process.env.API_ROUTE_SECRET
+    
+    if (secret) {
+      if (!authHeader || authHeader !== `Bearer ${secret}`) {
+        console.warn('[Agent Hook Webhook Warning] Unauthorized webhook call blocked.')
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers })
+      }
+    } else {
+      console.warn('[Agent Hook Webhook Warning] API_ROUTE_SECRET environment variable is not configured. Endpoint is running unprotected.')
+    }
+
     const body = await request.json()
     console.log('[Agent Hook Webhook] Received webhook call from Google Cloud Agent Builder:', body)
     
@@ -51,10 +80,10 @@ export async function POST(request: Request) {
       await saveChapterToMongo(chapter, params.userId)
       result = chapter
     } else {
-      return NextResponse.json({ error: `Unknown operation: ${op} at path ${reqPath}` }, { status: 400 })
+      return NextResponse.json({ error: `Unknown operation: ${op} at path ${reqPath}` }, { status: 400, headers })
     }
     
-    return NextResponse.json(result)
+    return NextResponse.json(result, { headers })
   } catch (error: any) {
     console.error('[Agent Hook Webhook Error] Webhook execution failed:', error)
     return NextResponse.json({ error: error.message || 'Webhook execution failed' }, { status: 500 })
