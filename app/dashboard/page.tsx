@@ -235,8 +235,8 @@ export default function Dashboard() {
   }
 
   // Normalize a goal/title string for duplicate detection (lowercase, strip punctuation, trim)
-  const normalizeGoalKey = (text: string): string =>
-    text.toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ').trim()
+  const normalizeGoalKey = (text?: string | null): string =>
+    text ? text.toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ').trim() : ''
 
   const addCompletedGoalKey = (title: string) => {
     const key = normalizeGoalKey(title)
@@ -1023,11 +1023,11 @@ export default function Dashboard() {
     const inputKey = normalizeGoalKey(newGoal)
     const isDuplicate = inputKey.length > 2 && (
       // Check against completed goal keys (stored separately)
-      [...completedGoalKeys].some((key) => key === inputKey || key.includes(inputKey) || inputKey.includes(key)) ||
+      [...completedGoalKeys].some((key) => key && (key === inputKey || key.includes(inputKey) || inputKey.includes(key))) ||
       // Check against ALL existing quest titles (active or completed)
       quests.some((q) => {
         const qKey = normalizeGoalKey(q.title)
-        return qKey === inputKey || qKey.includes(inputKey) || inputKey.includes(qKey)
+        return qKey && (qKey === inputKey || qKey.includes(inputKey) || inputKey.includes(qKey))
       })
     )
     if (isDuplicate) return // UI already shows inline warning; just bail out
@@ -2146,11 +2146,11 @@ export default function Dashboard() {
                 const inputKey = newGoal.trim() ? normalizeGoalKey(newGoal) : ''
                 const isDuplicateGoal = inputKey.length > 2 && (
                   // Against completed goal keys
-                  [...completedGoalKeys].some((key) => key === inputKey || key.includes(inputKey) || inputKey.includes(key)) ||
+                  [...completedGoalKeys].some((key) => key && (key === inputKey || key.includes(inputKey) || inputKey.includes(key))) ||
                   // Against ALL existing quest titles (active or completed)
                   quests.some((q) => {
                     const qKey = normalizeGoalKey(q.title)
-                    return qKey === inputKey || qKey.includes(inputKey) || inputKey.includes(qKey)
+                    return qKey && (qKey === inputKey || qKey.includes(inputKey) || inputKey.includes(qKey))
                   })
                 )
                 return (
