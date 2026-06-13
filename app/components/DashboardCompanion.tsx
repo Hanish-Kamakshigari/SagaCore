@@ -401,6 +401,7 @@ export default function DashboardCompanion({
                 e.stopPropagation()
                 setShowTooltip(false)
               }}
+              aria-label="Close tooltip"
               className="absolute top-1.5 right-1.5 p-0.5 rounded text-zinc-550 hover:text-zinc-300 transition hover:cursor-pointer"
             >
               <X size={10} />
@@ -422,6 +423,7 @@ export default function DashboardCompanion({
           setIsOpen(true)
           setShowTooltip(false)
         }}
+        aria-label="Open companion diagnostics"
         className={`fixed bottom-6 right-6 z-40 h-16 w-16 rounded-full border border-zinc-800 bg-zinc-950/80 backdrop-blur-md shadow-2xl flex items-center justify-center cursor-pointer transition-all duration-300 ${coreVisuals.borderHover}`}
         whileHover={{ scale: 1.08 }}
         whileTap={{ scale: 0.95 }}
@@ -479,6 +481,7 @@ export default function DashboardCompanion({
                   mouseY.set(0)
                 }}
                 onMouseLeave={() => setIsHoveringClose(false)}
+                aria-label="Close companion diagnostics"
                 className="absolute top-4 right-4 p-2 rounded-xl border border-zinc-900 bg-zinc-900/40 text-zinc-550 hover:text-white hover:border-zinc-750 active:scale-90 transition hover:cursor-pointer"
               >
                 <X size={14} />
@@ -491,7 +494,7 @@ export default function DashboardCompanion({
                 </div>
                 <div>
                   <span className={`text-[10px] font-black tracking-widest ${coreVisuals.text} uppercase font-mono`}>Aether Companion</span>
-                  <h3 className="text-xl font-bold font-cinzel text-white leading-tight">Aether Core Diagnostics</h3>
+                  <h2 className="text-xl font-bold font-cinzel text-white leading-tight">Aether Core Diagnostics</h2>
                 </div>
               </div>
 
@@ -629,6 +632,7 @@ export default function DashboardCompanion({
                     <button
                       type="submit"
                       disabled={chatLoading || !chatInput.trim()}
+                      aria-label="Send message"
                       className={`flex items-center justify-center rounded-xl px-4 text-white hover:shadow-lg active:scale-95 transition hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${themeColors.btn}`}
                     >
                       {chatLoading ? (

@@ -1990,6 +1990,7 @@ export default function Dashboard() {
                               onClick={() => handleSaveDisplayName(tempName)}
                               className="text-green-400 hover:text-green-300 p-0.5"
                               title="Save Handle"
+                              aria-label="Save Handle"
                             >
                               <Check size={13} strokeWidth={3} />
                             </button>
@@ -1997,6 +1998,7 @@ export default function Dashboard() {
                               onClick={() => setIsEditingName(false)}
                               className="text-zinc-500 hover:text-zinc-400 p-0.5"
                               title="Cancel"
+                              aria-label="Cancel editing"
                             >
                               ✕
                             </button>
@@ -2013,6 +2015,7 @@ export default function Dashboard() {
                               }
                               className="text-zinc-550 hover:text-purple-400 opacity-0 group-hover/name:opacity-100 transition-opacity p-0.5 cursor-pointer"
                               title="Edit Scribe Handle"
+                              aria-label="Edit Scribe Handle"
                             >
                               <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-pencil"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>
                             </button>
@@ -2113,6 +2116,7 @@ export default function Dashboard() {
                 await logout()
               }}
               title={user.uid.startsWith('guest_') ? "Exit Demo Session" : "Sign Out of Portal"}
+              aria-label={user.uid.startsWith('guest_') ? "Exit Demo" : "Sign Out"}
               className="flex items-center justify-center gap-2 rounded-full border border-red-500/25 bg-red-500/5 w-9 h-9 sm:w-auto sm:px-4 text-xs font-semibold uppercase tracking-wider text-red-400 backdrop-blur-md transition-all duration-300 hover:bg-red-500/12 hover:scale-[1.03] active:scale-[0.97] hover:cursor-pointer"
             >
               <LogOut size={16} />
@@ -2134,9 +2138,9 @@ export default function Dashboard() {
 
             {/* Dream Forge — only change: button shows spinner when isForging */}
             <div className={`relative overflow-hidden rounded-3xl border ${colors.borderGlow} ${colors.hoverGlow} bg-gradient-to-r from-zinc-900/40 via-zinc-900/20 to-zinc-950/40 p-6 shadow-xl backdrop-blur-xl transition-all duration-500`}>
-              <h3 className="text-lg font-bold text-zinc-100 flex items-center gap-2">
+              <h2 className="text-lg font-bold text-zinc-100 flex items-center gap-2">
                 The Dream Forge
-              </h3>
+              </h2>
               <p className="mt-1 text-sm text-zinc-400">
                 Type any ambition. The SAGACORE generator will forge a legendary quest with dynamic XP rewards.
               </p>
@@ -2172,6 +2176,7 @@ export default function Dashboard() {
                       <button
                         type="submit"
                         disabled={isForging || !newGoal.trim() || isDuplicateGoal}
+                        aria-label="Start Adventure"
                         className={`flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r ${colors.btnBg} px-4 sm:px-7 py-3 sm:py-4 font-bold text-white transition-all duration-300 hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 disabled:scale-100 disabled:translate-y-0 disabled:opacity-60 disabled:cursor-not-allowed ${colors.btnGlow}`}
                       >
                         {isForging ? (

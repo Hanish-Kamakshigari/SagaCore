@@ -259,9 +259,9 @@ export default function AetherCore() {
                     return <Icon size={16} />
                   })()}
                 </div>
-                <h4 className="text-sm uppercase font-mono font-bold tracking-widest text-zinc-350">
+                <h3 className="text-sm uppercase font-mono font-bold tracking-widest text-zinc-350">
                   {steps[step].title}
-                </h4>
+                </h3>
               </div>
 
               <p className="text-zinc-300 text-sm leading-relaxed min-h-[4.5rem]">
@@ -278,6 +278,7 @@ export default function AetherCore() {
                 <button
                   key={idx}
                   onClick={() => setStep(idx)}
+                  aria-label={`Go to slide ${idx + 1}`}
                   className={`h-2 rounded-full transition-all duration-300 hover:cursor-pointer ${
                     idx === step ? 'w-6 bg-red-500' : 'w-2 bg-zinc-700 hover:bg-zinc-550'
                   }`}
@@ -290,6 +291,7 @@ export default function AetherCore() {
               <button
                 disabled={step === 0}
                 onClick={() => setStep(s => s - 1)}
+                aria-label="Previous slide"
                 className="p-2 rounded-full border border-zinc-800 bg-zinc-950/50 text-zinc-400 hover:text-white hover:border-zinc-700 active:scale-90 transition disabled:opacity-30 disabled:pointer-events-none hover:cursor-pointer"
               >
                 <ChevronLeft size={16} />

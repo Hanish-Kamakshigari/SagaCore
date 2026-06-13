@@ -134,7 +134,7 @@ export default function WorldArchitect({
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
             <span className="text-[9px] uppercase tracking-widest text-zinc-550 font-semibold">Active Realm</span>
-            <h4 className="text-lg font-black text-zinc-200 truncate">{activeWorld.name}</h4>
+            <h3 className="text-lg font-black text-zinc-200 truncate">{activeWorld.name}</h3>
             {/* Custom Realm badge */}
             {isCustomRealm && (
               <span className={`mt-1 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest ${

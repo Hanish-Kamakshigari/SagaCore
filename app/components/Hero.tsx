@@ -34,7 +34,7 @@ export default function Hero() {
         }}
         className="absolute inset-0 bg-cover bg-center"
         style={{
-          backgroundImage: "url('/image.jpg')",
+          backgroundImage: "url('/image.webp')",
         }}
       />
 
@@ -84,6 +84,7 @@ export default function Hero() {
                 </Link>
                 <button
                   onClick={() => logout()}
+                  aria-label="Sign Out"
                   className="rounded-full border border-red-500/20 bg-red-500/5 px-3 py-1.5 sm:px-4 sm:py-2.5 text-[10px] sm:text-xs font-semibold text-red-400 backdrop-blur-md transition-all duration-300 hover:bg-red-500/10 hover:scale-[1.03] active:scale-[0.98] flex items-center gap-1 sm:gap-1.5 hover:cursor-pointer"
                 >
                   <LogOut size={11} className="sm:w-3 sm:h-3" />

@@ -129,12 +129,12 @@ export default function Leaderboard({ theme = 'fantasy', activeUserUid }: Leader
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 text-center text-zinc-550">
             <RefreshCw size={32} className={`mb-3 animate-spin ${accentColor}`} />
-            <h4 className="font-bold text-zinc-400">Consulting the Grand Registry...</h4>
+            <h3 className="font-bold text-zinc-400">Consulting the Grand Registry...</h3>
           </div>
         ) : players.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center text-zinc-550">
             <Shield size={32} className={`mb-3 opacity-30 ${accentColor}`} />
-            <h4 className="font-bold text-zinc-400">The Hall is Silent</h4>
+            <h3 className="font-bold text-zinc-400">The Hall is Silent</h3>
             <p className="text-xs text-zinc-500 mt-1 max-w-xs leading-relaxed">
               No legends have forged user accounts in this database yet. Sync your progress to claim the first rank!
             </p>

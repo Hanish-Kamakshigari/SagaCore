@@ -170,7 +170,7 @@ export default function LandingSections() {
               I
             </div>
             <div>
-              <h4 className="text-lg font-bold text-zinc-100 font-cinzel">Wisdom Attributes</h4>
+              <h3 className="text-lg font-bold text-zinc-100 font-cinzel">Wisdom Attributes</h3>
               <p className="mt-1 text-sm text-zinc-400 leading-relaxed">
                 Refining technical mastery, algorithm studies, deep research, and conceptual code architecture.
               </p>
@@ -188,7 +188,7 @@ export default function LandingSections() {
               II
             </div>
             <div>
-              <h4 className="text-lg font-bold text-zinc-100 font-cinzel">Discipline Columns</h4>
+              <h3 className="text-lg font-bold text-zinc-100 font-cinzel">Discipline Columns</h3>
               <p className="mt-1 text-sm text-zinc-400 leading-relaxed">
                 Tracking consistency, task management, regression logs, physical stability, and continuous endurance.
               </p>
@@ -206,7 +206,7 @@ export default function LandingSections() {
               III
             </div>
             <div>
-              <h4 className="text-lg font-bold text-zinc-100 font-cinzel">Creation Forges</h4>
+              <h3 className="text-lg font-bold text-zinc-100 font-cinzel">Creation Forges</h3>
               <p className="mt-1 text-sm text-zinc-400 leading-relaxed">
                 Building frontends, designing databases, drafting mockups, deploying modules, and forging visual layouts.
               </p>
@@ -358,7 +358,7 @@ export default function LandingSections() {
               World Engine
             </span>
           </div>
-          <p className="text-xs text-zinc-600 font-mono">
+          <p className="text-xs text-zinc-400 font-mono">
             © 2026 SagaCore Hub · All rights reserved.
           </p>
         </div>
